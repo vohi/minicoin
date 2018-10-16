@@ -64,6 +64,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update
     echo Y | apt-get install g++
-    # echo Y | apt-get install mesa-utils freeglut3-dev
+    echo Y | apt-get install mesa-utils freeglut3-dev
   SHELL
 end
