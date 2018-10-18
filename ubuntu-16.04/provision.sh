@@ -6,4 +6,4 @@ apt-get update
 apt-get -y build-dep qt5-default
 apt-get -y install libxcb-xinerama0-dev
 apt-get -y install bison flex gperf
-
+apt-get -y upgrade
