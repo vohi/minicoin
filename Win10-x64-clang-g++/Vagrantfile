@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+$user = ENV['USER']
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -19,10 +21,6 @@ Vagrant.configure("2") do |config|
   # Forwarded port mapping for remote desktop and winrm
   config.vm.network :forwarded_port, guest: 3389, host: 3389, id: "rdp"
   config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
-
-  # Windows has no bash, and vagrant doesn't know how to replace default keys
-  config.ssh.shell = "powershell.exe"
-  config.ssh.insert_key = false
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
@@ -43,7 +41,7 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "~", "/vagrant"
+  config.vm.synced_folder "~", "/#{$user}"
 
   # config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
@@ -53,5 +51,5 @@ Vagrant.configure("2") do |config|
   #   vb.memory = "1024"
   # end
 
-  config.vm.provision "shell", path: "provision.ps1", upload_path: "c:\\Windows\Temp"
+  config.vm.provision "shell", path: "provision.cmd", args: $user, upload_path: "c:\\Windows\Temp"
 end
