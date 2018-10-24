@@ -1,1 +1,1 @@
-Find-Package -Name visualcpp-build-tools -Provider chocolatey | Install-Package
+Find-Package -Name visualcpp-build-tools -Provider chocolatey | Install-Package -Scope AllUsers
