@@ -1,0 +1,1 @@
+Find-Package -Name strawberryperl -Provider chocolatey | Install-Package

@@ -43,13 +43,17 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   config.vm.synced_folder "~", "/#{$user}"
 
-  # config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
+    vb.gui = true
+    vb.customize ["modifyvm", :id, "--memory", 4096]
+    vb.customize ["modifyvm", :id, "--cpus", 4]
+    vb.customize ["modifyvm", :id, "--vram", "128"]
+    vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
   #
   #   # Customize the amount of memory on the VM:
   #   vb.memory = "1024"
-  # end
+  end
 
-  config.vm.provision "shell", path: "provision.cmd", args: $user, upload_path: "c:\\Windows\Temp"
+  config.vm.provision "shell", path: "provision.cmd", args: $user, upload_path: "c:\\\\Windows\\temp\\", privileged: true
 end
