@@ -12,3 +12,5 @@ powershell \\VBOXSRV\vagrant\provision-choco.ps1
 
 echo "Installing Tools"
 powershell \\VBOXSRV\vagrant\provision-tools.ps1
+
+echo "Please reboot the VM and let it install updates..."
