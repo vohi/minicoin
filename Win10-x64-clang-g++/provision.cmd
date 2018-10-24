@@ -18,3 +18,6 @@ powershell \\VBOXSRV\vagrant\provision-python2.ps1
 
 echo "Installing LLVM and Clang"
 powershell \\VBOXSRV\vagrant\provision-llvm.ps1
+
+echo "Installing Tools"
+powershell \\VBOXSRV\vagrant\provision-tools.ps1
