@@ -14,7 +14,7 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "tqtc/Win10-x64-clang-g++"
+  config.vm.box = "tqtc/windows10"
   config.vm.guest = :windows
   config.vm.communicator = "winssh"
 
