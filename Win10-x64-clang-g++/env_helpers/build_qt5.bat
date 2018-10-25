@@ -2,6 +2,6 @@
 cd c:\dev
 mkdir qt5-build
 cd qt5-build
-..\qt5\configure -confirm-license -opensource -developer-build -nomake examples -nomake tests
+..\qt5\configure -confirm-license -opensource -developer-build -nomake examples -nomake tests -debug
 jom
 cmd /k
