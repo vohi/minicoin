@@ -1,3 +1,6 @@
+# fix for locale not being set correctly
+echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+
 # enable source repositories for apt
 sed -i '/deb-src http.*xenial.* main restricted$/s/^# //g' /etc/apt/sources.list
 
