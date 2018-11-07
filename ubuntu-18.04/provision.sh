@@ -3,7 +3,8 @@ if [ -z "$1" ]; then
   echo "No source directory for ssh configuration provided"
 else
   echo "Copying ssh configuration and credentials from '$1'"
-  cp -R $1/.ssh ~
+  cp -R $1/.ssh /home/vagrant
+  chown -R vagrant /home/vagrant/.ssh
 fi
 
 # fix for locale not being set correctly
