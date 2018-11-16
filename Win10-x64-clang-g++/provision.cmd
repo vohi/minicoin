@@ -16,4 +16,5 @@ powershell \\VBOXSRV\vagrant\provision-tools.ps1
 echo "Copying env helper scripts"
 powershell \\VBOXSRV\vagrant\provision-devenv.ps1
 
-echo "Please reboot the VM and let it install updates..."
+echo "Rebooting the VM to complete installation and configuration..."
+shutdown /r
