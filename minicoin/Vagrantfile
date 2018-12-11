@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$user = ENV['USER']
+$coin = ENV['COIN_ROOT']
+
+# Import YAML
+require 'yaml'
+
+boxes = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
+
+Vagrant.configure("2") do |config|
+  boxes.each do |box|
+    config.vm.define box["name"] do |machine|
+      machine.vm.box = box["box"]
+      machine.vm.network "private_network", type: "dhcp"
+      machine.vm.synced_folder "~", "/home/#{$user}"
+
+      machine.vm.provider "virtualbox" do |vb|
+        # vb.gui = true
+        # vb.memory = box["memory"]
+        vb.name = box["name"]
+      end
+
+      coin_template = box["coin"]
+      machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
+      machine.vm.provision "file", source: "~/.ssh/", destination: ".ssh/"
+
+      if ["up", "provision", "reload", "validate"].include? ARGV[0]
+        if !$coin.nil? && !$coin.empty?
+          machine.vm.provision "file", source: "#{$coin}/", destination: "coin"
+        else
+          puts "COIN_ROOT not specified; skipping"
+        end
+        if !coin_template.nil? && !coin_template.empty?
+          machine.vm.provision "shell", path: "#{coin_template}/provision.sh", args: "#{coin_template}"
+        else
+          puts "No coin template specified; not running provisioning scripts"
+        end
+      end
+    end
+  end
+end

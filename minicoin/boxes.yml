@@ -1,0 +1,5 @@
+---
+- name: ubuntu-18.04
+  box: generic/ubuntu1804
+  coin: qtci-linux-Ubuntu-18.04-x86_64
+
