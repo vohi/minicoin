@@ -18,8 +18,8 @@ Vagrant.configure("2") do |config|
         puts "No coin template specified for box '#{name}'"
       end
 
-      is_windows = coin_template.include? "windows" unless coin_template.nil?
-      is_mac = coin_template.include? "mac" unless coin_template.nil?
+      is_windows = name.include? "windows" || (coin_template.include? "windows" unless coin_template.nil?)
+      is_mac = name.include? "mac" || (coin_template.include? "mac" unless coin_template.nil?)
 
       machine.vm.box = box["box"]
       machine.vm.network "private_network", type: "dhcp"
@@ -46,6 +46,11 @@ Vagrant.configure("2") do |config|
         machine.vm.guest = :windows
         machine.vm.communicator = "winssh"
         machine.vm.synced_folder "~", "/#{$user}"
+        machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
+      elsif is_mac
+        provision_script = "provision.sh"
+        machine.vm.synced_folder ".", "/vagrant", disabled: true
+        # machine.vm.synced_folder "~", "/home/#{$user}", type: "nfs"
       else
         provision_script = "provision.sh"
         machine.vm.synced_folder "~", "/home/#{$user}"
@@ -61,19 +66,21 @@ Vagrant.configure("2") do |config|
 
       # Execution of provisioning script
       if ["up", "provision", "reload", "validate"].include? ARGV[0]
-        if !coin_root.nil? && !coin_root.empty?
+        if coin_root.nil? || !File.exists?(coin_root)
+          puts "COIN_ROOT '#{coin_root}' does not exist" unless ARGV[0] == "validate"
+        else
           if !is_windows
             machine.vm.provision "file", source: "#{coin_root}/", destination: "coin"
           end
-        else
-          puts "COIN_ROOT not specified" if !ARGV[0] == "validate"
         end
 
-        provisioning_file = "#{coin_template}/#{provisioning_script}"
-        if File.file?(provisioning_file)
-          machine.vm.provision "shell", path: "#{coin_template}/#{provision_script}", args: "#{coin_template}"
-        else
-          puts "Provisioining file at '#{provisioning_file}' not found!"
+        if !coin_template.nil?
+          provisioning_file = "#{coin_template}/#{provision_script}"
+          if File.file?(provisioning_file)
+            machine.vm.provision "shell", path: "#{provisioning_file}", args: "#{coin_template}"
+          else
+            puts "Provisioining file at '#{provisioning_file}' not found!"
+          end
         end
       end
     end
