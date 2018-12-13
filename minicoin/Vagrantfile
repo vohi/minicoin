@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 $user = ENV['USER']
-$coin = ENV['COIN_ROOT']
+coin_root = ENV['COIN_ROOT']
 
 # Import YAML
 require 'yaml'
@@ -12,30 +12,68 @@ boxes = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 Vagrant.configure("2") do |config|
   boxes.each do |box|
     config.vm.define box["name"] do |machine|
-      machine.vm.box = box["box"]
-      machine.vm.network "private_network", type: "dhcp"
-      machine.vm.synced_folder "~", "/home/#{$user}"
-
-      machine.vm.provider "virtualbox" do |vb|
-        # vb.gui = true
-        # vb.memory = box["memory"]
-        vb.name = box["name"]
+      name = box["name"]
+      coin_template = box["coin"]
+      if coin_template.nil?
+        puts "No coin template specified for box '#{name}'"
       end
 
-      coin_template = box["coin"]
-      machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
-      machine.vm.provision "file", source: "~/.ssh/", destination: ".ssh/"
+      is_windows = coin_template.include? "windows" unless coin_template.nil?
+      is_mac = coin_template.include? "mac" unless coin_template.nil?
 
-      if ["up", "provision", "reload", "validate"].include? ARGV[0]
-        if !$coin.nil? && !$coin.empty?
-          machine.vm.provision "file", source: "#{$coin}/", destination: "coin"
-        else
-          puts "COIN_ROOT not specified; skipping"
+      machine.vm.box = box["box"]
+      machine.vm.network "private_network", type: "dhcp"
+
+      # VirtualBox specific settings
+      machine.vm.provider "virtualbox" do |vb|
+        vb.memory = box["memory"] unless box["memory"].nil?
+        vb.cpus = box["cpus"] unless box["cpus"].nil?
+        vb.gui = box["gui"] unless box["gui"].nil?
+        vb.name = name
+        if is_windows || is_mac
+          vb.default_nic_type = "82540EM" # "Intel Pro/1000 MT Desktop" must be used on Windows and Mac
         end
-        if !coin_template.nil? && !coin_template.empty?
-          machine.vm.provision "shell", path: "#{coin_template}/provision.sh", args: "#{coin_template}"
+
+        vb.customize [
+            "modifyvm", :id,
+            "--clipboard", "bidirectional"
+          ]
+      end
+
+      # Platform specific configurations
+      if is_windows
+        provision_script = "provision.cmd"
+        machine.vm.guest = :windows
+        machine.vm.communicator = "winssh"
+        machine.vm.synced_folder "~", "/#{$user}"
+      else
+        provision_script = "provision.sh"
+        machine.vm.synced_folder "~", "/home/#{$user}"
+      end
+
+      # Copying files to guest
+      if is_windows
+        # machine.vm.provision "file", source: "boxes.yml", destination: "boxes.yml"
+      else
+        machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
+        machine.vm.provision "file", source: "~/.ssh/", destination: ".ssh/"
+      end
+
+      # Execution of provisioning script
+      if ["up", "provision", "reload", "validate"].include? ARGV[0]
+        if !coin_root.nil? && !coin_root.empty?
+          if !is_windows
+            machine.vm.provision "file", source: "#{coin_root}/", destination: "coin"
+          end
         else
-          puts "No coin template specified; not running provisioning scripts"
+          puts "COIN_ROOT not specified" if !ARGV[0] == "validate"
+        end
+
+        provisioning_file = "#{coin_template}/#{provisioning_script}"
+        if File.file?(provisioning_file)
+          machine.vm.provision "shell", path: "#{coin_template}/#{provision_script}", args: "#{coin_template}"
+        else
+          puts "Provisioining file at '#{provisioning_file}' not found!"
         end
       end
     end
