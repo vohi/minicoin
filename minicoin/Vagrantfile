@@ -61,7 +61,7 @@ Vagrant.configure("2") do |config|
         # machine.vm.provision "file", source: "boxes.yml", destination: "boxes.yml"
       else
         machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
-        machine.vm.provision "file", source: "~/.ssh/", destination: ".ssh/"
+        machine.vm.provision "file", source: "~/.ssh", destination: ".ssh"
       end
 
       # Execution of provisioning script
