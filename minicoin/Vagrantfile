@@ -14,9 +14,6 @@ Vagrant.configure("2") do |config|
     config.vm.define box["name"] do |machine|
       name = box["name"]
       coin_template = box["coin"]
-      if coin_template.nil?
-        puts "No coin template specified for box '#{name}'"
-      end
 
       is_windows = name.include? "windows" || (coin_template.include? "windows" unless coin_template.nil?)
       is_mac = name.include? "mac" || (coin_template.include? "mac" unless coin_template.nil?)
@@ -85,6 +82,8 @@ Vagrant.configure("2") do |config|
           else
             puts "Provisioining file at '#{provisioning_file}' not found!"
           end
+        else
+          puts "No coin template specified for box '#{name}'"
         end
       end
     end
