@@ -2,18 +2,34 @@
 - name: ubuntu1804
   box: generic/ubuntu1804
   coin: simple-apt
+  memory: 512
 - name: centos7
   box: generic/centos7
+  memory: 512
 - name: windows10
   box: tqtc/windows10
-  gui: true
+  coin: simple-windows
+  memory: 512
+  gui: false
+  private_net: disabled
 - name: windows81
   box: tqtc/windows81
-  gui: true
+  coin: simple-windows
+  memory: 512
+  gui: false
+  private_net: disabled
 - name: windows7
   box: tqtc/windows7
-  gui: true
+  coin: simple-windows
+  memory: 512
+  gui: false
+  private_net: disabled
+  shared_folders: disabled
 - name: macos106
   box: tqtc/macos106
-  gui: true
+  coin: simple-mac
+  memory: 512
+  vram: 128
+  gui: false
+  shared_folders: disabled
 
