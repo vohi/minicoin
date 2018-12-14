@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-$user = ENV['USER']
+user = ENV['USER']
 coin_root = ENV['COIN_ROOT']
 
 # Import YAML
@@ -44,20 +44,21 @@ Vagrant.configure("2") do |config|
       end
 
       # Platform specific configurations
+      guest_home = "/home/#{user}"
+      provision_script = "provision.sh"
+
       if is_windows
         provision_script = "provision.cmd"
         machine.vm.guest = :windows
         machine.vm.communicator = "winssh"
-        machine.vm.synced_folder "~", "/#{$user}"
+        guest_home = "/#{user}"
         machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       elsif is_mac
-        provision_script = "provision.sh"
-        machine.vm.synced_folder ".", "/vagrant", disabled: true
-        # machine.vm.synced_folder "~", "/home/#{$user}", type: "nfs"
       else
-        provision_script = "provision.sh"
-        machine.vm.synced_folder "~", "/home/#{$user}"
       end
+
+      machine.vm.synced_folder "~", "#{guest_home}" unless box["shared_folders"] == "disabled"
+      machine.vm.synced_folder ".", "/vagrant", disabled: true if box["shared_folders"] == "disabled"
 
       # Copying files to guest
       if is_windows
