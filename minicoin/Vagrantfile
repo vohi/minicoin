@@ -48,7 +48,7 @@ Vagrant.configure("2") do |config|
       if is_windows
         provision_script = "provision.cmd"
         machine.vm.guest = :windows
-        machine.vm.communicator = "winssh"
+        machine.vm.communicator = :winssh
         guest_home = "/#{user}"
         machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       elsif is_mac
@@ -60,7 +60,7 @@ Vagrant.configure("2") do |config|
 
       # Copying files to guest
       if is_windows
-        # machine.vm.provision "file", source: "boxes.yml", destination: "boxes.yml"
+        # windows file provisioning broken, vagrant tries to execute mkdir -p
       else
         machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
         machine.vm.provision "file", source: "~/.ssh", destination: ".ssh"
@@ -78,8 +78,13 @@ Vagrant.configure("2") do |config|
 
         if !coin_template.nil?
           provisioning_file = "#{coin_template}/#{provision_script}"
+          if is_windows
+            upload_path = "c:\\\\Windows\\temp\\"
+          else
+            upload_path = "/tmp/vagrant-shell"
+          end
           if File.file?(provisioning_file)
-            machine.vm.provision "shell", path: "#{provisioning_file}", args: "#{coin_template}"
+            machine.vm.provision "shell", path: "#{provisioning_file}", args: ["#{coin_template}", "#{user}"], upload_path: upload_path, privileged: true
           else
             puts "Provisioining file at '#{provisioning_file}' not found!"
           end
