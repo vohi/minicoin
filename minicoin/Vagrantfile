@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
       is_mac = name.include? "mac" || (coin_template.include? "mac" unless coin_template.nil?)
 
       machine.vm.box = box["box"]
-      machine.vm.network "private_network", type: "dhcp"
+      machine.vm.network "private_network", type: "dhcp" unless box["private_net"] == "disabled"
 
       # VirtualBox specific settings
       machine.vm.provider "virtualbox" do |vb|
@@ -30,8 +30,11 @@ Vagrant.configure("2") do |config|
         vb.cpus = box["cpus"] unless box["cpus"].nil?
         vb.gui = box["gui"] unless box["gui"].nil?
         vb.name = name
-        if is_windows || is_mac
-          vb.default_nic_type = "82540EM" # "Intel Pro/1000 MT Desktop" must be used on Windows and Mac
+        if is_windows || is_mac # "Intel Pro/1000 MT Desktop" must be used on Windows and Mac
+          vb.customize [
+            "modifyvm", :id,
+            "--nictype1", "82540EM"
+          ]
         end
 
         vb.customize [
