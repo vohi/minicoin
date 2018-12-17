@@ -50,7 +50,20 @@ Vagrant.configure("2") do |config|
       if is_windows
         provision_script = "provision.cmd"
         machine.vm.guest = :windows
-        machine.vm.communicator = :winrm # winssh
+
+        # Test if winrm is available
+        begin
+          has_winrm = require 'foobar'
+        rescue LoadError
+        puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
+        puts "    #{name}: Shared folder support and file provisioning might fail"
+        end
+
+        if has_winrm
+          machine.vm.communicator = :winrm
+        else
+          machine.vm.communicator = :winssh
+        end
         guest_home = "/#{user}"
         machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
         guest_filedir = "c:\\Users\\vagrant\\"
@@ -74,7 +87,7 @@ Vagrant.configure("2") do |config|
       # Execution of provisioning script
       if ["up", "provision", "reload", "validate"].include? ARGV[0]
         if coin_root.nil? || !File.exists?(coin_root)
-          puts "COIN_ROOT '#{coin_root}' empty or does not exist" unless ARGV[0] == "validate"
+          puts "==> #{name}: COIN_ROOT '#{coin_root}' empty or does not exist" unless ARGV[0] == "validate"
         else
           if !is_windows || machine.vm.communicator == :winrm
             machine.vm.provision "file", source: "#{coin_root}/", destination: "#{guest_filedir}coin"
@@ -86,10 +99,10 @@ Vagrant.configure("2") do |config|
           if File.file?(provisioning_file)
             machine.vm.provision "shell", path: "#{provisioning_file}", args: ["#{coin_template}", "#{user}"], upload_path: guest_scriptdir, privileged: true
           else
-            puts "Provisioining file at '#{provisioning_file}' not found!"
+            puts "==> #{name}: Provisioining file at '#{provisioning_file}' not found!"
           end
         else
-          puts "No coin template specified for box '#{name}'"
+          puts "==> #{name}: No coin template specified for box '#{name}'"
         end
       end
     end
