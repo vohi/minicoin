@@ -44,47 +44,47 @@ Vagrant.configure("2") do |config|
       # Platform specific configurations
       guest_home = "/home/#{user}"
       provision_script = "provision.sh"
+      guest_filedir = ""
+      guest_scriptdir ="/tmp/vagrant-shell"
 
       if is_windows
         provision_script = "provision.cmd"
         machine.vm.guest = :windows
-        machine.vm.communicator = :winssh
+        machine.vm.communicator = :winrm # winssh
         guest_home = "/#{user}"
         machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
+        guest_filedir = "c:\\Users\\vagrant\\"
+        guest_scriptdir = "c:\\Windows\\temp\\"
       elsif is_mac
       else
       end
+
+      # Allow overriding defaults
+      machine.vm.communicator = box["communicator"] unless box["communicator"].nil?
 
       machine.vm.synced_folder "~", "#{guest_home}" unless box["shared_folders"] == "disabled"
       machine.vm.synced_folder ".", "/vagrant", disabled: true if box["shared_folders"] == "disabled"
 
       # Copying files to guest
-      if is_windows
-        # windows file provisioning broken, vagrant tries to execute mkdir -p
-      else
-        machine.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
-        machine.vm.provision "file", source: "~/.ssh", destination: ".ssh"
+      if !is_windows || machine.vm.communicator == :winrm # file provisioning via winssh is broken
+        machine.vm.provision "file", source: "~/.gitconfig", destination: "#{guest_filedir}.gitconfig"
+        machine.vm.provision "file", source: "~/.ssh", destination: "#{guest_filedir}.ssh"
       end
 
       # Execution of provisioning script
       if ["up", "provision", "reload", "validate"].include? ARGV[0]
         if coin_root.nil? || !File.exists?(coin_root)
-          puts "COIN_ROOT '#{coin_root}' does not exist" unless ARGV[0] == "validate"
+          puts "COIN_ROOT '#{coin_root}' empty or does not exist" unless ARGV[0] == "validate"
         else
-          if !is_windows
-            machine.vm.provision "file", source: "#{coin_root}/", destination: "coin"
+          if !is_windows || machine.vm.communicator == :winrm
+            machine.vm.provision "file", source: "#{coin_root}/", destination: "#{guest_filedir}coin"
           end
         end
 
         if !coin_template.nil?
           provisioning_file = "#{coin_template}/#{provision_script}"
-          if is_windows
-            upload_path = "c:\\\\Windows\\temp\\"
-          else
-            upload_path = "/tmp/vagrant-shell"
-          end
           if File.file?(provisioning_file)
-            machine.vm.provision "shell", path: "#{provisioning_file}", args: ["#{coin_template}", "#{user}"], upload_path: upload_path, privileged: true
+            machine.vm.provision "shell", path: "#{provisioning_file}", args: ["#{coin_template}", "#{user}"], upload_path: guest_scriptdir, privileged: true
           else
             puts "Provisioining file at '#{provisioning_file}' not found!"
           end
