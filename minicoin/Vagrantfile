@@ -36,9 +36,9 @@ Vagrant.configure("2") do |config|
         end
 
         vb.customize [
-            "modifyvm", :id,
-            "--clipboard", "bidirectional"
-          ]
+          "modifyvm", :id,
+          "--clipboard", "bidirectional"
+        ]
       end
 
       # Platform specific configurations
@@ -48,15 +48,18 @@ Vagrant.configure("2") do |config|
       guest_scriptdir ="/tmp/vagrant-shell"
 
       if is_windows
-        provision_script = "provision.cmd"
         machine.vm.guest = :windows
+        guest_home = "/#{user}"
+        provision_script = "provision.cmd"
+        guest_filedir = "c:\\Users\\vagrant\\"
+        guest_scriptdir = "c:\\Windows\\temp\\"
 
         # Test if winrm is available
         begin
           has_winrm = require 'winrm'
         rescue LoadError
-        puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
-        puts "    #{name}: Shared folder support and file provisioning might fail"
+          puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
+          puts "    #{name}: Shared folder support and file provisioning might fail"
         end
 
         if has_winrm
@@ -64,16 +67,16 @@ Vagrant.configure("2") do |config|
         else
           machine.vm.communicator = :winssh
         end
-        guest_home = "/#{user}"
-        machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
-        guest_filedir = "c:\\Users\\vagrant\\"
-        guest_scriptdir = "c:\\Windows\\temp\\"
       elsif is_mac
       else
       end
 
       # Allow overriding defaults
       machine.vm.communicator = box["communicator"] unless box["communicator"].nil?
+
+      if machine.vm.communicator == :winssh
+        machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
+      end
 
       machine.vm.synced_folder "~", "#{guest_home}" unless box["shared_folders"] == "disabled"
       machine.vm.synced_folder ".", "/vagrant", disabled: true if box["shared_folders"] == "disabled"
@@ -97,7 +100,10 @@ Vagrant.configure("2") do |config|
         if !coin_template.nil?
           provisioning_file = "#{coin_template}/#{provision_script}"
           if File.file?(provisioning_file)
-            machine.vm.provision "shell", path: "#{provisioning_file}", args: ["#{coin_template}", "#{user}"], upload_path: guest_scriptdir, privileged: true
+            machine.vm.provision "shell", path: "#{provisioning_file}",
+              args: ["#{coin_template}", "#{user}"],
+              upload_path: guest_scriptdir,
+              privileged: true
           else
             puts "==> #{name}: Provisioining file at '#{provisioning_file}' not found!"
           end
