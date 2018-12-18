@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+boxfile = ARGV[ARGV.length-1] # naively assume last argument is box
+
+# This is a generic Vagrant configuration that allows launching
+# a virtual machine from a box file. This is not useful to do
+# anything except for maintaining base boxes incrementally without
+# having to keep VMs alive and eating disk-space in VirtualBox.
+Vagrant.configure("2") do |config|
+  config.vm.define "#{boxfile}" do |basebox|
+    basebox.vm.box = "#{boxfile}.box"
+
+    basebox.vm.provider "virtualbox" do |vb|
+      vb.gui = true
+      vb.memory = "1024"
+      vb.name = boxfile
+    end
+  end
+end
