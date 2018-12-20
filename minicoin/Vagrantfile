@@ -98,14 +98,20 @@ Vagrant.configure("2") do |config|
         end
 
         if !coin_template.nil?
-          provisioning_file = "#{coin_template}/#{provision_script}"
-          if File.file?(provisioning_file)
-            machine.vm.provision "shell", path: "#{provisioning_file}",
-              args: ["#{coin_template}", "#{user}"],
-              upload_path: guest_scriptdir,
-              privileged: true
+          if File.file?("#{coin_template}/playbook.yml")
+            machine.vm.provision "ansible" do |ansible|
+              ansible.playbook = "#{coin_template}/playbook.yml"
+            end
           else
-            puts "==> #{name}: Provisioining file at '#{provisioning_file}' not found!"
+            provisioning_file = "#{coin_template}/#{provision_script}"
+            if File.file?(provisioning_file)
+              machine.vm.provision "shell", path: "#{provisioning_file}",
+                args: ["#{coin_template}", "#{user}"],
+                upload_path: guest_scriptdir,
+                privileged: true
+            else
+              puts "==> #{name}: Provisioning file at '#{provisioning_file}' not found!"
+            end
           end
         else
           puts "==> #{name}: No coin template specified for box '#{name}'"

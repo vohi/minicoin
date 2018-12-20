@@ -1,0 +1,13 @@
+- name: Install basic build packages
+  apt:
+    name: ['build-essential', 'git', 'python', 'perl', 'bison', 'gperf', 'flex']
+    state: present
+  tags:
+    - packages
+
+- name: Install build dependencies
+  apt:
+    name: ['libglu1-mesa-dev', 'freeglut3-dev', 'mesa-common-dev', 'libxcb-xinerama0-dev', 'libssl-dev']
+    state: present
+  tags:
+    - packages

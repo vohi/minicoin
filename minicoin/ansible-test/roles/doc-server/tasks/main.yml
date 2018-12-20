@@ -1,0 +1,8 @@
+- name: Install and run nginx to server locally built documentation
+  apt:
+    name: nginx
+    state: present
+  tags:
+    - packages
+
+
