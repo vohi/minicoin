@@ -3,19 +3,21 @@ set +ex
 
 if [ $# -lt 1 ]; then
 
-  echo "Export an existing virtual machine to a base box and register with vagrant"
+  echo "Export an existing virtual machine to a box file and register with vagrant"
   echo ""
-  echo "Usage: $0 name [variant='base']"
+  echo "Usage: $0 vm-name [boxname]"
+  echo ""
   exit -1
 fi
 
+vmname=$1
+
 if [ -z "$2" ]; then
-  boxvariant="base"
+  boxbase=$vmname
 else
-  boxvariant=$2
+  boxbase=$2
 fi
 
-boxbase=$1-$boxvariant
 boxfile=$boxbase.box
 clear_backup=false
 
@@ -27,9 +29,9 @@ if [ -f $boxfile ]; then
   clear_backup=true
 fi
 
-echo "Exporting VM '$boxbase' to file '$boxfile' and adding to vagrant as 'tqtc/$boxbase'..."
+echo "Exporting VM '$vmname' to file '$boxfile' and adding to vagrant as 'tqtc/$boxbase'..."
 
-vagrant package --base $boxbase --output $boxfile $boxbase 
+vagrant package --base $vmname --output $boxfile $boxbase
 error=$?
 
 if [[ error != 0 ]]; then
