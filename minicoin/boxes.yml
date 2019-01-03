@@ -27,5 +27,3 @@
   memory: 512
   vram: 128
   gui: false
-  shared_folders: disabled
-

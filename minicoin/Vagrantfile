@@ -68,6 +68,7 @@ Vagrant.configure("2") do |config|
           machine.vm.communicator = :winssh
         end
       elsif is_mac
+        guest_home = "/Users/#{user}"
       else
       end
 
@@ -78,8 +79,13 @@ Vagrant.configure("2") do |config|
         machine.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       end
 
-      machine.vm.synced_folder "~", "#{guest_home}" unless box["shared_folders"] == "disabled"
-      machine.vm.synced_folder ".", "/vagrant", disabled: true if box["shared_folders"] == "disabled"
+      if box["shared_folders"] == "disabled"
+        machine.vm.synced_folder ".", "/vagrant", disabled: true if box["shared_folders"] == "disabled"
+      elsif is_mac
+        machine.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__chown: false
+      else
+        machine.vm.synced_folder "~", "#{guest_home}"
+      end
 
       # Copying files to guest
       if !is_windows || machine.vm.communicator == :winrm # file provisioning via winssh is broken
