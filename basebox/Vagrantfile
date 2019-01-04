@@ -16,5 +16,9 @@ Vagrant.configure("2") do |config|
       vb.memory = "1024"
       vb.name = boxfile
     end
+
+    # since we launch a base box to maintain it as a base box...
+    basebox.winssh.insert_key = false
+    basebox.ssh.insert_key = false
   end
 end
