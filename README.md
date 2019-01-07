@@ -3,7 +3,8 @@ environment for multiple platforms, and helper scripts for executing typical
 jobs.
 
 The intended use case is to use the managed machines to build an test a local
-clone of Qt.
+clone of Qt, and to run test cases (such as from bug reports or during package
+testing) on a wide range of platforms.
 
 Machines are declared in a yaml file, `boxes.yml`. The `Vagrantfile` contains
 the vagrant configuration code and takes care of setting appropriate defaults.
@@ -34,8 +35,8 @@ TBD
 
 ## Requirements
 
-The virtual machine images are built for VirtualBox: virtualbox.org
-The machines are managed using vagrant: vagrantup.com
+The virtual machine images are built for [VirtualBox](virtualbox.org).
+The machines are managed using (vagrantup.com)[vagrant].
 
 ### Windows specifics
 
