@@ -1,6 +1,0 @@
-- name: Install base packages
-  apt:
-    name: ['acl', 'ntp']
-    state: present
-  tags:
-    - packages

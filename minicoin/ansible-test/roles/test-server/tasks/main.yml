@@ -1,6 +1,0 @@
-- name: Install packages for running a local test server
-  apt:
-    name: ['avahi-daemon', 'docker']
-    state: present
-  tags:
-    - packages

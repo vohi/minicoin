@@ -7,7 +7,7 @@ urls:
 machines:
   - name: ubuntu1804
     box: generic/ubuntu1804
-    coin: ansible-test
+    coin: simple-apt
     memory: 512
   - name: centos7
     box: generic/centos7
