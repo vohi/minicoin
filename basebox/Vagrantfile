@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
 
     basebox.vm.provider "virtualbox" do |vb|
       vb.gui = true
-      vb.memory = "1024"
+      vb.memory = "2048"
       vb.name = boxfile
     end
 
