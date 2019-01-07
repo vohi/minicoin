@@ -1,6 +1,7 @@
 ---
 # global values
-url: https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
+urls:
+  - tqtc: https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
 
 # machine definitions
 machines:
