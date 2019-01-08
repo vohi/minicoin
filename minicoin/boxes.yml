@@ -9,6 +9,10 @@ machines:
     box: generic/ubuntu1804
     coin: simple-apt
     memory: 512
+  - name: doc-server
+    box: generic/ubuntu1804
+    coin: doc-server
+    memory: 2048
   - name: centos7
     box: generic/centos7
     memory: 512

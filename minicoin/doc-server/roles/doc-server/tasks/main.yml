@@ -1,0 +1,10 @@
+- name: Install and run nginx to serve locally built documentation
+  apt:
+    name: ['nginx']
+    state: present
+  tags:
+    - packages
+
+- name: Make nginx serve correct directory
+  shell: sed -i 's/root.*/root \/home\/vagrant;/' /etc/nginx/sites-available/default
+  notify: restart nginx
