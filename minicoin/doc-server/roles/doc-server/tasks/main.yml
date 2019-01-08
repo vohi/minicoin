@@ -1,6 +1,6 @@
-- name: Install and run nginx to serve locally built documentation
+- name: Install nginx and avahi to serve locally built documentation
   apt:
-    name: ['nginx']
+    name: ['nginx', 'avahi-daemon']
     state: present
   tags:
     - packages
