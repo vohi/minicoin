@@ -7,5 +7,6 @@
       raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
       changed_when: False
   roles:
+    - base
     - build
     - doc-server
