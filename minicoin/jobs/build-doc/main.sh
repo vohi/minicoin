@@ -11,10 +11,29 @@ if [[ $2 != "" ]]; then
   fi
 fi
 
-echo "Building HTML docs for $1 into '~/qt5-build/qtbase/doc/qtdoc'"
+outputdir=~/qt5-build/qtbase/doc
+
+echo "Building HTML docs for '$1' into '$outputdir'"
 cd ~/qt5-build
 if [[ $1 != "" ]]; then
   cd $1
 fi
 
 make html_docs
+
+cd $outputdir
+rm diff.txt
+date > now.log # make sure there's a change
+git init -q
+git add .
+
+commit="Build of '$1'"
+if [[ $2 != "" ]]; then
+  commit+=" from '$2'"
+  if [[ $3 != "" ]]; then
+    commit+=" branch '$3'"
+  fi
+fi
+
+git commit -q -m "$commit"
+git show > diff.txt
