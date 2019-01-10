@@ -2,6 +2,8 @@ This repository contains a definition of a vagrant development and test
 environment for multiple platforms, and helper scripts for executing typical
 jobs.
 
+All the useful stuff is in the subdirectory `minicoin`.
+
 # Usage
 
 The intended use case is to use the managed machines to build and test a local
