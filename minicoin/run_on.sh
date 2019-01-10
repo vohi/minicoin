@@ -49,6 +49,11 @@ for machine in "${machines}"; do
     vagrant up $machine
   fi
 
+  if [ -f "jobs/$job/pre-run.sh" ]; then
+    echo "Initializing $job"
+    source jobs/$job/pre-run.sh ${script_args[@]}
+  fi
+
   vagrant upload $upload_source $job  $machine
   error=$?
   if [ ! $error == 0 ]; then
@@ -70,11 +75,18 @@ for machine in "${machines}"; do
   else
     command="$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command'"
-    vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine
+    vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine 2> /dev/null
     error=$?
+    vagrant ssh -c "tail $job-$log_stamp.log" $machine 2> /dev/null
     if [ $error == 0 ]; then
-      vagrant ssh -c "rm -rf $job" $machine
+      vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
     fi
+    echo "$machine ==> See '$job-$log_stamp.log' and '$job-error-$log_stamp.log' for complete stdout and stderr"
+  fi
+
+  if [ -f "jobs/$job/post-run.sh" ]; then
+    echo "Cleaning up after $job"
+    source jobs/$job/post-run.sh ${script_args[@]}
   fi
 
   # shut machine down to previous state
