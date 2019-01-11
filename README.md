@@ -64,7 +64,7 @@ file. The following parameters are available:
 ```
   -name: mandatory # The name of the machine; will also be set as the hostname
    box: mandatory # The vagrant box for the machine
-   coin: optional # The subdirectory with the provisioning files
+   roles: optional # One or more subdirectories with provisioning files
 
 # Optional virtual machine configurations
 
@@ -109,9 +109,23 @@ will be shared with the guest.
 
 ### Machine-specific provisioning
 
-Additional provisioning steps are defined in the subdirectory that the `coin`
+Additional provisioning steps are defined in the subdirectories that the `roles`
 attribute points at in the machine's definition.
-The Vagrantfile will look for a `provision.sh` file for linux/macOS
+
+```
+- name: simple
+  box: generic/ubuntu1804
+  roles: test
+
+- name: multiple
+  box: generic/ubuntu1804
+  roles:
+    - base
+    - build
+    - test
+```
+
+For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
 guests, or for a `provision.cmd` file for Windows guests, and execute such a
 script using shell provisioning.
 

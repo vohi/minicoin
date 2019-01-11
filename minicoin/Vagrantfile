@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-user = ENV['USER']
+$user = ENV['USER']
 coin_root = ENV['COIN_ROOT']
 
 # Import YAML
@@ -11,16 +11,34 @@ yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 urls = yaml["urls"]
 machines = yaml["machines"]
 
+def provision(box, directory, script, upload_path)
+  if File.file?("#{directory}/playbook.yml")
+    box.vm.provision "ansible" do |ansible|
+      ansible.playbook = "#{directory}/playbook.yml"
+      ansible.become = !is_windows
+    end
+  else
+    provisioning_file = "#{directory}/#{script}"
+    if File.file?(provisioning_file)
+      box.vm.provision "shell", path: "#{provisioning_file}",
+        args: ["#{directory}", "#{$user}"],
+        upload_path: upload_path,
+        privileged: true
+    else
+      puts "==> #{box.vm.hostname}: Provisioning file at '#{provisioning_file}' not found!"
+    end
+  end
+end
+
 Vagrant.configure("2") do |config|
   machines.each do |machine|
     config.vm.define machine["name"] do |box|
       name = machine["name"]
-      coin_template = machine["coin"]
-
-      is_windows = name.include? "windows" || (coin_template.include? "windows" unless coin_template.nil?)
-      is_mac = name.include? "mac" || (coin_template.include? "mac" unless coin_template.nil?)
-
       machine_box = machine["box"]
+
+      is_windows = (name.include? "windows") || (machine_box.include? "windows")
+      is_mac = (name.include? "mac") || (machine_box.include? "mac")
+
       urls.each do |url|
         maker = machine_box.split(/\//).first
         source = url[maker]
@@ -61,14 +79,14 @@ Vagrant.configure("2") do |config|
       end
 
       # Platform specific configurations
-      guest_home = "/home/#{user}"
+      guest_home = "/home/#{$user}"
       provision_script = "provision.sh"
       guest_filedir = ""
       guest_scriptdir ="/tmp/vagrant-shell"
 
       if is_windows
         box.vm.guest = :windows
-        guest_home = "/#{user}"
+        guest_home = "/#{$user}"
         provision_script = "provision.cmd"
         guest_filedir = "c:\\Users\\vagrant\\"
         guest_scriptdir = "c:\\Windows\\temp\\"
@@ -89,7 +107,7 @@ Vagrant.configure("2") do |config|
           box.vm.communicator = :winssh
         end
       elsif is_mac
-        guest_home = "/Users/#{user}"
+        guest_home = "/Users/#{$user}"
       else
       end
 
@@ -124,25 +142,15 @@ Vagrant.configure("2") do |config|
           end
         end
 
-        if !coin_template.nil?
-          if File.file?("#{coin_template}/playbook.yml")
-            box.vm.provision "ansible" do |ansible|
-              ansible.playbook = "#{coin_template}/playbook.yml"
-              ansible.become = !is_windows
+        roles = machine["roles"]
+        unless roles.nil? or roles.empty?
+          if roles.kind_of?(Array)
+            roles.each do |role|
+              provision(box, role, provision_script, guest_scriptdir)
             end
           else
-            provisioning_file = "#{coin_template}/#{provision_script}"
-            if File.file?(provisioning_file)
-              box.vm.provision "shell", path: "#{provisioning_file}",
-                args: ["#{coin_template}", "#{user}"],
-                upload_path: guest_scriptdir,
-                privileged: true
-            else
-              puts "==> #{name}: Provisioning file at '#{provisioning_file}' not found!"
-            end
+            provision(box, roles, provision_script, guest_scriptdir)
           end
-        else
-          puts "==> #{name}: No coin template specified for box '#{name}'"
         end
       end
     end

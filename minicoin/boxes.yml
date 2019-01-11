@@ -7,33 +7,33 @@ urls:
 machines:
   - name: ubuntu1804
     box: generic/ubuntu1804
-    coin: simple-apt
+    roles: simple-apt
     memory: 512
   - name: doc-server
     box: generic/ubuntu1804
-    coin: doc-server
+    roles: doc-server
     memory: 2048
   - name: centos7
     box: generic/centos7
     memory: 512
   - name: windows10
     box: tqtc/windows10
-    coin: simple-windows
+    roles: simple-windows
     memory: 512
     gui: false
   - name: windows81
     box: tqtc/windows81
-    coin: simple-windows
+    roles: simple-windows
     memory: 512
     gui: false
   - name: windows7
     box: tqtc/windows7
-    coin: simple-windows
+    roles: simple-windows
     memory: 512
     gui: false
   - name: macos106
     box: tqtc/macos106
-    coin: simple-mac
+    roles: simple-mac
     memory: 512
     vram: 128
     gui: false
