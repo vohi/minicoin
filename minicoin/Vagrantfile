@@ -25,7 +25,7 @@ def provision(box, role)
     end
     provisioning_file = "#{role}/provision#{script_ext}"
     if File.file?(provisioning_file)
-      box.vm.provision "shell", path: "#{provisioning_file}",
+      box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
         args: ["#{role}", "#{$user}"],
         upload_path: upload_path,
         privileged: true
