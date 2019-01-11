@@ -120,11 +120,16 @@ Vagrant.configure("2") do |config|
       end
 
       if machine["shared_folders"] == "disabled"
-        box.vm.synced_folder ".", "/vagrant", disabled: true if machine["shared_folders"] == "disabled"
+        box.vm.synced_folder ".", "/vagrant", disabled: true
       elsif is_mac
         box.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__chown: false
       else
         box.vm.synced_folder "~", "#{guest_home}"
+        box.vm.synced_folder ".", "/vagrant"
+        if is_windows
+          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant"
+          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\Users\\#{$user} \\\\VBOXSRV\\#{$user}"
+        end
       end
 
       # Copying files to guest
