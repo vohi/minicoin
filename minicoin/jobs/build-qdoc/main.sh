@@ -9,7 +9,7 @@ if [[ $2 != "" ]]; then
   $(git remote add local file://$2/qttools)
   git fetch local
 
-  if [[ $3 != ""]]; then
+  if [[ $3 != "" ]]; then
     echo "Checkout out qttools branch '$3'"
     git checkout $3
   fi
