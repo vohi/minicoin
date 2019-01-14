@@ -14,7 +14,7 @@ def provision(box, role)
   if File.file?("#{role}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
       ansible.playbook = "#{role}/playbook.yml"
-      ansible.become = !is_windows
+      ansible.become = true unless box.vm.guest == :windows
     end
   else
     script_ext = ".sh"
