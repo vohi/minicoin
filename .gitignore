@@ -1,3 +1,4 @@
 */.vagrant
+**/.isocache/*.iso
 *.box
 *.retry

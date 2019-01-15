@@ -28,7 +28,9 @@ machines:
     gui: false
   - name: windows7
     box: tqtc/windows7
-    roles: simple-windows
+    roles:
+      - simple-windows
+      - mingw32
     memory: 512
     gui: false
   - name: macos106

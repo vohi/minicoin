@@ -5,33 +5,84 @@ $user = ENV['USER']
 
 # Import YAML
 require 'yaml'
+require 'net/http'
 
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
-urls = yaml["urls"]
+$urls = yaml["urls"]
 machines = yaml["machines"]
 
-def provision(box, role)
+def add_role(box, role)
+  activity = false
   if File.file?("#{role}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
       ansible.playbook = "#{role}/playbook.yml"
       ansible.become = true unless box.vm.guest == :windows
     end
-  else
-    script_ext = ".sh"
-    upload_path = "/tmp/vagrant-shell"
-    if box.vm.guest == :windows
-      script_ext = ".cmd"
-      upload_path = "c:\\Windows\\temp\\"
+    activity = true
+  elsif File.file?("#{role}/disk")
+    activity = true
+    disk_file = File.read("#{role}/disk").strip
+    if ["up", "provision", "reload"].include? ARGV[0]
+      Dir.mkdir(".isocache") unless Dir.exist?(".isocache")
+
+      if !File.file?(".isocache/#{disk_file}")
+        puts "Downloading '#{disk_file}'..."
+        $urls.each do |url|
+          url.each do |key, value|
+            uri = URI("#{value}/#{key}/#{disk_file}")
+            puts "Tyting to download '#{uri}'..."
+            Net::HTTP.start(uri.host) do |http|
+              request = Net::HTTP::Get.new uri
+              http.request request do |response|
+                if response.code == Net::HTTP::HTTPOK
+                  open(".isocache/#{disk_file}", "wb") do |file|
+                    response.read_body do |chunk|
+                      file.write(chunk)
+                    end
+                  end
+                else
+                  puts "Error downloading: #{response}"
+                end
+              end
+            end
+          end
+        end
+      end
+      if !File.file?(".isocache/#{disk_file}")
+        puts "==> #{box.vm.hostname}: ISO file '#{disk_file}' not available"
+      else
+        puts "==> #{box.vm.hostname}: Inserting '#{disk_file}' into DVD drive"
+        box.vm.provider "virtualbox" do |vb|
+          vb.customize [
+            "storageattach", :id,
+            "--storagectl", "SATA",
+            "--port", "1",
+            "--type", "dvddrive",
+            "--medium", ".isocache/#{disk_file}"
+          ]
+        end
+      end
     end
-    provisioning_file = "#{role}/provision#{script_ext}"
-    if File.file?(provisioning_file)
-      box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
-        args: ["#{role}", "#{$user}"],
-        upload_path: upload_path,
-        privileged: true
-    else
-      puts "==> #{box.vm.hostname}: Provisioning file at '#{provisioning_file}' not found!"
-    end
+  end
+
+  # always check for a provisioning script
+  script_ext = ".sh"
+  upload_path = "/tmp/vagrant-shell"
+  if box.vm.guest == :windows
+    script_ext = ".cmd"
+    upload_path = "c:\\Windows\\temp\\"
+  end
+  provisioning_file = "#{role}/provision#{script_ext}"
+  if File.file?(provisioning_file)
+    activity = true
+    box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
+      args: ["#{role}", "#{$user}"],
+      upload_path: upload_path,
+      privileged: true
+  end
+
+  if ! activity
+    puts "==> #{box.vm.hostname}: Provisioning script at '#{provisioning_file}' not found!"
   end
 end
 
@@ -44,7 +95,7 @@ Vagrant.configure("2") do |config|
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
-      urls.each do |url|
+      $urls.each do |url|
         maker = machine_box.split(/\//).first
         source = url[maker]
         unless source.nil?
@@ -153,10 +204,10 @@ Vagrant.configure("2") do |config|
         unless roles.nil? or roles.empty?
           if roles.kind_of?(Array)
             roles.each do |role|
-              provision(box, role)
+              add_role(box, role)
             end
           else
-            provision(box, roles)
+            add_role(box, roles)
           end
         end
       end
