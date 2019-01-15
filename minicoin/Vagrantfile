@@ -70,6 +70,9 @@ def add_role(box, role)
   upload_path = "/tmp/vagrant-shell"
   if box.vm.guest == :windows
     script_ext = ".cmd"
+    if File.file?("#{role}/provision.ps1")
+      script_ext = ".ps1"
+    end
     upload_path = "c:\\Windows\\temp\\"
   end
   provisioning_file = "#{role}/provision#{script_ext}"
