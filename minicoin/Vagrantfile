@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+Vagrant.require_version ">= 2.2"
+
 $user = ENV['USER']
 
 # Import YAML
@@ -10,6 +12,28 @@ require 'net/http'
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 $urls = yaml["urls"]
 machines = yaml["machines"]
+
+def fetch_file(uri, local)
+  begin
+    Net::HTTP.start(uri.host) do |http|
+      req = Net::HTTP::Get.new(uri)
+      http.request(req) do |response|
+        case response
+        when Net::HTTPSuccess then
+          open("#{local}", "wb") do |file|
+            response.read_body do |chunk|
+              file.write(chunk)
+            end
+          end
+        else
+          puts "Error downloading: #{response.value}"
+        end
+      end
+    end
+  rescue
+      puts "Error downloading #{uri}"
+  end
+end
 
 def add_role(box, role)
   activity = false
@@ -30,21 +54,8 @@ def add_role(box, role)
         $urls.each do |url|
           url.each do |key, value|
             uri = URI("#{value}/#{key}/#{disk_file}")
-            puts "Tyting to download '#{uri}'..."
-            Net::HTTP.start(uri.host) do |http|
-              request = Net::HTTP::Get.new uri
-              http.request request do |response|
-                if response.code == Net::HTTP::HTTPOK
-                  open(".isocache/#{disk_file}", "wb") do |file|
-                    response.read_body do |chunk|
-                      file.write(chunk)
-                    end
-                  end
-                else
-                  puts "Error downloading: #{response}"
-                end
-              end
-            end
+            puts "Trying to download '#{uri}'..."
+            fetch_file(uri, ".isocache/#{disk_file}")
           end
         end
       end
