@@ -88,27 +88,42 @@ build qdoc into qt5-build.
 
 ## Machine definition
 
-Machines are defined in the `boxes.yml` file, in the `machines` section of the
-file. The following parameters are available:
+Machines are defined in the `machines` section of the `boxes.yml` file.
+The following parameters are available:
 
 ```
-  -name: mandatory # The name of the machine; will also be set as the hostname
-   box: mandatory # The vagrant box for the machine
-   roles: optional # One or more subdirectories with provisioning files
+  - name: mandatory # The name of the machine; will also be set as the hostname
+    box: mandatory # The vagrant box for the machine, as org/boxfile
+    roles: optional # One or more subdirectories with provisioning files
 
 # Optional virtual machine configurations
 
-   private_net: optional # IP address, or "disabled"; use dhcp otherwise
-   memory: optional # amount of MBs of RAM the machine should have
-   cpus: optional # number of CPUs the machine should have
-   gui: optional # "true" if the VirtualBox gui should be shown
-   vram: optional # amount of MBs of video memory the machine should have
+    private_net: optional # IP address, or "disabled"; use dhcp otherwise
+    memory: optional # amount of MBs of RAM the machine should have
+    cpus: optional # number of CPUs the machine should have
+    gui: optional # "true" if the VirtualBox gui should be shown
+    vram: optional # amount of MBs of video memory the machine should have
 
 # Expert options for platform specific quirks
 
-   communicator: optional # the communicator vagrant should use
-   shared_folders: optional # set to "disabled" to turn folder sharing off
+    communicator: optional # the communicator vagrant should use
+    shared_folders: optional # set to "disabled" to turn folder sharing off
 ```
+
+Base boxes and disk images will be downloaded from any of the URLs listed in
+the `urls` section:
+
+```
+urls:
+  - org: server
+```
+
+where `org` matches the `org` part of the `box` parameter of the
+machine, ie a box `tqtc/windows10` will be downloaded from the server set for
+org `tqtc`.
+
+For disk images, all URLs will be attempted in order until one succeeds.
+
 
 ## Provisioning
 
