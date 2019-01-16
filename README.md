@@ -12,10 +12,14 @@ testing), on a wide range of platforms.
 
 Machines are declared in a yaml file, `boxes.yml`. The `Vagrantfile` contains
 the vagrant configuration code, takes care of setting appropriate defaults, and
-runs the provisioning steps from the machine's definition.
+runs the provisioning steps from the machine's definition. To see which machines
+are declared, run
 
-Using the machine is then possible via `vagrant ssh`, or interactively through
-virtualbox's display of the machine.
+`$ vagrant status`
+
+Running machines can be used via ssh, interactively through virtualbox's display
+of the machine, or - if your host can run bash scripts - by executing jobs on
+it with the `run_on` script.
 
 ## Machine Operations
 
@@ -33,6 +37,13 @@ workflows for multi-machine environments:
 This will download the virtual machine image if needed, boot up the machine,
 and run provisioning actions.
 
+*Warning:* Note that running
+
+`$ vagrant up`
+
+without any machine names will bring up all machines, which involves downloading
+several dozen GB of base boxes. You probably don't want that.
+
 * Stopping all Windows machine
 
 `$ vagrant halt windows7 windows81 windows10`
@@ -44,17 +55,36 @@ and run provisioning actions.
 ## Executing Jobs
 
 Jobs are define in the `jobs` folder. Each subfolder represents a job that can
-be executed on machines, using the `run_on.sh` shell script, ie
+be executed on machines, using the `run_on.sh` shell script.
 
-`./run_on.sh doc-server test`
+`$ ./run_on.sh ubuntu1804 test -- p1 p2 p3`
 
-This starts the `doc-server` machine if it's not already running, uploads the
-`jobs/test` subdirectory to the machine, and then runs the `main.sh` script. If
-the `doc-server` was started by the script, it will afterwards be stopped again.
+This starts the `ubuntu1804` machine if it's not already running, uploads the
+`jobs/test` subdirectory to the machine, and then runs the `main.sh` script
+(if the guest is Linux or Mac; on Windows the `main.cmd` or `main.ps1` script).
+Any parameters after the double dash `--` will be passed on to the `main`
+script.
 
-* running a job
+If the `doc-server` was started by the script, it will afterwards be stopped
+again.
+
+* defining jobs
 
 TBD
+
+* available jobs
+
+`$ ./run_on.sh doc-server build-qdoc -- dev`
+
+Builds qdoc on the doc-server machine. Clones qt5 from code.qt.io, checks out
+the dev branch, and builds qtbase and qttools into `/home/vagrant/qt5-build`.
+
+`$ ./run_on.sh doc-server build-qdoc -- dev /home/vohi/qt5 feature`
+
+Clones qt5 from code.qt.io, checks out the dev branch, adds the local Qt5 clone
+as a remote, checks out the feature branch from that qttools repository, and
+build qdoc into qt5-build.
+
 
 ## Machine definition
 
@@ -126,18 +156,25 @@ attribute points at in the machine's definition.
 ```
 
 For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
-guests, or for a `provision.cmd` file for Windows guests, and execute such a
-script using shell provisioning.
+guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests, and
+execute such a script using shell provisioning.
 
 If Vagrantfile finds a `playbook.yml` file, then the machine will be provisioned
 using [ansible](ansible.com) instead.
 
+If the role directory contains a file `disk` with the name of an ISO image, then
+the ISO image will be downloaded from any of the registered URLs, and then
+inserted as a DVD into the guest VM. This will happen during boot time and
+before any other provisioners are run. Roles that specify a `disk` can also
+include a `provision(.sh|.cmd|.ps1)` script.
 
 # Host System Requirements
 
 The virtual machine images are built for [VirtualBox](virtualbox.org).
-The machines are managed using [vagrant](vagrantup.com). Remote execution is
-tested with macOS as the host.
+The machines are managed using [vagrant](vagrantup.com), vagrant 2.2 is
+required.
+
+Remote execution is tested with macOS as the host.
 
 ## Windows specifics
 
