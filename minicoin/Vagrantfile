@@ -101,6 +101,17 @@ def add_role(box, role)
 end
 
 Vagrant.configure("2") do |config|
+  if ARGV[0] == "up" and ARGV.length == 1
+    puts "This is a multi-machine environment. The following machines are available:"
+    puts
+    machines.each do |machine|
+      puts "- #{machine['name']}"
+    end
+    puts
+    puts "Please, specify which machine(s) you want to bring up."
+    exit
+  end
+
   machines.each do |machine|
     config.vm.define machine["name"] do |box|
       name = machine["name"]
