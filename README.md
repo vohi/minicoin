@@ -61,9 +61,12 @@ be executed on machines, using the `run_on.sh` shell script.
 
 This starts the `ubuntu1804` machine if it's not already running, uploads the
 `jobs/test` subdirectory to the machine, and then runs the `main.sh` script
-(if the guest is Linux or Mac; on Windows the `main.cmd` or `main.ps1` script).
+(if the guest is Linux or Mac; on Windows the `main.cmd` script).
 Any parameters after the double dash `--` will be passed on to the `main`
 script.
+
+Output from the script will be directed to time-stamped log files (one for
+stdout and one for stderr).
 
 If the `doc-server` was started by the script, it will afterwards be stopped
 again.

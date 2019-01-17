@@ -67,10 +67,10 @@ for machine in "${machines}"; do
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command'"
-    vagrant winrm -s cmd -c "$command" $machine
+    vagrant winrm -s cmd -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine
     error=$?
     if [ $error == 0 ]; then
-      vagrant winrm -s cmd -c "deltree $job" $machine
+      vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
     fi
   else
     command="$scriptfile ${script_args[@]}"
