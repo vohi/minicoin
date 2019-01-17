@@ -37,12 +37,9 @@ workflows for multi-machine environments:
 This will download the virtual machine image if needed, boot up the machine,
 and run provisioning actions.
 
-*Warning:* Note that running
-
-`$ vagrant up`
-
-without any machine names will bring up all machines, which involves downloading
-several dozen GB of base boxes. You probably don't want that.
+*Note:* Running just `$ vagrant up` is not possible, as this would
+bring up all machines, downloading several dozen GB of base box images, and
+possibly killing the host.
 
 * Stopping all Windows machine
 
@@ -51,6 +48,9 @@ several dozen GB of base boxes. You probably don't want that.
 * destroying all (!) machines without prompting
 
 `$ vagrant destroy -f`
+
+*Note:* Any data that live only on the machines will be lost.
+
 
 ## Executing Jobs
 
