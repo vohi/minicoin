@@ -140,7 +140,7 @@ is designed for.
 
 ### Default provisioning and file sharing
 
-As part of provisioning the file `~/.gitconfig` and the `~/.ssh` directory will
+As part of provisioning the file `~/.gitconfig` will
 be copied to the guest, into the homefolder of the `vagrant` user. This allows
 you to interact with git repostory servers from within the guest in the same way
 as from the host machine.
@@ -150,7 +150,9 @@ subdirectory of a local Qt5 clone, then the entire `coin` subdirectory will be
 copied into the home folder of the `vagrant` user on the guest as well.
 
 Unless folder-sharing is disabled, the current directory with the Vagrantfile
-will be shared with the guest.
+will be shared with the guest as a folder "/vagrant"; the home directory of
+the current user will be shared with the guest as a folder "host" (/home/host
+on Linux, c:\host on Windows, /Users/host on Mac guests).
 
 ### Machine-specific provisioning
 
@@ -172,16 +174,22 @@ attribute points at in the machine's definition.
 
 For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
 guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests, and
-execute such a script using shell provisioning.
+execute such a script using shell provisioning. The script will receive the name
+of the role for which it was run, and the user name on the host, as command line
+arguments.
 
 If Vagrantfile finds a `playbook.yml` file, then the machine will be provisioned
-using [ansible](ansible.com) instead.
+using [ansible](ansible.com).
 
 If the role directory contains a file `disk` with the name of an ISO image, then
 the ISO image will be downloaded from any of the registered URLs, and then
 inserted as a DVD into the guest VM. This will happen during boot time and
-before any other provisioners are run. Roles that specify a `disk` can also
-include a `provision(.sh|.cmd|.ps1)` script.
+before any other provisioners are run.
+
+Roles that use ansible or specify a `disk` can also include a
+`provision(.sh|.cmd|.ps1)` script, which will then be executed afterwards.
+
+Multiple roles can be specified for any machine.
 
 # Host System Requirements
 

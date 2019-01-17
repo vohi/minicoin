@@ -3,8 +3,6 @@
 
 Vagrant.require_version ">= 2.2"
 
-$user = ENV['USER']
-
 # Import YAML
 require 'yaml'
 require 'net/http'
@@ -89,8 +87,9 @@ def add_role(box, role)
   provisioning_file = "#{role}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
+    user = ENV['USER']
     box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
-      args: ["#{role}", "#{$user}"],
+      args: ["#{role}", "#{user}"],
       upload_path: upload_path,
       privileged: true
   end
@@ -160,12 +159,12 @@ Vagrant.configure("2") do |config|
       end
 
       # Platform specific configurations
-      guest_home = "/home/#{$user}"
+      guest_home = "/home/host"
       guest_filedir = ""
 
       if is_windows
         box.vm.guest = :windows
-        guest_home = "/#{$user}"
+        guest_home = "/host"
         guest_filedir = "c:\\Users\\vagrant\\"
 
         # Test if winrm is available
@@ -184,7 +183,7 @@ Vagrant.configure("2") do |config|
           box.vm.communicator = :winssh
         end
       elsif is_mac
-        guest_home = "/Users/#{$user}"
+        guest_home = "/Users/host"
       else
       end
 
@@ -204,14 +203,13 @@ Vagrant.configure("2") do |config|
         box.vm.synced_folder ".", "/vagrant"
         if is_windows
           box.vm.provision "shell", inline: "cmd /c mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant"
-          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\Users\\#{$user} \\\\VBOXSRV\\#{$user}"
+          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\Users\\host \\\\VBOXSRV\\host"
         end
       end
 
       # Copying files to guest
       if !is_windows || box.vm.communicator == :winrm # file provisioning via winssh is broken
         box.vm.provision "file", source: "~/.gitconfig", destination: "#{guest_filedir}.gitconfig"
-        box.vm.provision "file", source: "~/.ssh", destination: "#{guest_filedir}.ssh"
       end
 
       # Execution of provisioning script
