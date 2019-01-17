@@ -10,5 +10,5 @@ git checkout %branch%
 perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
 mkdir ..\qt5-build
 cd ..\qt5-build
-..\qt5\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
+call ..\qt5\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
 mingw32-make -j4 module-qtbase
