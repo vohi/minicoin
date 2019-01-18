@@ -8,7 +8,7 @@ machines:
   - name: ubuntu1804
     box: generic/ubuntu1804
     roles: simple-apt
-    memory: 512
+    memory: 2048
   - name: doc-server
     box: generic/ubuntu1804
     roles: doc-server
@@ -31,7 +31,7 @@ machines:
     roles:
       - simple-windows
       - mingw32
-    memory: 512
+    memory: 2048
     gui: false
   - name: macos106
     box: tqtc/macos106
