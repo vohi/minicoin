@@ -29,11 +29,19 @@ done
 job="${machines[@]: -1}"
 unset "machines[${#machines[@]}-1]"
 
-for machine in "${machines}"; do
-  case "$machine" in
-    *"windows"*)   ext=cmd ;;
-    *"mac"*)       ext=sh ;;
-    *)             ext=sh ;;
+log_stamp=$(date "+%Y%m%d-%H%M%S")
+
+for machine in "${machines[@]}"; do
+  machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
+  if [ ! $machine_state == 'running' ]; then
+    vagrant up $machine
+  fi
+
+  platform_test=$(vagrant ssh -c uname $machine) 2> /dev/null
+  case "$platform_test" in
+    *"Linux"*)  ext="sh" ;;
+    *"Darwin"*) ext="sh" ;;
+    *)          ext="cmd" ;;
   esac
 
   upload_source=jobs/$job
@@ -42,11 +50,6 @@ for machine in "${machines}"; do
   if [ ! -f "jobs/$scriptfile" ]; then
     echo "'$scriptfile' does not exist, aborting"
     exit 1
-  fi
-
-  machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
-  if [ ! $machine_state == 'running' ]; then
-    vagrant up $machine
   fi
 
   if [ -f "jobs/$job/pre-run.sh" ]; then
@@ -61,8 +64,6 @@ for machine in "${machines}"; do
     continue
   fi
 
-  log_stamp=$(date "+%Y%m%d-%H%M%S")
-
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${script_args[@]}"
@@ -75,9 +76,21 @@ for machine in "${machines}"; do
   else
     command="$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command'"
+
+    $(vagrant ssh -c "touch $job-$log_stamp.log && tail -f $job-$log_stamp.log" $machine > $job-current-$machine.log)&
+    stdout_tail_pid=$!
+    sleep 5
+    $(vagrant ssh -c "touch $job-error-$log_stamp.log && tail -f $job-error-$log_stamp.log" $machine > $job-error-current-$machine.log)&
+    stderr_tail_pid=$!
+    sleep 5
+
     vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine 2> /dev/null
     error=$?
-    vagrant ssh -c "tail $job-$log_stamp.log" $machine 2> /dev/null
+
+    kill $stdout_tail_pid
+    kill $stderr_tail_pid
+    tail $job-current-$machine.log
+
     if [ $error == 0 ]; then
       vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
     fi
@@ -95,7 +108,7 @@ for machine in "${machines}"; do
   elif [ $machine_state == 'poweroff' ]; then
     vagrant halt $machine
   elif [ $machine_state == 'not' ]; then
-    vagrant destroy -f $machine
+    vagrant halt $machine
   fi
 
 done
