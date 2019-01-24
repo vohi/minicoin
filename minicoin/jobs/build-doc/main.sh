@@ -2,7 +2,7 @@
 if [[ $2 != "" ]]; then
   echo "Fetching module $1 from local $2"
   cd ~/qt5/$1
-  $(git remote add local file://$2/$1)
+  $(git remote add local file://$2)
   git fetch local
 
   if [[ $3 != "" ]]; then
@@ -37,3 +37,9 @@ fi
 
 git commit -q -m "$commit"
 git show > diff.txt
+
+if [[ $2 != "" ]]; then
+  cd ~/qt5/$1
+  git remote remove local
+fi
+
