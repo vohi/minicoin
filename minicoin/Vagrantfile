@@ -35,15 +35,15 @@ end
 
 def add_role(box, role)
   activity = false
-  if File.file?("#{role}/playbook.yml")
+  if File.file?("roles/#{role}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
-      ansible.playbook = "#{role}/playbook.yml"
+      ansible.playbook = "roles/#{role}/playbook.yml"
       ansible.become = true unless box.vm.guest == :windows
     end
     activity = true
-  elsif File.file?("#{role}/disk")
+  elsif File.file?("roles/#{role}/disk")
     activity = true
-    disk_file = File.read("#{role}/disk").strip
+    disk_file = File.read("roles/#{role}/disk").strip
     if ["up", "provision", "reload"].include? ARGV[0]
       Dir.mkdir(".isocache") unless Dir.exist?(".isocache")
 
@@ -79,12 +79,12 @@ def add_role(box, role)
   upload_path = "/tmp/vagrant-shell"
   if box.vm.guest == :windows
     script_ext = ".cmd"
-    if File.file?("#{role}/provision.ps1")
+    if File.file?("roles/#{role}/provision.ps1")
       script_ext = ".ps1"
     end
     upload_path = "c:\\Windows\\temp\\"
   end
-  provisioning_file = "#{role}/provision#{script_ext}"
+  provisioning_file = "roles/#{role}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
     user = ENV['USER']
