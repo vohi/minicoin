@@ -77,19 +77,8 @@ for machine in "${machines[@]}"; do
     command="$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command'"
 
-    $(vagrant ssh -c "touch $job-$log_stamp.log && tail -f $job-$log_stamp.log" $machine > $job-current-$machine.log)&
-    stdout_tail_pid=$!
-    sleep 5
-    $(vagrant ssh -c "touch $job-error-$log_stamp.log && tail -f $job-error-$log_stamp.log" $machine > $job-error-current-$machine.log)&
-    stderr_tail_pid=$!
-    sleep 5
-
     vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine 2> /dev/null
     error=$?
-
-    kill $stdout_tail_pid
-    kill $stderr_tail_pid
-    tail $job-current-$machine.log
 
     if [ $error == 0 ]; then
       vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
