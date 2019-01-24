@@ -64,6 +64,9 @@ function run_on_machine() {
     source jobs/$job/pre-run.sh $machine ${script_args[@]}
   fi
 
+  ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
+  ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
+
   echo "$machine ==> Uploading '$upload_source'..."
   out=$(vagrant upload $upload_source $job $machine)
   error=$?
@@ -72,11 +75,14 @@ function run_on_machine() {
     return
   fi
 
+  error=0
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command' at $log_stamp"
-    vagrant winrm -s cmd -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine
+    vagrant winrm -s cmd -c \
+      "$command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log 2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log" \
+      $machine
     error=$?
     if [ $error == 0 ]; then
       vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
@@ -85,14 +91,18 @@ function run_on_machine() {
     command="$scriptfile ${script_args[@]}"
     echo "$machine ==> Executing '$command' at $log_stamp"
 
-    vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine 2> /dev/null
+    vagrant ssh -c \
+      "$command > /vagrant/.logs/$job-$machine-$log_stamp.log 2> /vagrant/.logs/$job-error-$machine-$log_stamp.log" \
+      $machine 2> /dev/null
     error=$?
 
     if [ $error == 0 ]; then
       vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
     fi
   fi
-  echo "$machine ==> See '$job-$log_stamp.log' and '$job-error-$log_stamp.log' for complete stdout and stderr"
+  if [ $error != 0 ]; then
+    echo "$machine ==> Job ended with error - See files in .logs for complete stdout and stderr"
+  fi
 
   if [ -f "jobs/$job/post-run.sh" ]; then
     echo "$machine ==> Cleaning up after '$job'"
