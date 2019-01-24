@@ -34,30 +34,32 @@ def fetch_file(uri, local)
 end
 
 def add_role(box, role)
+  role_path = "#{__dir__}#{role_path}/roles/#{role}"
   activity = false
-  if File.file?("roles/#{role}/playbook.yml")
+  if File.file?("#{role_path}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
-      ansible.playbook = "roles/#{role}/playbook.yml"
+      ansible.playbook = "#{role_path}/playbook.yml"
       ansible.become = true unless box.vm.guest == :windows
     end
     activity = true
-  elsif File.file?("roles/#{role}/disk")
+  elsif File.file?("#{role_path}/disk")
     activity = true
-    disk_file = File.read("roles/#{role}/disk").strip
+    disk_file = File.read("#{role_path}/disk").strip
+    iso_path = "#{__dir__}/.isocache"
     if ["up", "provision", "reload"].include? ARGV[0]
-      Dir.mkdir(".isocache") unless Dir.exist?(".isocache")
+      Dir.mkdir(iso_path) unless Dir.exist?(iso_path)
 
-      if !File.file?(".isocache/#{disk_file}")
+      if !File.file?("#{iso_path}/#{disk_file}")
         puts "Downloading '#{disk_file}'..."
         $urls.each do |url|
           url.each do |key, value|
             uri = URI("#{value}/#{key}/#{disk_file}")
             puts "Trying to download '#{uri}'..."
-            fetch_file(uri, ".isocache/#{disk_file}")
+            fetch_file(uri, "#{iso_path}/#{disk_file}")
           end
         end
       end
-      if !File.file?(".isocache/#{disk_file}")
+      if !File.file?("#{iso_path}/#{disk_file}")
         puts "==> #{box.vm.hostname}: ISO file '#{disk_file}' not available"
       else
         puts "==> #{box.vm.hostname}: Inserting '#{disk_file}' into DVD drive"
@@ -67,7 +69,7 @@ def add_role(box, role)
             "--storagectl", "SATA",
             "--port", "1",
             "--type", "dvddrive",
-            "--medium", ".isocache/#{disk_file}"
+            "--medium", "#{iso_path}/#{disk_file}"
           ]
         end
       end
@@ -79,12 +81,12 @@ def add_role(box, role)
   upload_path = "/tmp/vagrant-shell"
   if box.vm.guest == :windows
     script_ext = ".cmd"
-    if File.file?("roles/#{role}/provision.ps1")
+    if File.file?("#{role_path}/provision.ps1")
       script_ext = ".ps1"
     end
     upload_path = "c:\\Windows\\temp\\"
   end
-  provisioning_file = "roles/#{role}/provision#{script_ext}"
+  provisioning_file = "#{role_path}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
     user = ENV['USER']
