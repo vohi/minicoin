@@ -3,7 +3,7 @@
 if [ "$#" -lt 2 ]; then
   echo "Runs a script on a machine using the appropriate remoting mechanism."
   echo
-  echo "Usage: $0 machine1 machine2 ... job -- {args}"
+  echo "Usage: $0 [options] machine1 machine2 ... job [--] [args]"
   echo
   echo "  'machine1..n' is a list of machines on which the job will be run sequentially"
   echo "  'job' is the job to run, with the main script in the jobs/job as the entry point"
@@ -13,12 +13,16 @@ if [ "$#" -lt 2 ]; then
 fi
 
 machines=()
+pids=()
 job="-1"
 script_args=()
+parallel="true"
 
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
+  elif [[ "$arg" = "--no-parallel" ]]; then
+    parallel="false"
   elif [[ "$job" = '-1' ]]; then
     machines=( "${machines[@]}" "$arg" )
   else
@@ -31,7 +35,9 @@ unset "machines[${#machines[@]}-1]"
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
 
-for machine in "${machines[@]}"; do
+function run_on_machine() {
+  machine=$1
+
   machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
   if [ ! $machine_state == 'running' ]; then
     vagrant up $machine
@@ -39,35 +45,37 @@ for machine in "${machines[@]}"; do
 
   platform_test=$(vagrant ssh -c uname $machine) 2> /dev/null
   case "$platform_test" in
-    *"Linux"*)  ext="sh" ;;
-    *"Darwin"*) ext="sh" ;;
-    *)          ext="cmd" ;;
+    *"Windows"*) ext="cmd";;
+    *"Linux"*)   ext="sh" ;;
+    *"Darwin"*)  ext="sh" ;;
+    *)           ext="cmd" ;;
   esac
 
   upload_source=jobs/$job
   scriptfile=$job/main.$ext
 
   if [ ! -f "jobs/$scriptfile" ]; then
-    echo "'$scriptfile' does not exist, aborting"
-    exit 1
+    echo "'$scriptfile' does not exist - skipping '$machine'"
+    return
   fi
 
   if [ -f "jobs/$job/pre-run.sh" ]; then
-    echo "Initializing $job"
-    source jobs/$job/pre-run.sh ${script_args[@]}
+    echo "$machine ==> Initializing $job"
+    source jobs/$job/pre-run.sh $machine ${script_args[@]}
   fi
 
-  vagrant upload $upload_source $job  $machine
+  echo "$machine ==> Uploading '$upload_source'..."
+  out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
-    echo "Error uploading '$upload_source' to machine '$machine' - skipping machine"
-    continue
+    echo "$machine ==> Error uploading '$upload_source' to machine '$machine' - skipping machine"
+    return
   fi
 
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${script_args[@]}"
-    echo "$machine ==> Executing '$command'"
+    echo "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine
     error=$?
     if [ $error == 0 ]; then
@@ -75,7 +83,7 @@ for machine in "${machines[@]}"; do
     fi
   else
     command="$scriptfile ${script_args[@]}"
-    echo "$machine ==> Executing '$command'"
+    echo "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c "$command > $job-$log_stamp.log 2> $job-error-$log_stamp.log" $machine 2> /dev/null
     error=$?
@@ -83,12 +91,12 @@ for machine in "${machines[@]}"; do
     if [ $error == 0 ]; then
       vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
     fi
-    echo "$machine ==> See '$job-$log_stamp.log' and '$job-error-$log_stamp.log' for complete stdout and stderr"
   fi
+  echo "$machine ==> See '$job-$log_stamp.log' and '$job-error-$log_stamp.log' for complete stdout and stderr"
 
   if [ -f "jobs/$job/post-run.sh" ]; then
-    echo "Cleaning up after $job"
-    source jobs/$job/post-run.sh ${script_args[@]}
+    echo "$machine ==> Cleaning up after '$job'"
+    source jobs/$job/post-run.sh $machine ${script_args[@]}
   fi
 
   # shut machine down to previous state
@@ -99,5 +107,18 @@ for machine in "${machines[@]}"; do
   elif [ $machine_state == 'not' ]; then
     vagrant halt $machine
   fi
+}
 
+for machine in "${machines[@]}"; do
+  if [[ "$parallel" == "true" ]]; then
+    echo "Starting job on '$machine'..."
+    run_on_machine $machine &
+    pids[${machine}]=$!
+  else
+    run_on_machine $machine
+  fi
+done
+
+for pid in ${pids[*]}; do
+  wait $pid
 done
