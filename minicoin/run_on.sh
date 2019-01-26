@@ -75,10 +75,21 @@ function run_on_machine() {
     return
   fi
 
+  if [[ $ext == "cmd" ]]; then
+    host_home="c:\\Users\\host"
+  else
+    host_home="/home/host"
+  fi
+
+  job_args=()
+  for arg in ${script_args[@]}; do
+    job_args=(${job_args[@]} ${arg/$HOME/$host_home})
+  done
+
   error=0
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
-    command="Documents\\$scriptfile \"${script_args[@]}\""
+    command="Documents\\$scriptfile \"${job_args[@]}\""
     echo "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
       "$command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log 2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log" \
@@ -88,7 +99,7 @@ function run_on_machine() {
       vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
     fi
   else
-    command="$scriptfile \"${script_args[@]}\""
+    command="$scriptfile \"${job_args[@]}\""
     echo "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c \
