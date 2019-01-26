@@ -61,7 +61,7 @@ function run_on_machine() {
 
   if [ -f "jobs/$job/pre-run.sh" ]; then
     echo "$machine ==> Initializing $job"
-    source jobs/$job/pre-run.sh $machine ${script_args[@]}
+    source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
   ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
@@ -78,7 +78,7 @@ function run_on_machine() {
   error=0
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
-    command="Documents\\$scriptfile ${script_args[@]}"
+    command="Documents\\$scriptfile \"${script_args[@]}\""
     echo "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
       "$command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log 2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log" \
@@ -88,7 +88,7 @@ function run_on_machine() {
       vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
     fi
   else
-    command="$scriptfile ${script_args[@]}"
+    command="$scriptfile \"${script_args[@]}\""
     echo "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c \
@@ -106,7 +106,7 @@ function run_on_machine() {
 
   if [ -f "jobs/$job/post-run.sh" ]; then
     echo "$machine ==> Cleaning up after '$job'"
-    source jobs/$job/post-run.sh $machine ${script_args[@]}
+    source jobs/$job/post-run.sh $machine "${script_args[@]}"
   fi
 
   # shut machine down to previous state
