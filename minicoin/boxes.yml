@@ -28,7 +28,7 @@ machines:
     box: tqtc/windows81
     roles:
       - windows-tools
-      - msvc2017
+      - msvc2015
       - hello-world
     memory: 1024
     gui: false
