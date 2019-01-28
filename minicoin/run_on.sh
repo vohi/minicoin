@@ -64,6 +64,7 @@ function run_on_machine() {
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
+  $(mkdir .logs)
   ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
   ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
 
@@ -118,15 +119,6 @@ function run_on_machine() {
   if [ -f "jobs/$job/post-run.sh" ]; then
     echo "$machine ==> Cleaning up after '$job'"
     source jobs/$job/post-run.sh $machine "${script_args[@]}"
-  fi
-
-  # shut machine down to previous state
-  if [ $machine_state == 'saved' ]; then
-    vagrant suspend $machine
-  elif [ $machine_state == 'poweroff' ]; then
-    vagrant halt $machine
-  elif [ $machine_state == 'not' ]; then
-    vagrant halt $machine
   fi
 }
 
