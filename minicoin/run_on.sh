@@ -64,7 +64,7 @@ function run_on_machine() {
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
-  $(mkdir .logs)
+  mkdir .logs &> /dev/null
   ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
   ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
 
@@ -90,7 +90,7 @@ function run_on_machine() {
   error=0
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
-    command="Documents\\$scriptfile \"${job_args[@]}\""
+    command="Documents\\$scriptfile ${job_args[@]}"
     echo "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
       "$command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log 2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log" \
