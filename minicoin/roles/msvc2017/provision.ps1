@@ -11,7 +11,3 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 
 write-host "Copying helper scripts to Desktop!"
 Copy-Item -Force -Recurse "$($env:SystemDrive)\vagrant\roles\msvc2017\env_helpers\" -Destination "$HOME\Desktop\"
-
-write-host "Rebooting the VM to complete installation and configuration..."
-
-Restart-Computer -Force
