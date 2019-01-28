@@ -18,24 +18,31 @@ machines:
     memory: 512
   - name: windows10
     box: tqtc/windows10
-    roles: simple-windows
-    memory: 512
+    roles:
+      - windows-tools
+      - msvc2017
+      - hello-world
+    memory: 1024
     gui: false
   - name: windows81
     box: tqtc/windows81
-    roles: simple-windows
-    memory: 512
+    roles:
+      - windows-tools
+      - msvc2017
+      - hello-world
+    memory: 1024
     gui: false
   - name: windows7
     box: tqtc/windows7
     roles:
-      - simple-windows
+      - windows-tools
       - mingw32
-    memory: 2048
+      - hello-world
+    memory: 1024
     gui: false
   - name: macos106
     box: tqtc/macos106
-    roles: simple-mac
+    roles: hello-world
     memory: 512
     vram: 128
     gui: false
