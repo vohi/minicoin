@@ -63,7 +63,6 @@ def add_role(box, role)
         puts "==> #{role}: ISO file '#{disk_file}' not available"
       else
         box.vm.provider "virtualbox" do |vb|
-            puts "==> #{vb.name}: Inserting '#{disk_file}' into DVD drive"
             vb.customize [
             "storageattach", :id,
             "--storagectl", "SATA",
