@@ -60,11 +60,11 @@ def add_role(box, role)
         end
       end
       if !File.file?("#{iso_path}/#{disk_file}")
-        puts "==> #{box.vm.hostname}: ISO file '#{disk_file}' not available"
+        puts "==> #{role}: ISO file '#{disk_file}' not available"
       else
-        puts "==> #{box.vm.hostname}: Inserting '#{disk_file}' into DVD drive"
         box.vm.provider "virtualbox" do |vb|
-          vb.customize [
+            puts "==> #{vb.name}: Inserting '#{disk_file}' into DVD drive"
+            vb.customize [
             "storageattach", :id,
             "--storagectl", "SATA",
             "--port", "1",
@@ -97,7 +97,7 @@ def add_role(box, role)
   end
 
   if ! activity
-    puts "==> #{box.vm.hostname}: Provisioning script at '#{provisioning_file}' not found!"
+    puts "==> #{role}: Provisioning script at '#{provisioning_file}' not found!"
   end
 end
 
@@ -132,7 +132,9 @@ Vagrant.configure("2") do |config|
         end
       end
       box.vm.box = machine_box
-      box.vm.hostname = name
+      if !is_windows
+        box.vm.hostname = name
+      end
       private_net = machine["private_net"]
       if private_net.nil?
         box.vm.network "private_network", type: "dhcp"
