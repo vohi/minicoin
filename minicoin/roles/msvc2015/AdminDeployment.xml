@@ -5,26 +5,26 @@
     <SelectableItemCustomization Id="VSUV3RTMV1" Hidden="no" Selected="yes" FriendlyName="Visual Studio 2015 Update 3" />
     <SelectableItemCustomization Id="MicroUpdateV3.5" Selected="yes" FriendlyName="Update for Microsoft Visual Studio 2015 (KB3165756)" />
     <SelectableItemCustomization Id="WebToolsV1" Hidden="no" Selected="no" FriendlyName="Microsoft Web Developer Tools" />
-    <SelectableItemCustomization Id="JavaScript_HiddenV12" Selected="yes" FriendlyName="JavaScript Project System for Visual Studio" />
-    <SelectableItemCustomization Id="MDDJSDependencyHiddenV1" Selected="yes" FriendlyName="MDDJSDependencyHidden" />
+    <SelectableItemCustomization Id="JavaScript_HiddenV12" Selected="no" FriendlyName="JavaScript Project System for Visual Studio" />
+    <SelectableItemCustomization Id="MDDJSDependencyHiddenV1" Selected="no" FriendlyName="MDDJSDependencyHidden" />
     <SelectableItemCustomization Id="AppInsightsToolsVisualStudioHiddenVSU3RTMV1" Selected="no" FriendlyName="Developer Analytics Tools v7.0.2" />
-    <SelectableItemCustomization Id="BlissHidden" Selected="yes" FriendlyName="BlissHidden" />
-    <SelectableItemCustomization Id="HelpHidden" Selected="yes" FriendlyName="HelpHidden" />
-    <SelectableItemCustomization Id="JavaScript" Selected="yes" FriendlyName="JavascriptHidden" />
-    <SelectableItemCustomization Id="NetFX4Hidden" Selected="yes" FriendlyName="NetFX4Hidden" />
-    <SelectableItemCustomization Id="NetFX45Hidden" Selected="yes" FriendlyName="NetFX45Hidden" />
-    <SelectableItemCustomization Id="NetFX451MTPackHidden" Selected="yes" FriendlyName="NetFX451MTPackHidden" />
-    <SelectableItemCustomization Id="NetFX451MTPackCoreHidden" Selected="yes" FriendlyName="NetFX451MTPackCoreHidden" />
-    <SelectableItemCustomization Id="NetFX452MTPackHidden" Selected="yes" FriendlyName="NetFX452MTPackHidden" />
-    <SelectableItemCustomization Id="NetFX46MTPackHidden" Selected="yes" FriendlyName="NetFX46MTPackHidden" />
+    <SelectableItemCustomization Id="BlissHidden" Selected="no" FriendlyName="BlissHidden" />
+    <SelectableItemCustomization Id="HelpHidden" Selected="no" FriendlyName="HelpHidden" />
+    <SelectableItemCustomization Id="JavaScript" Selected="no" FriendlyName="JavascriptHidden" />
+    <SelectableItemCustomization Id="NetFX4Hidden" Selected="no" FriendlyName="NetFX4Hidden" />
+    <SelectableItemCustomization Id="NetFX45Hidden" Selected="no" FriendlyName="NetFX45Hidden" />
+    <SelectableItemCustomization Id="NetFX451MTPackHidden" Selected="no" FriendlyName="NetFX451MTPackHidden" />
+    <SelectableItemCustomization Id="NetFX451MTPackCoreHidden" Selected="no" FriendlyName="NetFX451MTPackCoreHidden" />
+    <SelectableItemCustomization Id="NetFX452MTPackHidden" Selected="no" FriendlyName="NetFX452MTPackHidden" />
+    <SelectableItemCustomization Id="NetFX46MTPackHidden" Selected="no" FriendlyName="NetFX46MTPackHidden" />
     <SelectableItemCustomization Id="PortableDTPHidden" Selected="yes" FriendlyName="PortableDTPHidden" />
-    <SelectableItemCustomization Id="PreEmptiveDotfuscatorHidden" Selected="yes" FriendlyName="PreEmptiveDotfuscatorHidden" />
-    <SelectableItemCustomization Id="PreEmptiveAnalyticsHidden" Selected="yes" FriendlyName="PreEmptiveAnalyticsHidden" />
+    <SelectableItemCustomization Id="PreEmptiveDotfuscatorHidden" Selected="no" FriendlyName="PreEmptiveDotfuscatorHidden" />
+    <SelectableItemCustomization Id="PreEmptiveAnalyticsHidden" Selected="no" FriendlyName="PreEmptiveAnalyticsHidden" />
     <SelectableItemCustomization Id="ProfilerHidden" Selected="yes" FriendlyName="ProfilerHidden" />
     <SelectableItemCustomization Id="RoslynLanguageServicesHidden" Selected="yes" FriendlyName="RoslynLanguageServicesHidden" />
-    <SelectableItemCustomization Id="SDKTools3Hidden" Selected="yes" FriendlyName="SDKTools3Hidden" />
-    <SelectableItemCustomization Id="SDKTools4Hidden" Selected="yes" FriendlyName="SDKTools4Hidden" />
-    <SelectableItemCustomization Id="WCFDataServicesHidden" Selected="yes" FriendlyName="WCFDataServicesHidden" />
+    <SelectableItemCustomization Id="SDKTools3Hidden" Selected="no" FriendlyName="SDKTools3Hidden" />
+    <SelectableItemCustomization Id="SDKTools4Hidden" Selected="no" FriendlyName="SDKTools4Hidden" />
+    <SelectableItemCustomization Id="WCFDataServicesHidden" Selected="no" FriendlyName="WCFDataServicesHidden" />
     <SelectableItemCustomization Id="VSUV1PreReqV1" Selected="no" FriendlyName="Visual Studio 2015 Update 1 Prerequisite" />
     <SelectableItemCustomization Id="NativeLanguageSupport_VCV1" Hidden="no" Selected="yes" FriendlyName="Common Tools for Visual C++ 2015" />
     <SelectableItemCustomization Id="NativeLanguageSupport_MFCV1" Hidden="no" Selected="no" FriendlyName="Microsoft Foundation Classes for C++" />
