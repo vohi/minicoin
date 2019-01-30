@@ -52,13 +52,13 @@ function run_on_machine() {
     vagrant up $machine
   fi
 
-  platform_test=$(vagrant ssh -c uname $machine) 2> /dev/null
-  case "$platform_test" in
-    *"Windows"*) ext="cmd";;
-    *"Linux"*)   ext="sh" ;;
-    *"Darwin"*)  ext="sh" ;;
-    *)           ext="cmd" ;;
-  esac
+  vagrant winrm $machine &> /dev/null
+  error=$?
+  if [[ $error == 0 ]]; then
+    ext="cmd"
+  else
+    ext="sh"
+  fi
 
   upload_source=jobs/$job
   scriptfile=$job/main.$ext
@@ -109,9 +109,7 @@ function run_on_machine() {
     if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
       error=1
     fi
-    if [ $error == 0 ]; then
-      vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
-    fi
+    vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
   else
     command="$scriptfile \"${job_args[@]}\""
     log_progress "$machine ==> Executing '$command' at $log_stamp"
@@ -121,12 +119,12 @@ function run_on_machine() {
       $machine 2> /dev/null
     error=$?
 
-    if [ $error == 0 ]; then
-      vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
-    fi
+    vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
   fi
   if [ $error != 0 ]; then
-    >&2 echo "$machine ==> Job ended with error - See files in .logs for complete stdout and stderr"
+    >&2 echo "$machine ==> Job $job started at $log_stamp ended with error"
+    >&2 echo "$machine ==> See 'tail $job-$machine-$log_stamp.log' for stdout"
+    >&2 echo "$machine ==> See 'tail $job-error-$machine-$log_stamp.log' for stderr"
   fi
 
   if [ -f "jobs/$job/post-run.sh" ]; then
