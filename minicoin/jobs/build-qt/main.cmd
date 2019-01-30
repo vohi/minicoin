@@ -3,6 +3,21 @@ SETLOCAL
 SET branch=dev
 IF NOT "%~1" == "" (SET branch=%~1)
 
+for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
+
+if NOT "%mingw32-make.exe%" == "" (
+    set MAKE=mingw32-make.exe
+) else if NOT "%jom.exe%" == "" (
+    set MAKE=jom.exe
+) else if NOT "%nmake.exe%" == "" (
+    set MAKE=nmake.exe
+)
+
+if "%MAKE%" == "" (
+    echo "No build tool-chain found in PATH"
+    goto errorenv
+)
+
 echo "Building Qt branch %branch%"
 git clone git://code.qt.io/qt/qt5.git
 cd qt5
@@ -11,4 +26,5 @@ perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtweb
 mkdir ..\qt5-build
 cd ..\qt5-build
 call ..\qt5\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
-mingw32-make -j4 module-qtbase
+
+%MAKE% module-qtbase
