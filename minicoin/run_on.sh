@@ -93,9 +93,13 @@ function run_on_machine() {
     command="Documents\\$scriptfile ${job_args[@]}"
     echo "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
-      "$command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log 2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log" \
+      "($command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log \
+        2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log) || \
+        echo \"Error %ERRORLEVEL%\" > c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
       $machine
-    error=$?
+    if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
+      error=1
+    fi
     if [ $error == 0 ]; then
       vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine
     fi
