@@ -1,6 +1,6 @@
 .DS_Store
 */.vagrant
 **/.isocache/*.iso
-**/.logs/*.log
+**/.logs/*
 *.box
 *.retry
