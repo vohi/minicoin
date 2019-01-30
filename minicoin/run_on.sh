@@ -17,12 +17,15 @@ pids=()
 job="-1"
 script_args=()
 parallel="true"
+verbose="false"
 
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
-  elif [[ "$arg" = "--no-parallel" ]]; then
+  elif [[ "$arg" = "--no-parallel" && "$job" != "--" ]]; then
     parallel="false"
+  elif [[ "$arg" = "--verbose" && "$job" != "--" ]]; then
+    verbose='true'
   elif [[ "$job" = '-1' ]]; then
     machines=( "${machines[@]}" "$arg" )
   else
@@ -34,6 +37,12 @@ job="${machines[@]: -1}"
 unset "machines[${#machines[@]}-1]"
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
+
+function log_progress() {
+  if [[ "$verbose" == "true" ]]; then
+    echo $1
+  fi
+}
 
 function run_on_machine() {
   machine=$1
@@ -60,7 +69,7 @@ function run_on_machine() {
   fi
 
   if [ -f "jobs/$job/pre-run.sh" ]; then
-    echo "$machine ==> Initializing $job"
+    log_progress "$machine ==> Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
@@ -68,7 +77,7 @@ function run_on_machine() {
   ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
   ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
 
-  echo "$machine ==> Uploading '$upload_source'..."
+  log_progress "$machine ==> Uploading '$upload_source'..."
   out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
@@ -91,7 +100,7 @@ function run_on_machine() {
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${job_args[@]}"
-    echo "$machine ==> Executing '$command' at $log_stamp"
+    log_progress "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
       "($command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log \
         2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log) || \
@@ -105,7 +114,7 @@ function run_on_machine() {
     fi
   else
     command="$scriptfile \"${job_args[@]}\""
-    echo "$machine ==> Executing '$command' at $log_stamp"
+    log_progress "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c \
       "$command > /vagrant/.logs/$job-$machine-$log_stamp.log 2> /vagrant/.logs/$job-error-$machine-$log_stamp.log" \
@@ -117,18 +126,18 @@ function run_on_machine() {
     fi
   fi
   if [ $error != 0 ]; then
-    echo "$machine ==> Job ended with error - See files in .logs for complete stdout and stderr"
+    >&2 echo "$machine ==> Job ended with error - See files in .logs for complete stdout and stderr"
   fi
 
   if [ -f "jobs/$job/post-run.sh" ]; then
-    echo "$machine ==> Cleaning up after '$job'"
+    log_progress "$machine ==> Cleaning up after '$job'"
     source jobs/$job/post-run.sh $machine "${script_args[@]}"
   fi
 }
 
 for machine in "${machines[@]}"; do
   if [[ "$parallel" == "true" ]]; then
-    echo "Starting job on '$machine'..."
+    log_progress "Starting job on '$machine'..."
     run_on_machine $machine &
     pids[${machine}]=$!
   else
