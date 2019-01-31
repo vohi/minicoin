@@ -10,9 +10,11 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
 write-host "Copying helper scripts to Desktop!"
-Copy-Item -Force -Recurse "$($env:SystemDrive)\vagrant\roles\msvc2017\env_helpers\" -Destination "$HOME\Desktop\"
+Copy-Item -Force -Recurse "$($env:SystemDrive)\vagrant\roles\msvc2017\env_helpers\" `
+  -Destination "$HOME\Desktop\"
 
 write-host "Updating PATH"
+refreshenv
 
 function Invoke-CmdScript {
     param(
@@ -23,9 +25,12 @@ function Invoke-CmdScript {
       Select-String '^([^=]*)=(.*)$' | ForEach-Object {
         $varName = $_.Matches[0].Groups[1].Value
         $varValue = $_.Matches[0].Groups[2].Value
-        [Environment]::SetEnvironmentVariable($varName, $varValue,
-        [System.EnvironmentVariableTarget]::User)
+        Set-Item env:$varName -Value $varValue
       }
   }
 
-Invoke-CmdScript "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvarsall.bat" amd64
+Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+
+[Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("LIB", $env:LIB, [System.EnvironmentVariableTarget]::User)
