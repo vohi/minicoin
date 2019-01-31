@@ -18,7 +18,7 @@ if "%MAKE%" == "" (
     goto errorenv
 )
 
-echo "Building Qt branch %branch%"
+echo Building Qt branch %branch%
 git clone git://code.qt.io/qt/qt5.git
 cd qt5
 git checkout %branch%

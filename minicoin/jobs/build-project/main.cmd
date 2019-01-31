@@ -4,9 +4,6 @@ IF "%~1" == "" (
     goto errorargs
 )
 
-@call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
-@call "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvarsall.bat" amd64
-
 for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
 
 if NOT "%mingw32-make.exe%" == "" (
