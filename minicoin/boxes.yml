@@ -35,7 +35,6 @@ machines:
   - name: windows7
     box: tqtc/windows7
     roles:
-      - windows-tools
       - mingw32
       - hello-world
     memory: 1024
