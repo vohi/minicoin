@@ -7,7 +7,11 @@ fi
 
 echo "Building project in $1"
 
-cd $1
-qmake
+project=$(basename $1)
+cd $HOME
+mkdir $project > /dev/null
+
+cd $project
+qmake $1
 make clean
 make
