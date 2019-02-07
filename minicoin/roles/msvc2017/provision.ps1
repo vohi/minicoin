@@ -1,5 +1,4 @@
-$packages = ( "vscode",
-              "visualstudio2017buildtools",
+$packages = ( "visualstudio2017buildtools",
               "visualstudio2017-workload-vctools")
 
 cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
@@ -29,7 +28,7 @@ function Invoke-CmdScript {
       }
   }
 
-Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
 [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
