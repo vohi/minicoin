@@ -205,8 +205,10 @@ Vagrant.configure("2") do |config|
         box.vm.synced_folder "~", "#{guest_home}"
         box.vm.synced_folder ".", "/vagrant"
         if is_windows
-          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant"
-          box.vm.provision "shell", inline: "cmd /c mklink /D C:\\Users\\host \\\\VBOXSRV\\host"
+          box.vm.provision "shell", inline: \
+            'cmd /c "mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant && ' \
+            'mklink /D C:\\host \\\\VBOXSRV\\host && ' \
+            'mklink /J C:\\Users\host C:\host"'
         end
       end
 

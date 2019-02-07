@@ -1,9 +1,10 @@
 @echo off
+SETLOCAL
+
 IF "%~1" == "" (
-    echo "No project specified"
+    echo No project specified!
     goto errorargs
 )
-
 for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
 
 if NOT "%mingw32-make.exe%" == "" (
@@ -15,18 +16,28 @@ if NOT "%mingw32-make.exe%" == "" (
 )
 
 if "%MAKE%" == "" (
-    echo "No build tool-chain found in PATH"
+    echo No build tool-chain found in PATH:
+    echo PATH=%PATH%
     goto errorenv
 )
 
 set PATH=%PATH%;%USERPROFILE%\qt5-build\qtbase\bin
 
-cd %1
-qmake || exit /B 3
+set projectpath=%1
+IF %projectpath:~-1%==/ SET projectpath=%projectpath:~0,-1%
+FOR %%P in ("%projectpath%") DO (
+    set projectname=%%~nP
+)
+echo Building '%projectpath%' into '%projectname%'
+
+mkdir %projectname%
+cd %projectname%
+
+qmake "%projectpath%" || exit /B 3
 %MAKE% clean || exit /B 4
 %MAKE% || exit /B 5
 
-echo "project built successfully"
+echo Project '%projectname%' built successfully
 
 exit 0
 
