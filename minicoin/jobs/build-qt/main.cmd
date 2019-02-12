@@ -25,7 +25,7 @@ echo Building Qt branch %branch%
 git clone git://code.qt.io/qt/qt5.git
 cd qt5
 git checkout %branch%
-perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
+perl init-repository --force --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
 mkdir ..\qt5-build
 cd ..\qt5-build
 call ..\qt5\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %CONFIGFLAGS%

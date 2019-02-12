@@ -6,7 +6,7 @@ if [[ $1 != "" ]]; then
   git checkout $1
 fi
 
-./init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
+./init-repository --force --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
 mkdir ../qt5-build
 cd ../qt5-build
 ../qt5/configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
