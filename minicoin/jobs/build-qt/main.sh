@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-echo "Building Qt branch $1"
-git clone git://code.qt.io/qt/qt5.git
-cd qt5
+branch=dev
+modules=essential
 if [[ $1 != "" ]]; then
-  git checkout $1
+  branch=$1
+fi
+if [[ $2 != "" ]]; then
+  modules=$2
 fi
 
-./init-repository --force --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine,-qt3d
+echo "Building Qt branch $branch"
+git clone git://code.qt.io/qt/qt5.git
+cd qt5
+git checkout $1
+
+./init-repository --force --module-subset=$modules
 mkdir ../qt5-build
 cd ../qt5-build
 ../qt5/configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
