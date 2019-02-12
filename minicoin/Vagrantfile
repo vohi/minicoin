@@ -224,8 +224,9 @@ Vagrant.configure("2") do |config|
         box.vm.synced_folder ".", "/vagrant"
         if is_windows
           box.vm.provision "shell", inline: \
-            'cmd /c "mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant && ' \
-            'mklink /D C:\\host \\\\VBOXSRV\\host && ' \
+            'cmd /c "rd c:\\vagrant & rd c:\\host & rd c:\\Users\\host & ' \
+            'mklink /D C:\\vagrant \\\\VBOXSRV\\vagrant & ' \
+            'mklink /D C:\\host \\\\VBOXSRV\\host & ' \
             'mklink /J C:\\Users\\host C:\\host"'
         end
       end
