@@ -5,6 +5,7 @@ IF "%~1" == "" (
     echo No project specified!
     goto errorargs
 )
+
 for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
 
 if NOT "%mingw32-make.exe%" == "" (
@@ -17,7 +18,7 @@ if NOT "%mingw32-make.exe%" == "" (
 
 if "%MAKE%" == "" (
     echo No build tool-chain found in PATH:
-    echo PATH=%PATH%
+    echo PATH="%PATH%"
     goto errorenv
 )
 
