@@ -13,16 +13,13 @@ machines:
     box: generic/ubuntu1804
     roles: doc-server
     memory: 2048
-  - name: centos7
-    box: generic/centos7
-    memory: 512
   - name: windows10
     box: tqtc/windows10
     roles:
       - windows-tools
       - msvc2017
       - hello-world
-    memory: 1024
+    memory: 2048
     gui: false
   - name: windows81
     box: tqtc/windows81
@@ -38,10 +35,4 @@ machines:
       - mingw32
       - hello-world
     memory: 1024
-    gui: false
-  - name: macos106
-    box: tqtc/macos106
-    roles: hello-world
-    memory: 512
-    vram: 128
     gui: false
