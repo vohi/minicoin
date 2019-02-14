@@ -9,6 +9,12 @@ machines:
     box: generic/ubuntu1804
     roles: simple-apt
     memory: 2048
+  - name: android-builder
+    box: generic/ubuntu1804
+    box_version: =1.8.54
+    roles:
+      - linux-android
+      - hello-world
   - name: doc-server
     box: generic/ubuntu1804
     roles: doc-server
