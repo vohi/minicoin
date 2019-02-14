@@ -149,6 +149,7 @@ Vagrant.configure("2") do |config|
         end
       end
       box.vm.box = machine_box
+      box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
       if !is_windows
         box.vm.hostname = name
       end
