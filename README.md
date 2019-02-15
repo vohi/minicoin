@@ -91,7 +91,11 @@ build qdoc into qt5-build.
 
 ## Machine definition
 
-Machines are defined in the `machines` section of the `boxes.yml` file.
+Machines are defined in the `machines` section of the `boxes.yml` file. The
+default `boxes.yml` file is loaded first; a `boxes.yml` file in `~/minicoin`
+will be loaded if present, and can add additional boxes or override settings
+from boxes in the default file.
+
 The following parameters are available:
 
 ```
@@ -222,3 +226,7 @@ vagrant/vagrant.
 
 In other words, don't put sensitive stuff on those boxes, don't run them
 if you don't need them, and don't expose them to an untrusted network.
+
+Boxes from the `generic` namespace are created using packer scripts here:
+
+https://github.com/lavabit/robox
