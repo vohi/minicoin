@@ -10,7 +10,7 @@ fi
 if [[ $2 != "" ]]; then
   cd qtbase
   $(git remote remove local)
-  $(git remote add local file://$2/qttools)
+  $(git remote add local file://$2/qtbase)
 
   git fetch remote
   if [[ $3 != "" ]]; then
