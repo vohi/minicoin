@@ -7,6 +7,7 @@ urls:
 machines:
   - name: ubuntu1804
     box: generic/ubuntu1804
+    box_version: =1.8.54
     roles: simple-apt
     memory: 2048
   - name: android-builder
