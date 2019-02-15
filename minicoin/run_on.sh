@@ -103,9 +103,9 @@ function run_on_machine() {
     command="Documents\\$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
     vagrant winrm -s cmd -c \
-      "($command > c:\\vagrant\\.logs\\$job-$machine-$log_stamp.log \
-        2> c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.log) || \
-        echo \"Error %ERRORLEVEL%\" > c:\\vagrant\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
+      "($command > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log \
+        2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log) || \
+        echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
       $machine
     if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
       error=1
@@ -116,7 +116,7 @@ function run_on_machine() {
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c \
-      "$command > /vagrant/.logs/$job-$machine-$log_stamp.log 2> /vagrant/.logs/$job-error-$machine-$log_stamp.log" \
+      "$command > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log" \
       $machine 2> /dev/null
     error=$?
 
