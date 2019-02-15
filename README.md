@@ -4,6 +4,13 @@ jobs.
 
 All the useful stuff is in the subdirectory `minicoin`.
 
+# Teaser
+
+```
+$ cd minicoin
+$ ./run_on.sh ubuntu1804 build-qtbase -- dev ~/qt5 my_local_branch
+```
+
 # Usage
 
 The intended use case is to use the managed machines to build and test a local
@@ -77,12 +84,12 @@ TBD
 
 * available jobs
 
-`$ ./run_on.sh doc-server build-qdoc -- dev`
+`$ ./run_on.sh machine1 build-qdoc -- dev`
 
 Builds qdoc on the doc-server machine. Clones qt5 from code.qt.io, checks out
 the dev branch, and builds qtbase and qttools into `/home/vagrant/qt5-build`.
 
-`$ ./run_on.sh doc-server build-qdoc -- dev /home/vohi/qt5 feature`
+`$ ./run_on.sh machine1 build-qdoc -- dev ~/qt5 feature`
 
 Clones qt5 from code.qt.io, checks out the dev branch, adds the local Qt5 clone
 as a remote, checks out the feature branch from that qttools repository, and
@@ -157,9 +164,9 @@ subdirectory of a local Qt5 clone, then the entire `coin` subdirectory will be
 copied into the home folder of the `vagrant` user on the guest as well.
 
 Unless folder-sharing is disabled, the current directory with the Vagrantfile
-will be shared with the guest as a folder "/vagrant"; the home directory of
+will be shared with the guest as a folder "/minicoin"; the home directory of
 the current user will be shared with the guest as a folder "host" (/home/host
-on Linux, c:\host on Windows, /Users/host on Mac guests).
+on Linux, c:\Users\host on Windows, /Users/host on Mac guests).
 
 ### Machine-specific provisioning
 
