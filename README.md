@@ -129,7 +129,7 @@ the `urls` section:
 
 ```
 urls:
-  - org: server
+  org: server
 ```
 
 where `org` matches the `org` part of the `box` parameter of the

@@ -6,6 +6,7 @@ Vagrant.require_version ">= 2.2"
 # Import YAML
 require 'yaml'
 require 'net/http'
+require 'zip'
 
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 $urls = yaml["urls"]
@@ -52,6 +53,12 @@ def fetch_file(uri, local)
 end
 
 def add_role(box, role)
+  role_params = role
+  if role.is_a?(Hash)
+    role = role["role"]
+    role_params.delete("role")
+  end
+
   role_path = "#{__dir__}#{role_path}/roles/#{role}"
   activity = false
   if File.file?("#{role_path}/playbook.yml")
@@ -62,32 +69,78 @@ def add_role(box, role)
     activity = true
   elsif File.file?("#{role_path}/disk")
     activity = true
-    disk_file = File.read("#{role_path}/disk").strip
-    iso_path = "#{__dir__}/.isocache"
-    if ["up", "provision", "reload"].include? ARGV[0]
-      Dir.mkdir(iso_path) unless Dir.exist?(iso_path)
 
-      if !File.file?("#{iso_path}/#{disk_file}")
-        puts "Downloading '#{disk_file}'..."
-        $urls.each do |url|
-          url.each do |key, value|
-            uri = URI("#{value}/#{key}/#{disk_file}")
-            puts "Trying to download '#{uri}'..."
-            fetch_file(uri, "#{iso_path}/#{disk_file}")
+    disk_data = nil
+    disk_file = File.read("#{role_path}/disk").strip
+    disk_archive = disk_file
+
+    if disk_file.start_with?("file:")
+      disk_data = YAML.load_file("#{role_path}/disk")
+      disk_file = disk_data["file"]
+      disk_archive = disk_data["archive"]
+    end
+
+    if disk_archive.nil?
+      disk_archive = disk_file
+    end
+
+    disk_cache = "#{__dir__}/.diskcache"
+    if ["up", "provision", "reload", "validate"].include? ARGV[0]
+      Dir.mkdir(disk_cache) unless Dir.exist?(disk_cache)
+
+      if !File.file?("#{disk_cache}/#{disk_file}")
+        if !File.file?("#{disk_cache}/#{disk_archive}")
+          puts "Downloading '#{disk_archive}'..."
+          $urls.each do |key, value|
+            url = URI("#{value}/#{key}/#{disk_archive}")
+            puts "Trying to download '#{url}'..."
+            fetch_file(url, "#{disk_cache}/#{disk_archive}")
+          end
+        end
+        if disk_archive.end_with?(".zip")
+          puts "Extracting '#{disk_archive}'"
+          Zip::File.open("#{disk_cache}/#{disk_archive}") do |zipfile|
+            zipfile.extract("#{disk_file}", "#{disk_cache}/#{disk_file}")
           end
         end
       end
-      if !File.file?("#{iso_path}/#{disk_file}")
+      if !File.file?("#{disk_cache}/#{disk_file}")
         puts "==> #{role}: ISO file '#{disk_file}' not available"
       else
         box.vm.provider "virtualbox" do |vb|
-            vb.customize [
+          storage_params = [
             "storageattach", :id,
-            "--storagectl", "SATA",
-            "--port", "1",
-            "--type", "dvddrive",
-            "--medium", "#{iso_path}/#{disk_file}"
+            "--medium", "#{disk_cache}/#{disk_file}",
           ]
+
+          disk_settings = disk_data["settings"] unless disk_data.nil?
+          if disk_settings.nil?
+            disk_settings = {}
+          end
+
+          # default settings, disks can override
+          disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
+
+          if disk_file.end_with?(".iso")
+            disk_settings["port"] = "1" unless !disk_settings["port"].nil?
+            disk_settings["type"] = "dvddrive" unless !disk_settings["type"].nil?
+          elsif disk_file.end_with?(".vdi")
+            disk_settings["port"] = "2" unless !disk_settings["port"].nil?
+            disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
+            disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"]
+          end
+
+          # boxes can override disk settings
+          if role_params.is_a?(Hash)
+            role_params.each do |key, value|
+              disk_settings[key] = value
+            end
+          end
+
+          disk_settings.each do |key, value|
+            storage_params += ["--#{key}", "#{value}"]
+          end
+          vb.customize storage_params
         end
       end
     end
@@ -138,15 +191,13 @@ Vagrant.configure("2") do |config|
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
-      $urls.each do |url|
-        maker = machine_box.split(/\//).first
-        source = url[maker]
-        unless source.nil?
-          box.vm.box_url = [
-            "#{source}/#{machine_box}.box",
-            "#{source}/#{machine_box}-base.box"
-          ]
-        end
+      maker = machine_box.split(/\//).first
+      source = $urls[maker]
+      unless source.nil?
+        box.vm.box_url = [
+          "#{source}/#{machine_box}.box",
+          "#{source}/#{machine_box}-base.box"
+        ]
       end
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
