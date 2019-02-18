@@ -159,9 +159,15 @@ def add_role(box, role)
   provisioning_file = "#{role_path}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
-    user = ENV['USER']
+    script_args = ["#{role}", ENV['USER']]
+    if role_params.is_a?(Hash)
+      role_params.each do |key, value|
+        script_args += ["--#{key}"]
+        script_args += ["#{value}"] unless value.nil?
+      end
+    end
     box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
-      args: ["#{role}", "#{user}"],
+      args: script_args,
       upload_path: upload_path,
       privileged: true
   end
