@@ -85,7 +85,7 @@ def add_role(box, role)
     end
 
     disk_cache = "#{__dir__}/.diskcache"
-    if ["up", "provision", "reload", "validate"].include? ARGV[0]
+    if ["up", "provision", "reload"].include? ARGV[0]
       Dir.mkdir(disk_cache) unless Dir.exist?(disk_cache)
 
       if !File.file?("#{disk_cache}/#{disk_file}")
