@@ -128,6 +128,15 @@ def add_role(box, role)
   if role.is_a?(Hash)
     role = role["role"]
     role_params.delete("role")
+    role_params.each do |key, value|
+      if value.nil?
+        continue
+      end
+      if matches = value.match(/\$([A-Z_]*)/)
+        env_val = ENV[matches[1]]
+        role_params[key] = env_val unless env_val.nil?
+      end
+    end
   end
 
   role_path = "#{__dir__}#{role_path}/roles/#{role}"
