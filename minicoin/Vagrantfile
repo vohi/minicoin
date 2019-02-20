@@ -132,7 +132,7 @@ def add_role(box, role, name)
       if value.nil?
         continue
       end
-      if matches = value.match(/\$([A-Z_]*)/)
+      if value.is_a?(String) and matches = value.match(/\$([A-Z_]*)/)
         env_val = ENV[matches[1]]
         if env_val.nil?
           puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping #{role}"
