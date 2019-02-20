@@ -1,7 +1,7 @@
 echo "Hello runner!"
 echo "Args received:"
 exitcode=0
-for arg in ${@}; do
+for arg in "${@}"; do
   echo \'$arg\'
   if [[ "$arg" = "error" ]]; then
      exitcode=1

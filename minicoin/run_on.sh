@@ -117,7 +117,7 @@ function run_on_machine() {
     fi
     vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
   else
-    command="$scriptfile \"${job_args[@]}\""
+    command="$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
     vagrant ssh -c \
