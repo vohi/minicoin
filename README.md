@@ -184,26 +184,58 @@ attribute points at in the machine's definition.
     - base
     - build
     - test
+
+- name: parameterized
+  box: generic/ubuntu1804
+  roles:
+    - role: arguments
+      param1: foo
+      param2: bar
 ```
+
+#### Scripted provisioning
 
 For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
 guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests, and
 execute such a script using shell provisioning. The script will receive the name
-of the role for which it was run, and the user name on the host, as command line
-arguments.
+of the role for which it was run, the name of the machine, and the user name on the
+host, as command line arguments.
+
+If the role is parameterized, then the parameters are passed to the provisioning
+script as named arguments, ie the script `roles/arguments/provision.sh` will be
+called with arguments `--param1 foo --param2 bar` in the example above.
+
+#### Ansible provisioning
 
 If Vagrantfile finds a `playbook.yml` file, then the machine will be provisioned
 using [ansible](ansible.com).
 
-If the role directory contains a file `disk` with the name of an ISO image, then
-the ISO image will be downloaded from any of the registered URLs, and then
-inserted as a DVD into the guest VM. This will happen during boot time and
-before any other provisioners are run.
+#### Disk provisioning
+
+If the role directory contains a file `disk`, then the file will be interpreted
+as YAML. A `file` attribute can point to an ISO image, which will be inserted as
+a DVD into the guest VM. If `file` points to a VDI file, then that file will be
+attached as a harddrive.
+The file will be looked for in the hidden `.diskcache` folder. If the file does
+not exist, then the `archive` attribute can point at a zip-file that can be
+downloaded from one of the global URLs.
+
+Disk are inserted or attached during boot time and before any other provisioners
+are run. Boxes might need to specify how the disk can be attached by setting
+parameters in the provisioner, e.g
+
+```
+- name: linux
+  box: generic/ubuntu1804
+  roles:
+    - role: disk
+      storagectl: IDE # defaults to SATA
+      port: 1 # default to 1 for ISO, 2 for VDI
+      mtype: standard # defaults to multiattach for VDI
+```
 
 Roles that use ansible or specify a `disk` can also include a
-`provision(.sh|.cmd|.ps1)` script, which will then be executed afterwards.
-
-Multiple roles can be specified for any machine.
+`provision(.sh|.cmd|.ps1)` script.
 
 # Host System Requirements
 
