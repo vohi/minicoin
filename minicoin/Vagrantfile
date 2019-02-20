@@ -11,9 +11,10 @@ require 'zip'
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 $urls = yaml["urls"]
 machines = yaml["machines"]
-begin
-  user_home = ENV['HOME']
-  user_machines = YAML.load_file(File.join(user_home, 'minicoin/boxes.yml'))["machines"]
+
+user_machine_file = File.join(ENV['HOME'], 'minicoin/boxes.yml');
+if File.file?(user_machine_file)
+  user_machines = YAML.load_file(user_machine_file)["machines"]
   user_machines.each do |user_machine|
     idx = machines.find_index {|m| m["name"] == user_machine["name"] }
     if !idx.nil?
@@ -26,8 +27,6 @@ begin
       machines << user_machine
     end
   end
-rescue
-  # no boxes.yml in the user's home dir
 end
 
 def fetch_file(uri, local)
