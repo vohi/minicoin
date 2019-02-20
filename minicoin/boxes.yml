@@ -5,10 +5,15 @@ urls:
 
 # machine definitions
 machines:
+
+## Test machines
+
   - name: ubuntu1804
     box: generic/ubuntu1804
-    roles: simple-apt
-    memory: 2048
+    roles: hello-world
+
+## Simple machines for fast but complete provisioning
+
   - name: android-builder
     box: generic/ubuntu1804
     roles:
@@ -18,13 +23,36 @@ machines:
     box: generic/ubuntu1804
     roles: doc-server
     memory: 2048
-  - name: windows10
-    box: tqtc/windows10
+
+## Linux boxes provisioned via coin scripts
+  - name: coin-ubuntu
+    box: generic/ubuntu1804
     roles:
-      - windows-tools
-      - msvc2017
-      - hello-world
+      - role: coin-node
+        template: qtci-linux-Ubuntu-18.04-x86_64
+        coin-root: $COIN_ROOT
     memory: 2048
+  - name: coin-rhel
+    box: generic/centos7
+    roles:
+      - role: coin-node
+        template: qtci-linux-RHEL-7.4-x86_64
+        coin-root: $COIN_ROOT
+  - name: coin-opensuse
+    box: opensuse/openSUSE-15.0-x86_64
+    roles:
+      - role: coin-node
+        template: qtci-linux-openSUSE-15.0-x86_64
+        coin-root: $COIN_ROOT
+
+## Windows boxes
+  - name: windows7
+    box: tqtc/windows7
+    roles:
+      - mingw32
+      - qt-packages
+      - hello-world
+    memory: 1024
     gui: false
   - name: windows81
     box: tqtc/windows81
@@ -34,10 +62,12 @@ machines:
       - hello-world
     memory: 1024
     gui: false
-  - name: windows7
-    box: tqtc/windows7
+  - name: windows10
+    box: tqtc/windows10
     roles:
-      - mingw32
+      - windows-tools
+      - msvc2017
+      - qt-packages
       - hello-world
-    memory: 1024
+    memory: 2048
     gui: false
