@@ -313,7 +313,7 @@ Vagrant.configure("2") do |config|
         if is_windows
           box.vm.provision "shell", inline: \
             'cmd /c "rd c:\\minicoin & rd c:\\host & rd c:\\Users\\host & ' \
-            'mklink /D C:\\minicoin \\\\VBOXSRV\\vagrant & ' \
+            'mklink /D C:\\minicoin \\\\VBOXSRV\\minicoin & ' \
             'mklink /D C:\\host \\\\VBOXSRV\\host & ' \
             'mklink /J C:\\Users\\host C:\\host"'
         end

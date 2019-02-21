@@ -42,10 +42,8 @@ fi
 
 SCRIPTS=( *.sh )
 
-mkdir -p /var/log/vagrant-provisioning > /dev/null
-
 for script in ${SCRIPTS[@]}; do
   [ -e "$script" ] || continue
-  echo "++ Executing $script"
-  bash "$script" || true
+  echo "++ Executing '$script $@'"
+  bash "$script" $@ || true
 done
