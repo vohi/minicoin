@@ -24,7 +24,35 @@ machines:
     roles: doc-server
     memory: 2048
 
-## Linux boxes provisioned via coin scripts
+## Simple Windows boxes
+  - name: windows7
+    box: tqtc/windows7
+    roles:
+      - mingw32
+      - qt-packages
+      - hello-world
+    memory: 1024
+    gui: false
+  - name: windows81
+    box: tqtc/windows81
+    roles:
+      - windows-tools
+      - msvc2015
+      - qt-packages
+      - hello-world
+    memory: 1024
+    gui: false
+  - name: windows10
+    box: tqtc/windows10
+    roles:
+      - windows-tools
+      - msvc2017
+      - qt-packages
+      - hello-world
+    memory: 2048
+    gui: false
+
+## Boxes provisioned via coin scripts
   - name: coin-ubuntu
     box: generic/ubuntu1804
     roles:
@@ -45,29 +73,21 @@ machines:
         template: qtci-linux-openSUSE-15.0-x86_64
         coin-root: $COIN_ROOT
 
-## Windows boxes
-  - name: windows7
+  - name: coin-windows7
     box: tqtc/windows7
     roles:
-      - mingw32
-      - qt-packages
-      - hello-world
-    memory: 1024
-    gui: false
-  - name: windows81
+      - role: coin-node
+        template: qtci-windows-7-x86_64
+        coin-root: /Users/host/qt/qt5/coin
+  - name: coin-windows81
     box: tqtc/windows81
     roles:
-      - windows-tools
-      - msvc2015
-      - hello-world
-    memory: 1024
-    gui: false
-  - name: windows10
+      - role: coin-node
+        template: qtci-windows-8.1-x86_64
+        coin-root: /Users/host/qt/qt5/coin
+  - name: coin-windows10
     box: tqtc/windows10
     roles:
-      - windows-tools
-      - msvc2017
-      - qt-packages
-      - hello-world
-    memory: 2048
-    gui: false
+      - role: coin-node
+        template: qtci-windows-10-x86_64
+        coin-root: /Users/host/qt/qt5/coin
