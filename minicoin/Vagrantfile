@@ -150,9 +150,9 @@ def add_role(box, role, name)
       ansible.become = true unless box.vm.guest == :windows
     end
     activity = true
-  elsif File.file?("#{role_path}/disk")
+  elsif File.file?("#{role_path}/disk.yml")
     activity = true
-    insert_disk(box, "#{role_path}/disk", role_params)
+    insert_disk(box, "#{role_path}/disk.yml", role_params)
   end
 
   # always check for a provisioning script
@@ -326,15 +326,6 @@ Vagrant.configure("2") do |config|
 
       # Execution of provisioning script
       if ["up", "provision", "reload", "validate"].include? ARGV[0]
-        coin_root = ENV['COIN_ROOT']
-        if coin_root.nil? || !File.exists?(coin_root)
-          puts "==> #{name}: COIN_ROOT '#{coin_root}' empty or does not exist" unless ARGV[0] == "validate"
-        else
-          if !is_windows || box.vm.communicator == :winrm
-            box.vm.provision "file", source: "#{coin_root}/", destination: "#{guest_filedir}coin"
-          end
-        end
-
         roles = machine["roles"]
         unless roles.nil? or roles.empty?
           if roles.kind_of?(Array)
