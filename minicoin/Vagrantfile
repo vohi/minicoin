@@ -186,7 +186,7 @@ def add_role(box, role, name)
   else
     # check for pre-/post-provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
-      box.trigger.before :provision do |trigger|
+      box.trigger.before [:up, :provision] do |trigger|
         trigger.name = "before #{role}"
         trigger.run = {
           path: "#{role_path}/pre-provision.sh",
@@ -196,7 +196,7 @@ def add_role(box, role, name)
     end
 
     if File.file?("#{role_path}/post-provision.sh")
-      box.trigger.after :provision do |trigger|
+      box.trigger.after [:up, :provision] do |trigger|
         trigger.name = "after #{role}"
         trigger.run = {
           path: "#{role_path}/post-provision.sh",
