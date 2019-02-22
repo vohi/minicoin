@@ -133,9 +133,17 @@ def add_role(box, role, name)
       end
       if value.is_a?(String) and matches = value.match(/\$([A-Z_]*)/)
         env_val = ENV[matches[1]]
+        host_home = ENV["HOME"]
         if env_val.nil?
           puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping #{role}"
           return
+        elsif env_val.start_with?(host_home)
+          if box.vm.guest == :windows
+            env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
+            env_val = env_val.gsub("/", "\\\\")
+          else
+            env_val = env_val.sub(host_home, "/home/host")
+          end
         end
         role_params[key] = env_val
       end

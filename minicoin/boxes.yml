@@ -78,16 +78,17 @@ machines:
     roles:
       - role: coin-node
         template: qtci-windows-7-x86_64
-        coin-root: /Users/host/qt/qt5/coin
+        coin-root: $COIN_ROOT
   - name: coin-windows81
     box: tqtc/windows81
     roles:
       - role: coin-node
         template: qtci-windows-8.1-x86_64
-        coin-root: /Users/host/qt/qt5/coin
+        coin-root: $COIN_ROOT
   - name: coin-windows10
     box: tqtc/windows10
     roles:
+      - msvc2017
       - role: coin-node
         template: qtci-windows-10-x86_64
-        coin-root: /Users/host/qt/qt5/coin
+        coin-root: $COIN_ROOT
