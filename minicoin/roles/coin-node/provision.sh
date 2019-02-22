@@ -45,5 +45,5 @@ SCRIPTS=( *.sh )
 for script in ${SCRIPTS[@]}; do
   [ -e "$script" ] || continue
   echo "++ Executing '$script $@'"
-  bash "$script" $@ || true
+  bash "./$script" $@ || true
 done
