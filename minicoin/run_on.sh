@@ -79,12 +79,7 @@ function run_on_machine() {
   ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
 
   log_progress "$machine ==> Uploading '$upload_source'..."
-  if [[ $ext == "sh" ]]; then
-    out=$(vagrant ssh -c "mkdir $job" $machine && \
-          vagrant upload jobs/$scriptfile $scriptfile $machine)
-  else
-    out=$(vagrant upload $upload_source $job $machine)
-  fi
+  out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
     echo "$machine ==> Error uploading '$upload_source' to machine '$machine' - skipping machine"
