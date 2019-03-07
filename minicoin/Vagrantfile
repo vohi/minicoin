@@ -12,9 +12,14 @@ yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 $urls = yaml["urls"]
 machines = yaml["machines"]
 
+settings = yaml["settings"]
+settings = [] if settings.nil?
+settings["home_share"] = "~" if settings["home_share"].nil?
+
 user_machine_file = File.join(ENV['HOME'], 'minicoin/boxes.yml');
 if File.file?(user_machine_file)
-  user_machines = YAML.load_file(user_machine_file)["machines"]
+  user_yaml = YAML.load_file(user_machine_file)
+  user_machines = user_yaml["machines"]
   user_machines.each do |user_machine|
     idx = machines.find_index {|m| m["name"] == user_machine["name"] }
     if !idx.nil?
@@ -25,6 +30,13 @@ if File.file?(user_machine_file)
       end
     else
       machines << user_machine
+    end
+  end
+
+  user_settings = user_yaml["settings"]
+  if !user_settings.nil?
+    user_settings.each do |key, value|
+      settings[key] = value
     end
   end
 end
@@ -316,7 +328,10 @@ Vagrant.configure("2") do |config|
       elsif is_mac
         box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false
       else
-        box.vm.synced_folder "~", "#{guest_home}"
+        host_home = settings["home_share"]
+        if host_home != "disabled"
+          box.vm.synced_folder host_home, guest_home
+        end
         box.vm.synced_folder ".", "/minicoin"
         if is_windows
           box.vm.provision "shell", inline: \

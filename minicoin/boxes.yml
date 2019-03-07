@@ -2,6 +2,8 @@
 # global values
 urls:
   tqtc: https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
+settings:
+  home_share: ~
 
 # machine definitions
 machines:
