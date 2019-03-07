@@ -17,6 +17,10 @@ Vagrant.configure("2") do |config|
       vb.name = boxfile
     end
 
+
+    # don't share anything
+    basebox.vm.synced_folder ".", "/vagrant", disabled: true
+
     # since we launch a base box to maintain it as a base box...
     basebox.winssh.insert_key = false
     basebox.ssh.insert_key = false
