@@ -274,10 +274,15 @@ Vagrant.configure("2") do |config|
         vb.gui = machine["gui"] unless machine["gui"].nil?
         vb.customize ["modifyvm", :id, "--vram", machine["vram"]] unless machine["vram"].nil?
         vb.name = name
-        if is_windows || is_mac # "Intel Pro/1000 MT Desktop" must be used on Windows and Mac
+        if is_windows # "Intel Pro/1000 MT Desktop" must be used on Windows
           vb.customize [
             "modifyvm", :id,
             "--nictype1", "82540EM"
+          ]
+        elsif is_mac # "Intel Pro/1000 MT Server" must be used on Mac
+          vb.customize [
+            "modifyvm", :id,
+            "--nictype1", "82545EM"
           ]
         end
 
@@ -326,7 +331,51 @@ Vagrant.configure("2") do |config|
       if machine["shared_folders"] == "disabled"
         box.vm.synced_folder ".", "/minicoin", disabled: true
       elsif is_mac
-        box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false
+        box.vm.synced_folder ".", "/minicoin", disabled: true # not supported on BSD systems
+        # box.vm.synced_folder ".", "/minicoin", type: "smb" # requires sharing, and buggy
+        # box.vm.synced_folder ".", "/minicoin", type: "nfs" # buggy
+        # box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false # slow
+        # mount shared folders via sshfs, both when privisioning, and after booting
+        host_home = settings["home_share"]
+        host_home = ENV['HOME'] if host_home == "~"
+        host_user = ENV['USER']
+        host_pwd = File.dirname(__FILE__)
+        sshfs_options = \
+          "reconnect,allow_other,defer_permissions," \
+          "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
+        # ensure users private key is on the guest for authenticating back to host
+        box.vm.provision "file",
+          source: "~/.ssh/id_rsa",
+          destination: "#{guest_filedir}.ssh/#{host_user}"
+
+        ssh_cmd = \
+          "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
+          "sshfs -o #{sshfs_options} #{host_user}@$HOST_IP"
+        if host_home != "disabled"
+          home_mount_command = {
+            privileged: false,
+            inline: \
+            "mkdir /tmp/vagrant-host && #{ssh_cmd}:#{host_home} /tmp/vagrant-host && " \
+            "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
+          }
+          box.vm.provision "shell", home_mount_command
+          box.trigger.after [:up] do |trigger|
+            trigger.name = "Mounting shared home folder #{host_home}"
+            trigger.run_remote = home_mount_command
+          end
+        end
+        pwd_mount_command = {
+          privileged: false,
+          inline: \
+          "mkdir /tmp/vagrant-minicoin && #{ssh_cmd}:#{host_pwd} /tmp/vagrant-minicoin && " \
+          "sudo ln -s /tmp/vagrant-minicoin /minicoin || true"
+        }
+
+        box.vm.provision "shell", pwd_mount_command
+        box.trigger.after [:up] do |trigger|
+          trigger.name = "Mounting vagrant folder #{host_pwd}"
+          trigger.run_remote = pwd_mount_command
+        end
       else
         host_home = settings["home_share"]
         if host_home != "disabled"
