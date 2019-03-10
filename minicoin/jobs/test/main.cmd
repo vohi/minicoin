@@ -1,6 +1,7 @@
 @echo off
 
 echo Hello runner!
+systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
 echo Args received:
 set errorcode=0
 for %%i in (%*) DO (

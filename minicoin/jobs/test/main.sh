@@ -1,4 +1,5 @@
 echo "Hello runner!"
+echo "This is $(uname -a)"
 echo "Args received:"
 exitcode=0
 for arg in "${@}"; do
