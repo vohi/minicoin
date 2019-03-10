@@ -43,23 +43,11 @@ end
 
 def fetch_file(uri, local)
   begin
-    Net::HTTP.start(uri.host) do |http|
-      req = Net::HTTP::Get.new(uri)
-      http.request(req) do |response|
-        case response
-        when Net::HTTPSuccess then
-          open("#{local}", "wb") do |file|
-            response.read_body do |chunk|
-              file.write(chunk)
-            end
-          end
-        else
-          puts "Error downloading: #{response.value}"
-        end
-      end
-    end
-  rescue
-      puts "Error downloading #{uri}"
+    downloader = Vagrant::Util::Downloader.new(uri, local)
+    downloader.download!
+  rescue => error
+    puts "Error downloading #{uri}: #{error}"
+    return false
   end
 end
 
@@ -67,6 +55,12 @@ def insert_disk(box, disk_filename, role_params)
   disk_data = YAML.load_file(disk_filename)
   disk_file = disk_data["file"]
   disk_archive = disk_data["archive"]
+  disk_urls = disk_data["urls"]
+  if disk_urls.is_a?(String)
+    disk_urls = [disk_urls]
+  end
+  disk_urls = [] if disk_urls.nil?
+  disk_urls += $urls["disks"] unless $urls["disks"].nil?
 
   if disk_archive.nil?
     disk_archive = disk_file
@@ -78,14 +72,17 @@ def insert_disk(box, disk_filename, role_params)
 
     if !File.file?("#{disk_cache}/#{disk_file}")
       if !File.file?("#{disk_cache}/#{disk_archive}")
-        puts "Downloading '#{disk_archive}'..."
-        $urls.each do |key, value|
-          url = URI("#{value}/#{key}/#{disk_archive}")
-          puts "Trying to download '#{url}'..."
-          fetch_file(url, "#{disk_cache}/#{disk_archive}")
+        disk_urls.each do |server|
+          url = URI("#{server}/disks/#{disk_archive}")
+          puts "Downloading '#{url}'..."
+          if fetch_file(url, "#{disk_cache}/#{disk_archive}")
+            break
+          end
         end
       end
-      if disk_archive.end_with?(".zip")
+      if !File.file?("#{disk_cache}/#{disk_archive}")
+        puts "Failed to download '#{disk_archive}' from any of #{disk_urls}"
+      else
         puts "Extracting '#{disk_archive}'"
         Zip::File.open("#{disk_cache}/#{disk_archive}") do |zipfile|
           zipfile.extract("#{disk_file}", "#{disk_cache}/#{disk_file}")
@@ -93,45 +90,47 @@ def insert_disk(box, disk_filename, role_params)
       end
     end
     if !File.file?("#{disk_cache}/#{disk_file}")
-      puts "==> #{role}: ISO file '#{disk_file}' not available"
-    else
-      box.vm.provider "virtualbox" do |vb|
-        storage_params = [
-          "storageattach", :id,
-          "--medium", "#{disk_cache}/#{disk_file}",
-        ]
+      puts "==> Disk file '#{disk_file}' not available"
+      return false
+    end
 
-        disk_settings = disk_data["settings"] unless disk_data.nil?
-        if disk_settings.nil?
-          disk_settings = {}
-        end
+    box.vm.provider "virtualbox" do |vb|
+      storage_params = [
+        "storageattach", :id,
+        "--medium", "#{disk_cache}/#{disk_file}",
+      ]
 
-        # default settings, disks can override
-        disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
-
-        if disk_file.end_with?(".iso")
-          disk_settings["port"] = "1" unless !disk_settings["port"].nil?
-          disk_settings["type"] = "dvddrive" unless !disk_settings["type"].nil?
-        elsif disk_file.end_with?(".vdi")
-          disk_settings["port"] = "2" unless !disk_settings["port"].nil?
-          disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
-          disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"]
-        end
-
-        # boxes can override disk settings
-        if role_params.is_a?(Hash)
-          role_params.each do |key, value|
-            disk_settings[key] = value
-          end
-        end
-
-        disk_settings.each do |key, value|
-          storage_params += ["--#{key}", "#{value}"]
-        end
-        vb.customize storage_params
+      disk_settings = disk_data["settings"] unless disk_data.nil?
+      if disk_settings.nil?
+        disk_settings = {}
       end
+
+      # default settings, disks can override
+      disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
+
+      if disk_file.end_with?(".iso")
+        disk_settings["port"] = "1" unless !disk_settings["port"].nil?
+        disk_settings["type"] = "dvddrive" unless !disk_settings["type"].nil?
+      elsif disk_file.end_with?(".vdi")
+        disk_settings["port"] = "2" unless !disk_settings["port"].nil?
+        disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
+        disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"]
+      end
+
+      # boxes can override disk settings
+      if role_params.is_a?(Hash)
+        role_params.each do |key, value|
+          disk_settings[key] = value
+        end
+      end
+
+      disk_settings.each do |key, value|
+        storage_params += ["--#{key}", "#{value}"]
+      end
+      vb.customize storage_params
     end
   end
+  return true
 end
 
 def add_role(box, role, name)
@@ -147,7 +146,7 @@ def add_role(box, role, name)
         env_val = ENV[matches[1]]
         host_home = ENV["HOME"]
         if env_val.nil?
-          puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping #{role}"
+          puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping role '#{role}'"
           return
         elsif env_val.start_with?(host_home)
           if box.vm.guest == :windows
@@ -172,7 +171,9 @@ def add_role(box, role, name)
     activity = true
   elsif File.file?("#{role_path}/disk.yml")
     activity = true
-    insert_disk(box, "#{role_path}/disk.yml", role_params)
+    if !insert_disk(box, "#{role_path}/disk.yml", role_params)
+      puts "==> #{name}: Attaching disk failed for role '#{role}'"
+    end
   end
 
   # always check for a provisioning script
@@ -248,12 +249,15 @@ Vagrant.configure("2") do |config|
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
       maker = machine_box.split(/\//).first
-      source = $urls[maker]
-      unless source.nil?
-        box.vm.box_url = [
-          "#{source}/#{machine_box}.box",
-          "#{source}/#{machine_box}-base.box"
-        ]
+      sources = $urls[maker]
+      unless sources.nil?
+        box.vm.box_url = []
+        if sources.is_a?(String)
+          sources = [sources];
+        end
+        sources.each do |source|
+          box.vm.box_url += ["#{source}/#{machine_box}.box"]
+        end
       end
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
