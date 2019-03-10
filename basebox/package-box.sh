@@ -29,7 +29,7 @@ if [ -f $boxfile ]; then
   clear_backup=true
 fi
 
-echo "Exporting VM '$vmname' to file '$boxfile' and adding to vagrant as 'tqtc/$boxbase'..."
+echo "Exporting VM '$vmname' to file '$boxfile' and adding to vagrant as '$boxbase'..."
 
 vagrant package --base $vmname --output $boxfile $boxbase
 error=$?
@@ -43,7 +43,7 @@ if [[ $error != 0 ]]; then
   exit $error
 fi
 
-vagrant box add --name tqtc/$boxbase $boxfile
+vagrant box add --name $boxbase $boxfile
 error=$?
 
 if [[ $error != 0 ]]; then
