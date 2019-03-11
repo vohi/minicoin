@@ -62,6 +62,19 @@ machines:
     memory: 2048
     gui: false
 
+## Mac - using sshfs for folder sharing
+
+  - name: macos1011
+    box: tqtc/macos1011
+    memory: 1024
+    roles:
+      - hello-world
+  - name: macos1013
+    box: tqtc/macos1013
+    memory: 1024
+    roles:
+      - hello-world
+
 ## Boxes provisioned via coin scripts
   - name: coin-ubuntu
     box: generic/ubuntu1804
