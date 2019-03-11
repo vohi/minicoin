@@ -178,7 +178,7 @@ def add_role(box, role, name)
 
   # always check for a provisioning script
   script_ext = ".sh"
-  upload_path = "/tmp/vagrant-shell"
+  upload_path = "/tmp/vagrant-shell/"
   if box.vm.guest == :windows
     script_ext = ".cmd"
     if File.file?("#{role_path}/provision.ps1")
@@ -186,6 +186,7 @@ def add_role(box, role, name)
     end
     upload_path = "c:\\Windows\\temp\\"
   end
+  upload_path += "provision_#{role}#{script_ext}"
   provisioning_file = "#{role_path}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
@@ -348,24 +349,30 @@ Vagrant.configure("2") do |config|
           "reconnect,allow_other,defer_permissions," \
           "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
         # ensure users private key is on the guest for authenticating back to host
-        box.vm.provision "file",
-          source: "~/.ssh/id_rsa",
-          destination: "#{guest_filedir}.ssh/#{host_user}"
+        if !File.file?("~/.ssh/id_rsa")
+          if ["up", "provision", "reload", "validate"].include? ARGV[0]
+            puts "==> #{name}: Private SSH key not found in ~/.ssh, can't share folders with Mac guest"
+          end
+        else
+          box.vm.provision "file",
+            source: "~/.ssh/id_rsa",
+            destination: "#{guest_filedir}.ssh/#{host_user}"
 
-        ssh_cmd = \
-          "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
-          "sshfs -o #{sshfs_options} #{host_user}@$HOST_IP"
-        if host_home != "disabled"
-          home_mount_command = {
-            privileged: false,
-            inline: \
-            "mkdir /tmp/vagrant-host && #{ssh_cmd}:#{host_home} /tmp/vagrant-host && " \
-            "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
-          }
-          box.vm.provision "shell", home_mount_command
-          box.trigger.after [:up] do |trigger|
-            trigger.name = "Mounting shared home folder #{host_home}"
-            trigger.run_remote = home_mount_command
+          ssh_cmd = \
+            "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
+            "sshfs -o #{sshfs_options} #{host_user}@$HOST_IP"
+          if host_home != "disabled"
+            home_mount_command = {
+              privileged: false,
+              inline: \
+              "mkdir /tmp/vagrant-host && #{ssh_cmd}:#{host_home} /tmp/vagrant-host && " \
+              "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
+            }
+            box.vm.provision "shell", home_mount_command
+            box.trigger.after [:up] do |trigger|
+              trigger.name = "Mounting shared home folder #{host_home}"
+              trigger.run_remote = home_mount_command
+            end
           end
         end
         pwd_mount_command = {
@@ -397,7 +404,9 @@ Vagrant.configure("2") do |config|
 
       # Copying files to guest
       if !is_windows || box.vm.communicator == :winrm # file provisioning via winssh is broken
-        box.vm.provision "file", source: "~/.gitconfig", destination: "#{guest_filedir}.gitconfig"
+	if File.file?("~/.gitconfig")
+          box.vm.provision "file", source: "~/.gitconfig", destination: "#{guest_filedir}.gitconfig"
+        end
       end
 
       # Execution of provisioning script

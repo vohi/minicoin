@@ -75,6 +75,8 @@ function run_on_machine() {
   fi
 
   mkdir .logs &> /dev/null
+  touch $PWD/.logs/$job-$machine-$log_stamp.log
+  touch $PWD/.logs/$job-error-$machine-$log_stamp.log
   ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
   ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
 
