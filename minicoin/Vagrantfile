@@ -248,10 +248,21 @@ Vagrant.configure("2") do |config|
   end
 
   machines.each do |machine|
-    config.vm.define machine["name"] do |box|
-      name = machine["name"]
-      machine_box = machine["box"]
+    name = machine["name"]
+    machine_box = machine["box"]
+    machine_url = machine_box
+    if machine_box.include?("$private")
+      minicoin_key = ENV['minicoin_key']
+      if minicoin_key.nil?
+        puts "==> #{name}: Box is private, but key is not set. Set 'minicoin_key' environment variable!"
+        next
+      end
+      machine_url = machine_url.gsub("$private", minicoin_key)
+      machine_box = machine_box.gsub("$private/", "")
+      puts "#{machine_box} -> #{machine_url}"
+    end
 
+    config.vm.define machine["name"] do |box|
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
@@ -263,7 +274,7 @@ Vagrant.configure("2") do |config|
           sources = [sources];
         end
         sources.each do |source|
-          box.vm.box_url += ["#{source}/#{machine_box}.box"]
+          box.vm.box_url += ["#{source}/#{machine_url}.box"]
         end
       end
       box.vm.box = machine_box
