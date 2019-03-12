@@ -10,7 +10,7 @@ require 'zip'
 
 $is_windows_host = !(ENV["windir"].nil?)
 $HOME = ENV["HOME"]
-if $HOME.nil? && $is_windows_host
+if $is_windows_host
   $HOME = ENV["USERPROFILE"]
 end
 
@@ -353,6 +353,9 @@ Vagrant.configure("2") do |config|
           host_user = ENV['USERNAME']
         end
         host_pwd = File.dirname(__FILE__)
+        if $is_windows_host
+          host_pwd = "/#{host_pwd}"
+        end
         sshfs_options = \
           "reconnect,allow_other,defer_permissions," \
           "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
@@ -370,6 +373,9 @@ Vagrant.configure("2") do |config|
             "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
             "sshfs -o #{sshfs_options} #{host_user}@$HOST_IP"
           if host_home != "disabled"
+            if $is_windows_host
+              host_home = "/#{host_home}"
+            end
             home_mount_command = {
               privileged: false,
               upload_path: "/tmp/vagrant-shell/home_mount.sh",
