@@ -16,13 +16,13 @@ machines=()
 pids=()
 job="-1"
 script_args=()
-parallel="true"
+parallel="false"
 verbose="false"
 
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
-  elif [[ "$arg" = "--no-parallel" && "$job" != "--" ]]; then
+  elif [[ "$arg" = "--parallel" && "$job" != "--" ]]; then
     parallel="false"
   elif [[ "$arg" = "--verbose" && "$job" != "--" ]]; then
     verbose='true'
@@ -34,6 +34,13 @@ for arg in "${@}"; do
 done
 
 job="${machines[@]: -1}"
+
+if [ ! -d "jobs/$job" ]; then
+  echo "There's no job '$job'. Available jobs are:"
+  ls jobs | awk {'printf (" - %s\n", $1)'}
+  exit -1
+fi
+
 unset "machines[${#machines[@]}-1]"
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
