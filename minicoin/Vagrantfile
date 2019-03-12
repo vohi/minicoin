@@ -8,13 +8,19 @@ require 'yaml'
 require 'net/http'
 require 'zip'
 
+$is_windows_host = !(ENV["windir"].nil?)
+$HOME = ENV["HOME"]
+if $HOME.nil? && $is_windows_host
+  $HOME = ENV["USERPROFILE"]
+end
+
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
 $urls = yaml["urls"]
 machines = yaml["machines"]
 
 settings = yaml["settings"]
 settings = [] if settings.nil?
-settings["home_share"] = "~" if settings["home_share"].nil?
+settings["home_share"] = $HOME if settings["home_share"].nil?
 
 user_machine_file = File.join(ENV['HOME'], 'minicoin/boxes.yml');
 if File.file?(user_machine_file)
@@ -144,7 +150,7 @@ def add_role(box, role, name)
       end
       if value.is_a?(String) and matches = value.match(/\$([A-Z_]*)/)
         env_val = ENV[matches[1]]
-        host_home = ENV["HOME"]
+        host_home = $HOME
         if env_val.nil?
           puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping role '#{role}'"
           return
@@ -342,20 +348,22 @@ Vagrant.configure("2") do |config|
         # box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false # slow
         # mount shared folders via sshfs, both when privisioning, and after booting
         host_home = settings["home_share"]
-        host_home = ENV['HOME'] if host_home == "~"
         host_user = ENV['USER']
+        if $is_windows_host && host_user.nil?
+          host_user = ENV['USERNAME']
+        end
         host_pwd = File.dirname(__FILE__)
         sshfs_options = \
           "reconnect,allow_other,defer_permissions," \
           "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
         # ensure users private key is on the guest for authenticating back to host
-        if !File.file?("~/.ssh/id_rsa")
+        if !File.file?("#{$HOME}/.ssh/id_rsa")
           if ["up", "provision", "reload", "validate"].include? ARGV[0]
-            puts "==> #{name}: Private SSH key not found in ~/.ssh, can't share folders with Mac guest"
+            puts "==> #{name}: Private SSH key not found in #{$HOME}/.ssh/id_rsa, can't share folders with Mac guest"
           end
         else
           box.vm.provision "file",
-            source: "~/.ssh/id_rsa",
+            source: "#{$HOME}/.ssh/id_rsa",
             destination: "#{guest_filedir}.ssh/#{host_user}"
 
           ssh_cmd = \
@@ -364,6 +372,7 @@ Vagrant.configure("2") do |config|
           if host_home != "disabled"
             home_mount_command = {
               privileged: false,
+              upload_path: "/tmp/vagrant-shell/home_mount.sh",
               inline: \
               "mkdir /tmp/vagrant-host && #{ssh_cmd}:#{host_home} /tmp/vagrant-host && " \
               "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
@@ -374,18 +383,19 @@ Vagrant.configure("2") do |config|
               trigger.run_remote = home_mount_command
             end
           end
-        end
-        pwd_mount_command = {
-          privileged: false,
-          inline: \
-          "mkdir /tmp/vagrant-minicoin && #{ssh_cmd}:#{host_pwd} /tmp/vagrant-minicoin && " \
-          "sudo ln -s /tmp/vagrant-minicoin /minicoin || true"
-        }
+          pwd_mount_command = {
+            privileged: false,
+            upload_path: "/tmp/vagrant-shell/minicoin_mount.sh",
+            inline: \
+            "mkdir /tmp/vagrant-minicoin && #{ssh_cmd}:#{host_pwd} /tmp/vagrant-minicoin && " \
+            "sudo ln -s /tmp/vagrant-minicoin /minicoin || true"
+          }
 
-        box.vm.provision "shell", pwd_mount_command
-        box.trigger.after [:up] do |trigger|
-          trigger.name = "Mounting vagrant folder #{host_pwd}"
-          trigger.run_remote = pwd_mount_command
+          box.vm.provision "shell", pwd_mount_command
+          box.trigger.after [:up] do |trigger|
+            trigger.name = "Mounting vagrant folder #{host_pwd}"
+            trigger.run_remote = pwd_mount_command
+          end
         end
       else
         host_home = settings["home_share"]
@@ -404,8 +414,8 @@ Vagrant.configure("2") do |config|
 
       # Copying files to guest
       if !is_windows || box.vm.communicator == :winrm # file provisioning via winssh is broken
-	if File.file?("~/.gitconfig")
-          box.vm.provision "file", source: "~/.gitconfig", destination: "#{guest_filedir}.gitconfig"
+	      if File.file?("#{$HOME}/.gitconfig")
+          box.vm.provision "file", source: "#{$HOME}/.gitconfig", destination: "#{guest_filedir}.gitconfig"
         end
       end
 
