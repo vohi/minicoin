@@ -355,9 +355,10 @@ Vagrant.configure("2") do |config|
         host_pwd = File.dirname(__FILE__)
         if $is_windows_host
           host_pwd = "/#{host_pwd}"
+          host_pwd = host_pwd.gsub("\\", "/")
         end
         sshfs_options = \
-          "reconnect,allow_other,defer_permissions," \
+          "reconnect,allow_other,defer_permissions,auto_cache," \
           "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
         # ensure users private key is on the guest for authenticating back to host
         if !File.file?("#{$HOME}/.ssh/id_rsa")
@@ -368,6 +369,9 @@ Vagrant.configure("2") do |config|
           box.vm.provision "file",
             source: "#{$HOME}/.ssh/id_rsa",
             destination: "#{guest_filedir}.ssh/#{host_user}"
+          box.vm.provision "shell",
+            inline: "chmod 0600 #{guest_filedir}.ssh/#{host_user}",
+            upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
 
           ssh_cmd = \
             "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
@@ -375,6 +379,7 @@ Vagrant.configure("2") do |config|
           if host_home != "disabled"
             if $is_windows_host
               host_home = "/#{host_home}"
+              host_home = host_home.gsub("\\", "/")
             end
             home_mount_command = {
               privileged: false,
@@ -384,7 +389,7 @@ Vagrant.configure("2") do |config|
               "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
             }
             box.vm.provision "shell", home_mount_command
-            box.trigger.after [:up] do |trigger|
+            box.trigger.after [:up, :reload] do |trigger|
               trigger.name = "Mounting shared home folder #{host_home}"
               trigger.run_remote = home_mount_command
             end
@@ -398,7 +403,7 @@ Vagrant.configure("2") do |config|
           }
 
           box.vm.provision "shell", pwd_mount_command
-          box.trigger.after [:up] do |trigger|
+          box.trigger.after [:up, :reload] do |trigger|
             trigger.name = "Mounting vagrant folder #{host_pwd}"
             trigger.run_remote = pwd_mount_command
           end
