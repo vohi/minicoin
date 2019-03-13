@@ -10,8 +10,10 @@ require 'zip'
 
 $is_windows_host = !(ENV["windir"].nil?)
 $HOME = ENV["HOME"]
+$USER = ENV['USER']
 if $is_windows_host
   $HOME = ENV["USERPROFILE"]
+  $USER = ENV['USERNAME']
 end
 
 yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
@@ -196,7 +198,7 @@ def add_role(box, role, name)
   provisioning_file = "#{role_path}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
-    script_args = [role, name, ENV['USER']]
+    script_args = [role, name, $USER]
     if role_params.is_a?(Hash)
       role_params.each do |key, value|
         script_args += ["--#{key}"]
@@ -232,6 +234,44 @@ def add_role(box, role, name)
         }
       end
     end
+  end
+end
+
+def mac_share_folder(box, host_path, guest_path)
+  guest_base = guest_path.split('/').last
+
+  if $is_windows_host
+    host_path = "/#{host_path}".gsub("\\", "/")
+  end
+
+  sshfs_options = \
+    "reconnect,allow_other,defer_permissions,cache=no," \
+    "IdentityFile=~/.ssh/#{$USER},StrictHostKeyChecking=no," \
+    "volname=#{guest_base}"
+  ssh_cmd = \
+    "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
+    "sshfs -o #{sshfs_options} #{$USER}@$HOST_IP"
+
+  mount_point = "/tmp/vagrant-#{guest_base}"
+  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
+  mount_command = {
+    privileged: false,
+    upload_path: "#{upload_path}.sh",
+    inline: \
+    "if [[ ! -d #{mount_point} ]]; then " \
+    "  mkdir #{mount_point}; " \
+    "fi && "\
+    "if ! (mount | grep #{mount_point} > /dev/null); then " \
+    "  #{ssh_cmd}:#{host_path} #{mount_point}; " \
+    "fi && " \
+    "if [[ ! -d #{guest_path} ]]; then " \
+    "  sudo ln -fs #{mount_point} #{guest_path}; " \
+    "fi || true"
+  }
+  box.vm.provision "shell", mount_command
+  box.trigger.after [:up, :reload] do |trigger|
+    trigger.name = "Mounting shared folder #{host_path}"
+    trigger.run_remote = mount_command
   end
 end
 
@@ -357,19 +397,7 @@ Vagrant.configure("2") do |config|
         # box.vm.synced_folder ".", "/minicoin", type: "nfs" # buggy
         # box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false # slow
         # mount shared folders via sshfs, both when privisioning, and after booting
-        host_home = settings["home_share"]
-        host_user = ENV['USER']
-        if $is_windows_host && host_user.nil?
-          host_user = ENV['USERNAME']
-        end
-        host_pwd = File.dirname(__FILE__)
-        if $is_windows_host
-          host_pwd = "/#{host_pwd}"
-          host_pwd = host_pwd.gsub("\\", "/")
-        end
-        sshfs_options = \
-          "reconnect,allow_other,defer_permissions,auto_cache," \
-          "IdentityFile=~/.ssh/#{host_user},StrictHostKeyChecking=no"
+
         # ensure users private key is on the guest for authenticating back to host
         if !File.file?("#{$HOME}/.ssh/id_rsa")
           if ["up", "provision", "reload", "validate"].include? ARGV[0]
@@ -378,45 +406,18 @@ Vagrant.configure("2") do |config|
         else
           box.vm.provision "file",
             source: "#{$HOME}/.ssh/id_rsa",
-            destination: "#{guest_filedir}.ssh/#{host_user}"
+            destination: "#{guest_filedir}.ssh/#{$USER}"
           box.vm.provision "shell",
-            inline: "chmod 0600 #{guest_filedir}.ssh/#{host_user}",
+            inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
             upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
 
-          ssh_cmd = \
-            "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
-            "sshfs -o #{sshfs_options} #{host_user}@$HOST_IP"
+          host_home = settings["home_share"]
           if host_home != "disabled"
-            if $is_windows_host
-              host_home = "/#{host_home}"
-              host_home = host_home.gsub("\\", "/")
-            end
-            home_mount_command = {
-              privileged: false,
-              upload_path: "/tmp/vagrant-shell/home_mount.sh",
-              inline: \
-              "mkdir /tmp/vagrant-host && #{ssh_cmd}:#{host_home} /tmp/vagrant-host && " \
-              "sudo ln -s /tmp/vagrant-host #{guest_home} || true"
-            }
-            box.vm.provision "shell", home_mount_command
-            box.trigger.after [:up, :reload] do |trigger|
-              trigger.name = "Mounting shared home folder #{host_home}"
-              trigger.run_remote = home_mount_command
-            end
+            mac_share_folder(box, host_home, guest_home)
           end
-          pwd_mount_command = {
-            privileged: false,
-            upload_path: "/tmp/vagrant-shell/minicoin_mount.sh",
-            inline: \
-            "mkdir /tmp/vagrant-minicoin && #{ssh_cmd}:#{host_pwd} /tmp/vagrant-minicoin && " \
-            "sudo ln -s /tmp/vagrant-minicoin /minicoin || true"
-          }
 
-          box.vm.provision "shell", pwd_mount_command
-          box.trigger.after [:up, :reload] do |trigger|
-            trigger.name = "Mounting vagrant folder #{host_pwd}"
-            trigger.run_remote = pwd_mount_command
-          end
+          host_pwd = File.dirname(__FILE__)
+          mac_share_folder(box, host_pwd, "/minicoin")
         end
       else
         host_home = settings["home_share"]
