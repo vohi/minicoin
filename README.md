@@ -8,7 +8,7 @@ All the useful stuff is in the subdirectory `minicoin`.
 
 ```
 $ cd minicoin
-$ ./run_on.sh ubuntu1804 build-qtbase -- dev ~/qt5 my_local_branch
+$ ./run_on.sh ubuntu1804 build-qtbase -- my_branch ~/qt5
 ```
 
 # Usage
@@ -89,11 +89,10 @@ TBD
 Builds qdoc on the doc-server machine. Clones qt5 from code.qt.io, checks out
 the dev branch, and builds qtbase and qttools into `/home/vagrant/qt5-build`.
 
-`$ ./run_on.sh machine1 build-qdoc -- dev ~/qt5 feature`
+`$ ./run_on.sh machine1 build-qtbase -- my_feature ~/qt5`
 
-Clones qt5 from code.qt.io, checks out the dev branch, adds the local Qt5 clone
-as a remote, checks out the feature branch from that qttools repository, and
-build qdoc into qt5-build.
+Clones qt5 from code.qt.io, fetches the local qtbase clone from `~/qt5` on
+the host, checks out the `my_feature` branch, runs configure, and then make.
 
 
 ## Machine definition
@@ -129,14 +128,19 @@ the `urls` section:
 
 ```
 urls:
-  org: server
+  disks:
+    - server1
+    - server2
+  org:
+    - server1
+    - server2
 ```
 
 where `org` matches the `org` part of the `box` parameter of the
-machine, ie a box `tqtc/windows10` will be downloaded from the server set for
+machine, ie a box `tqtc/windows10` will be downloaded from the servers set for
 org `tqtc`.
 
-For disk images, all URLs will be attempted in order until one succeeds.
+For disk images, all URLs in the `disks` section will be attempted.
 
 
 ## Provisioning
@@ -159,14 +163,13 @@ be copied to the guest, into the homefolder of the `vagrant` user. This allows
 you to interact with git repostory servers from within the guest in the same way
 as from the host machine.
 
-If the `COIN_ROOT` environment variable is set to point at the `coin`
-subdirectory of a local Qt5 clone, then the entire `coin` subdirectory will be
-copied into the home folder of the `vagrant` user on the guest as well.
-
 Unless folder-sharing is disabled, the current directory with the Vagrantfile
 will be shared with the guest as a folder "/minicoin"; the home directory of
 the current user will be shared with the guest as a folder "host" (/home/host
-on Linux, c:\Users\host on Windows, /Users/host on Mac guests).
+on Linux, c:\Users\host on Windows, /Users/host on Mac guests). Folder sharing
+can be disabled completely by setting the `shared_folders` attribute to
+`disabled`; the global `home_share` setting can be set to something else than
+`~`, or to `disabled` to only share the minicoin folder.
 
 ### Machine-specific provisioning
 
@@ -215,10 +218,12 @@ using [ansible](ansible.com).
 If the role directory contains a file `disk`, then the file will be interpreted
 as YAML. A `file` attribute can point to an ISO image, which will be inserted as
 a DVD into the guest VM. If `file` points to a VDI file, then that file will be
-attached as a harddrive.
-The file will be looked for in the hidden `.diskcache` folder. If the file does
-not exist, then the `archive` attribute can point at a zip-file that can be
-downloaded from one of the global URLs.
+attached as a harddrive. An ISO image can be attached to multiple guests; a VDI
+can as well, but each guest will perform write operations to a separate VDI file.
+
+The drive image file will be looked for in the hidden `.diskcache` folder. If
+the file does not exist, then the `archive` attribute can point at a zip-file
+that can be downloaded from one of the global URLs.
 
 Disk are inserted or attached during boot time and before any other provisioners
 are run. Boxes might need to specify how the disk can be attached by setting
@@ -240,18 +245,35 @@ Roles that use ansible or specify a `disk` can also include a
 # Host System Requirements
 
 The virtual machine images are built for [VirtualBox](virtualbox.org).
-The machines are managed using [vagrant](vagrantup.com), vagrant 2.2 is
-required.
+The machines are managed using [vagrant](vagrantup.com), vagrant 2.2.4
+is required.
 
-Remote execution is tested with macOS as the host.
+Remote execution is tested with macOS and Windows 10 as host, using the
+bash shell.
 
 ## Windows specifics
+
+A guest is identified as running Windows when either the name of the machine,
+or the name of the box includes the string "windows".
 
 Windows machines support WinRM and ssh, but only WinRM works reliably for
 provisioning. To be able to talk WinRM via vagrant, install the ruby gem:
 
 `$ sudo gem install winrm`
 
+## Mac specifics
+
+A guest is identified as running MacOS when either the name of the machine,
+or the name of the box includes the string "mac".
+
+Since VirtualBox doesn't provide guest additions for Mac systems, minicoin is
+using sshfs for file sharing between the guest and the host. For this to work,
+the host needs to run an OpenSSL server that allows key based authentication.
+
+When bringing a Mac guest up, minicoin will create a dedicated SSH key pair,
+and add the public key to the `~/.ssh/authorized_keys` file. After a box has
+been destroyed, these keys will be deleted again, and removed from the
+`authorized_keys` file.
 
 # Security notice
 
@@ -263,8 +285,8 @@ provisioning, but not on all.
 Even with secure keys, the user credentials are still the default, ie
 vagrant/vagrant.
 
-In other words, don't put sensitive stuff on those boxes, don't run them
-if you don't need them, and don't expose them to an untrusted network.
+In other words, don't expose those boxes to an untrusted network. By
+default, they should be as secure as your host machine.
 
 Boxes from the `generic` namespace are created using packer scripts here:
 
