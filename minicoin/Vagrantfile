@@ -433,12 +433,14 @@ Vagrant.configure("2") do |config|
         end
 
         # upload the private key to the guest
-        box.vm.provision "file",
-          source: key_file,
-          destination: "#{guest_filedir}.ssh/#{$USER}"
-        box.vm.provision "shell",
-          inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
-          upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+        if !["validate"].include? ARGV[0]
+          box.vm.provision "file",
+            source: key_file,
+            destination: "#{guest_filedir}.ssh/#{$USER}"
+          box.vm.provision "shell",
+            inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
+            upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+        end
 
         host_home = settings["home_share"]
         if host_home != "disabled"
