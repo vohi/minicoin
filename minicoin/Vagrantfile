@@ -16,7 +16,8 @@ if $is_windows_host
   $USER = ENV['USERNAME']
 end
 
-yaml = YAML.load_file(File.join(File.dirname(__FILE__), 'boxes.yml'))
+$PWD = File.dirname(__FILE__)
+yaml = YAML.load_file(File.join($PWD, 'boxes.yml'))
 $urls = yaml["urls"]
 machines = yaml["machines"]
 
@@ -392,33 +393,59 @@ Vagrant.configure("2") do |config|
       if machine["shared_folders"] == "disabled"
         box.vm.synced_folder ".", "/minicoin", disabled: true
       elsif is_mac
-        box.vm.synced_folder ".", "/minicoin", disabled: true # not supported on BSD systems
-        # box.vm.synced_folder ".", "/minicoin", type: "smb" # requires sharing, and buggy
-        # box.vm.synced_folder ".", "/minicoin", type: "nfs" # buggy
-        # box.vm.synced_folder ".", "/minicoin", type: "rsync", rsync__chown: false # slow
-        # mount shared folders via sshfs, both when privisioning, and after booting
+        # folder sharing is not supported on BSD/Mac systems
+        # instead, mount shared folders via sshfs
+        box.vm.synced_folder ".", "/minicoin", disabled: true 
 
         # ensure users private key is on the guest for authenticating back to host
-        if !File.file?("#{$HOME}/.ssh/id_rsa")
-          if ["up", "provision", "reload", "validate"].include? ARGV[0]
-            puts "==> #{name}: Private SSH key not found in #{$HOME}/.ssh/id_rsa, can't share folders with Mac guest"
-          end
-        else
-          box.vm.provision "file",
-            source: "#{$HOME}/.ssh/id_rsa",
-            destination: "#{guest_filedir}.ssh/#{$USER}"
-          box.vm.provision "shell",
-            inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
-            upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+        key_file = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
+        authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
-          host_home = settings["home_share"]
-          if host_home != "disabled"
-            mac_share_folder(box, host_home, guest_home)
+        # generate keys and authorize the guest to access the host
+        box.trigger.before [:up] do |trigger|
+          trigger.name = "Generating key pair and authorizing guest"
+          trigger.ruby do |env,machine|
+            if !File.file?(key_file)
+              `ssh-keygen -f #{key_file} -C minicoin@#{name} -q -N \"\"`
+              public_key = File.read("#{key_file}.pub")
+              open(authorized_keys, 'a') do |file|
+                file.puts "#{public_key}"
+              end
+              File.chmod(0600, authorized_keys)
+            end
           end
-
-          host_pwd = File.dirname(__FILE__)
-          mac_share_folder(box, host_pwd, "/minicoin")
         end
+
+        # delete the keys, and de-authorize the guest
+        box.trigger.after [:destroy] do |trigger|
+          trigger.name = "Removing key-pair and de-authorising guest"
+          trigger.ruby do |env,machine|
+            File.open("#{authorized_keys}.new", 'w') do |out|
+              out.chmod(File.stat(authorized_keys).mode)
+              File.foreach(authorized_keys) do |line|
+                out.puts line unless line =~ /minicoin@#{name}/
+              end
+            end
+            File.rename("#{authorized_keys}.new", authorized_keys)
+            File.delete(key_file) if File.exist?(key_file)
+            File.delete("#{key_file}.pub") if File.exist?("#{key_file}.pub")
+          end
+        end
+
+        # upload the private key to the guest
+        box.vm.provision "file",
+          source: key_file,
+          destination: "#{guest_filedir}.ssh/#{$USER}"
+        box.vm.provision "shell",
+          inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
+          upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+
+        host_home = settings["home_share"]
+        if host_home != "disabled"
+          mac_share_folder(box, host_home, guest_home)
+        end
+
+        mac_share_folder(box, $PWD, "/minicoin")
       else
         host_home = settings["home_share"]
         if host_home != "disabled"
