@@ -61,11 +61,18 @@ To destroy all (!) machines without prompting
 
 For advanced options and usages, see the **Machine definition** sections below.
 
+# Jobs
+
+Jobs are script files that can be executed from the host on one or more machines.
+
+Jobs are defined in the `jobs` folder, and each subfolder represents a job that
+can be executed on machines. Jobs can receive command line arguments, access the
+host file system via folder sharing, and use the software installed through
+provisioning steps.
 
 ## Executing Jobs
 
-Jobs are defined in the `jobs` folder. Each subfolder represents a job that can
-be executed on machines, using the `run_on.sh` shell script.
+Jobs are executed using the `run_on.sh` shell script.
 
 `$ ./run_on.sh ubuntu1804 test -- p1 p2 p3`
 
@@ -82,6 +89,9 @@ currnet run. Use `tail -f` to see the output while the script is running, e.g
 `$ tail -f .logs/test-ubuntu1804-latest.log`
 `$ tail -f .logs/test-error-ubuntu1804-latest.log`
 
+Jobs are executed on the guest as the `vagrant` user. If your script requires
+root privileges, use `sudo` etc, or consider making your job a provisioning
+step.
 
 ## Defining jobs
 
@@ -119,26 +129,34 @@ Clones qt5 from code.qt.io, fetches the local qtbase clone from `~/qt5` on
 the host, checks out the `my_feature` branch, runs configure, and then make.
 
 
-## Machine definition
+# Machines
 
-minicoin is based on vagrant, but tries to provide a clearer separation of
-the data defining machines, and the code implementing the logic. Hence,
-there is only one `Vagrantfile` which contains the vagrant configuration
-code, takes care of setting appropriate defaults, works around limitations,
-and runs the provisioning steps from the machine's definition. You will
-probably never have to change this file.
+minicoin is based on [vagrant](vagrantup.com), but tries to provide a clearer
+separation of the data defining machines, and the code implementing the logic.
+
+## Machine definition
 
 Machines are defined in the `machines` section of the `boxes.yml` file. The
 default `boxes.yml` file is loaded first; a `boxes.yml` file in `~/minicoin`
-will be loaded if present, and can add additional boxes or override settings
+will be loaded if present, and can add additional boxes, or override settings
 from boxes in the default file.
 
 The following parameters are available:
 
 ```
+# Mandatory settings
+
   - name: mandatory # The name of the machine; will also be set as the hostname
-    box: mandatory # The vagrant box for the machine, as org/boxfile
-    roles: optional # One or more subdirectories with provisioning files
+    box: mandatory # The vagrant box for the machine, usually as org/boxfile
+
+# Provisioning
+
+    roles: # Optional, as per the definitions in the roles subdirectory
+      - role1
+      - role2
+      - role: role3
+        key1: value1
+        key2: value2
 
 # Optional virtual machine configurations
 
@@ -154,27 +172,48 @@ The following parameters are available:
     shared_folders: optional # set to "disabled" to turn folder sharing off
 ```
 
-Base boxes and disk images will be downloaded from any of the URLs listed in
-the `urls` section:
+There is only one `Vagrantfile` which contains the vagrant configuration
+code, takes care of setting appropriate defaults, works around limitations,
+and runs the provisioning steps from the machine's definition. You will
+probably never have to change this file.
+
+## Vagrant boxes
+
+Base boxes (and disk images; see **Disk provisioning**) will be downloaded
+from the URLs listed in the `urls` section of the `boxes.yml` file. Servers
+are attempted in sequence.
 
 ```
 urls:
   disks:
     - server1
     - server2
-  org:
+  <org>:
     - server1
     - server2
 ```
 
-where `org` matches the `org` part of the `box` parameter of the
-machine, ie a box `tqtc/windows10` will be downloaded from the servers set for
+The servers listed for an `<org>` key will be used to download boxes for that
+org, e.g a box `tqtc/windows10` will be downloaded from the servers set for
 org `tqtc`.
 
-For disk images, all URLs in the `disks` section will be attempted.
+For disk images, the URLs under the `disks` key will be attempted.
 
+### Private boxes
 
-## Provisioning
+Boxes might be located at a private location, in which case the
+`box` value for the machine needs to be specified as `org/$private/box`, and
+the environment variable `$minicoin_key` needs to hold the key, e.g.
+
+```
+machines:
+  - name: proprietary_os
+    box: tqtc/$private/proprietary
+```
+
+`$ minicoin_key=password123 vagrant up proprietary`
+
+# Provisioning
 
 Provisioning is executed when the machine is booted up for the first time via
 
@@ -187,7 +226,7 @@ or when provisioning is explicitly executed using
 At the end of provisioning, the machine should be able to execute the tasks it
 is designed for.
 
-### Default provisioning and file sharing
+## Default provisioning and file sharing
 
 As part of provisioning the file `~/.gitconfig` will
 be copied to the guest, into the homefolder of the `vagrant` user. This allows
@@ -195,14 +234,15 @@ you to interact with git repostory servers from within the guest in the same way
 as from the host machine.
 
 Unless folder-sharing is disabled, the current directory with the Vagrantfile
-will be shared with the guest as a folder "/minicoin"; the home directory of
-the current user will be shared with the guest as a folder "host" (/home/host
-on Linux, c:\Users\host on Windows, /Users/host on Mac guests). Folder sharing
-can be disabled completely by setting the `shared_folders` attribute to
-`disabled`; the global `home_share` setting can be set to something else than
-`~`, or to `disabled` to only share the minicoin folder.
+will be shared with the guest as a folder `/minicoin`; the home directory of
+the current user will be shared with the guest as a folder `host` (`/home/host`
+on Linux, `C:\Users\host` on Windows, `/Users/host` on Mac guests).
 
-### Machine-specific provisioning
+Folder sharing can be disabled for each box by setting the `shared_folders`
+attribute to `disabled`; the global `home_share` setting can be set to something
+else than `~`, or to `disabled` to only share the minicoin folder.
+
+## Machine-specific provisioning
 
 Additional provisioning steps are defined in the subdirectories that the `roles`
 attribute points at in the machine's definition.
@@ -210,7 +250,7 @@ attribute points at in the machine's definition.
 ```
 - name: simple
   box: generic/ubuntu1804
-  roles: test
+  roles: test # see roles/test
 
 - name: multiple
   box: generic/ubuntu1804
@@ -227,24 +267,32 @@ attribute points at in the machine's definition.
       param2: bar
 ```
 
-#### Scripted provisioning
+minicoin supports a variety of provisioning mechanism. As far as the provisioning
+is executed on the guest, it will be run with root privileges.
+
+### Scripted provisioning
 
 For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
-guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests, and
-execute such a script using shell provisioning. The script will receive the name
-of the role for which it was run, the name of the machine, and the user name on the
-host, as command line arguments.
+guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests. Such
+a script will be executed on the guest using shell provisioning.
+
+The script will receive the name of the role for which it was run, the name of
+the machine, and the user name on the host, as command line arguments.
 
 If the role is parameterized, then the parameters are passed to the provisioning
 script as named arguments, ie the script `roles/arguments/provision.sh` will be
 called with arguments `--param1 foo --param2 bar` in the example above.
 
-#### Ansible provisioning
+Scripted provisioning is always done for roles that provide a provision script,
+even if there is another provisioner type (such as ansible or disk) present for
+that role.
+
+### Ansible provisioning
 
 If Vagrantfile finds a `playbook.yml` file, then the machine will be provisioned
 using [ansible](ansible.com).
 
-#### Disk provisioning
+### Disk provisioning
 
 If the role directory contains a file `disk`, then the file will be interpreted
 as YAML. A `file` attribute can point to an ISO image, which will be inserted as
@@ -254,7 +302,7 @@ can as well, but each guest will perform write operations to a separate VDI file
 
 The drive image file will be looked for in the hidden `.diskcache` folder. If
 the file does not exist, then the `archive` attribute can point at a zip-file
-that can be downloaded from one of the global URLs.
+that can be downloaded from one of the global URLs under the `disks` key.
 
 Disk are inserted or attached during boot time and before any other provisioners
 are run. Boxes might need to specify how the disk can be attached by setting
@@ -270,9 +318,6 @@ parameters in the provisioner, e.g
       mtype: standard # defaults to multiattach for VDI
 ```
 
-Roles that use ansible or specify a `disk` can also include a
-`provision(.sh|.cmd|.ps1)` script.
-
 # Host System Requirements
 
 The virtual machine images are built for [VirtualBox](virtualbox.org).
@@ -282,7 +327,12 @@ is required.
 Remote execution is tested with macOS and Windows 10 as host, using the
 bash shell.
 
-## Windows specifics
+# Guest-platform specifics
+
+While vagrant and minicoin try to make the boxes all behave the same from
+the host's perspective, there are some guest-system specific requirements.
+
+## Windows
 
 A guest is identified as running Windows when either the name of the machine,
 or the name of the box includes the string "windows".
@@ -292,7 +342,7 @@ provisioning. To be able to talk WinRM via vagrant, install the ruby gem:
 
 `$ sudo gem install winrm`
 
-## Mac specifics
+## Mac
 
 A guest is identified as running MacOS when either the name of the machine,
 or the name of the box includes the string "mac".
