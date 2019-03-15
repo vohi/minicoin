@@ -11,33 +11,20 @@ $ cd minicoin
 $ ./run_on.sh ubuntu1804 build-qtbase -- my_branch ~/qt5
 ```
 
-# Usage
+# Basic Usage
 
 The intended use case is to use the managed machines to build and test a local
 clone of Qt, and to run test cases (such as from bug reports or during package
 testing), on a wide range of platforms.
 
-Machines are declared in a yaml file, `boxes.yml`. The `Vagrantfile` contains
-the vagrant configuration code, takes care of setting appropriate defaults, and
-runs the provisioning steps from the machine's definition. To see which machines
-are declared, run
-
-`$ vagrant status`
-
-Running machines can be used via ssh, interactively through virtualbox's display
-of the machine, or - if your host can run bash scripts - by executing jobs on
-it with the `run_on` script.
-
-## Machine Operations
-
 Basic machine operations are identical to regular [vagrant](vagrantup.com)
 workflows for multi-machine environments:
 
-* checking status of all machines
+To see which machines are declared and to check their status, run
 
 `$ vagrant status`
 
-* Starting a machine
+To start a machine, run
 
 `$ vagrant up windows10`
 
@@ -48,20 +35,36 @@ and run provisioning actions.
 bring up all machines, downloading several dozen GB of base box images, and
 possibly killing the host.
 
-* Stopping all Windows machine
+To run a job on the machine, use the `run_on` script (requires bash)
 
-`$ vagrant halt windows7 windows81 windows10`
+`$ ./run_on.sh test ubunu1804 -- arg1 arg2`
 
-* destroying all (!) machines without prompting
+This will also start the machine if it's not running yet. To sign into a
+machine, use
+
+`$ vagrant ssh`
+
+To interactively use the machine, use the VirtualBox UI to attach a GUI.
+
+To destroy the machine after usage, run
+
+`$ vagrant destroy -f machine`
+
+Other typical commands are `vagrant halt` to shut down the machine (restart
+with `up`), `vagrant suspend` to freeze the machine (restart with `resume`).
+
+To destroy all (!) machines without prompting
 
 `$ vagrant destroy -f`
 
 *Note:* Any data that live only on the machines will be lost.
 
+For advanced options and usages, see the **Machine definition** sections below.
+
 
 ## Executing Jobs
 
-Jobs are define in the `jobs` folder. Each subfolder represents a job that can
+Jobs are defined in the `jobs` folder. Each subfolder represents a job that can
 be executed on machines, using the `run_on.sh` shell script.
 
 `$ ./run_on.sh ubuntu1804 test -- p1 p2 p3`
@@ -72,17 +75,38 @@ This starts the `ubuntu1804` machine if it's not already running, uploads the
 Any parameters after the double dash `--` will be passed on to the `main`
 script.
 
-Output from the script will be directed to time-stamped log files (one for
-stdout and one for stderr).
+Output from the script will be directed to time-stamped log files in the `.logs`
+subdirectory, one for stdout and one for stderr with a `latest` symlink for the
+currnet run. Use `tail -f` to see the output while the script is running, e.g
 
-If the `doc-server` was started by the script, it will afterwards be stopped
-again.
+`$ tail -f .logs/test-ubuntu1804-latest.log`
+`$ tail -f .logs/test-error-ubuntu1804-latest.log`
 
-* defining jobs
 
-TBD
+## Defining jobs
 
-* available jobs
+Unless folder sharing is disabled, job scripts can safely make the following
+assumptions:
+
+* the minicoin directory is available in `/minicoin` (or `C:\minicoin`), so
+scripts can be found there
+* the user's home directory (if not disabled) is available in a "host"
+subdirectory the platform's location for user directories (ie 
+`/home/host` for linux, `/Users/host` for macOS, `C:\Users\host` on Windows)
+* an argument passed to the `run_on` script that includes the user's home on
+the host will be adjusted to point to the user's home on the guest, e.g
+
+`$ run_on.sh ubuntu test -- ~/qt`
+
+will call the test script with `/home/host/qt` on Linux, with `/Users/host/qt`
+on macOS, and with `C:\Users\host\qt` on Windows.
+
+Otherwise, the roles for the machines will define what other
+assumptions scripts can make. See the **Provisioning** section below for
+details.
+
+
+## Available jobs
 
 `$ ./run_on.sh machine1 build-qdoc -- dev`
 
@@ -96,6 +120,13 @@ the host, checks out the `my_feature` branch, runs configure, and then make.
 
 
 ## Machine definition
+
+minicoin is based on vagrant, but tries to provide a clearer separation of
+the data defining machines, and the code implementing the logic. Hence,
+there is only one `Vagrantfile` which contains the vagrant configuration
+code, takes care of setting appropriate defaults, works around limitations,
+and runs the provisioning steps from the machine's definition. You will
+probably never have to change this file.
 
 Machines are defined in the `machines` section of the `boxes.yml` file. The
 default `boxes.yml` file is loaded first; a `boxes.yml` file in `~/minicoin`
