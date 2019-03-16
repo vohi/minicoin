@@ -75,7 +75,7 @@ def insert_disk(box, disk_filename, role_params)
     disk_archive = disk_file
   end
 
-  disk_cache = "#{__dir__}/.diskcache"
+  disk_cache = "#{$PWD}/.diskcache"
   if ["up", "provision", "reload"].include? ARGV[0]
     Dir.mkdir(disk_cache) unless Dir.exist?(disk_cache)
 
@@ -170,7 +170,7 @@ def add_role(box, role, name)
     end
   end
 
-  role_path = "#{__dir__}#{role_path}/roles/#{role}"
+  role_path = "#{$PWD}/roles/#{role}"
   activity = false
   if File.file?("#{role_path}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
