@@ -265,14 +265,22 @@ attribute points at in the machine's definition.
     - role: arguments
       param1: foo
       param2: bar
+    - docker: name
+      image: foo/bar
 ```
 
 minicoin supports a variety of provisioning mechanism. As far as the provisioning
 is executed on the guest, it will be run with root privileges.
 
-### Scripted provisioning
+## Support Provisioners
 
-For each subdirectory, vagrant will look for a `provision.sh` file for linux/macOS
+minicoin will set up a vagrant provisioner depending on the contents of the
+respective `role` directory. Docker containers can be run using the special role
+type `docker`.
+
+### Scripted
+
+For each subdirectory, minicoin will look for a `provision.sh` file for linux/macOS
 guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests. Such
 a script will be executed on the guest using shell provisioning.
 
@@ -287,15 +295,55 @@ Scripted provisioning is always done for roles that provide a provision script,
 even if there is another provisioner type (such as ansible or disk) present for
 that role.
 
-### Ansible provisioning
+### Docker
 
-If Vagrantfile finds a `playbook.yml` file, then the machine will be provisioned
+minicoin can build a Dockerfile, or run a docker image.
+
+To run an image, use the role type `docker`, and specify the image and other
+options as parameters:
+
+```
+  - name: webserver
+    box: generic/ubuntu1804
+    roles:
+      - docker: name # name of the container
+        image: # mandatory; name of the image; will be pulled if needed
+        args: # optional; arguments to be passed to `docker run`
+        cmd: # optional; command to execute, overrides default CMD of the image
+        restart: # optional; defaults to "always", can be "no"
+        detach: # optional; defaults to true, can be "false"
+```
+
+If minicoin finds a Dockerfile in the `role` directory, then the Dockerfile
+will be built. Parameters are passed to the `docker build` run:
+
+```
+  - name: db-server
+    box: generic/ubuntu1804
+    roles:
+      - role: builder
+        tag: builder/wasm:5.13
+```
+
+This will call `docker build --rm --tag builder/wasm:513`.
+
+
+### Ansible
+
+If minicoin finds a `playbook.yml` file, then the machine will be provisioned
 using [ansible](ansible.com).
 
-### Disk provisioning
+### Disks
 
-If the role directory contains a file `disk`, then the file will be interpreted
-as YAML. A `file` attribute can point to an ISO image, which will be inserted as
+If minicoin finds a file `disk.yml`, then a disk or drive will be inserted or
+attached.
+
+```
+file: filename # .iso for a DVD, or .vdi for a drive
+archive: archive.zip # a compressed file for downloading
+```
+
+A `file` attribute can point to an ISO image, which will be inserted as
 a DVD into the guest VM. If `file` points to a VDI file, then that file will be
 attached as a harddrive. An ISO image can be attached to multiple guests; a VDI
 can as well, but each guest will perform write operations to a separate VDI file.
@@ -327,8 +375,6 @@ is required.
 Remote execution is tested with macOS and Windows 10 as host, using the
 bash shell.
 
-# Guest-platform specifics
-
 While vagrant and minicoin try to make the boxes all behave the same from
 the host's perspective, there are some guest-system specific requirements.
 
@@ -338,7 +384,8 @@ A guest is identified as running Windows when either the name of the machine,
 or the name of the box includes the string "windows".
 
 Windows machines support WinRM and ssh, but only WinRM works reliably for
-provisioning. To be able to talk WinRM via vagrant, install the ruby gem:
+provisioning. To be able to talk WinRM via vagrant, install the ruby gem
+on the host:
 
 `$ sudo gem install winrm`
 

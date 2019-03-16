@@ -145,11 +145,16 @@ end
 def add_role(box, role, name)
   role_params = role
   if role.is_a?(Hash)
-    role = role["role"]
-    role_params.delete("role")
+    if !role["docker"].nil?
+      role_params["name"] = role["docker"]
+      role = "docker"
+    else
+      role = role["role"]
+      role_params.delete("role")
+    end
     role_params.each do |key, value|
       if value.nil?
-        continue
+        next
       end
       if value.is_a?(String) and matches = value.match(/\$([A-Z_]*)/)
         env_val = ENV[matches[1]]
@@ -183,6 +188,39 @@ def add_role(box, role, name)
     if !insert_disk(box, "#{role_path}/disk.yml", role_params)
       puts "==> #{name}: Attaching disk failed for role '#{role}'"
     end
+  elsif File.file?("#{role_path}/Dockerfile")
+    docker_args = "--rm"
+    role_params.each do |param, value|
+      if value.nil?
+        docker_args += " --#{param}"
+      else
+        docker_args += " --#{param} \"#{value}\""
+      end
+    end
+    box.vm.provision "docker" do |docker|
+      docker.build_image "/minicoin/roles/#{role}", args: docker_args
+    end
+    activity = true
+  elsif role == "docker"
+    detach = true
+    restart = "always"
+
+    name = role_params["docker"]
+    image = role_params["image"]
+    cmd = role_params["cmd"]
+    args = role_params["args"]
+    detach = (role_params["detach"] == true) unless role_params["detach"].nil?
+    restart = role_params["restart"] unless role_params["restart"].nil?
+    box.vm.provision "docker" do |docker|
+      docker.run name,
+      image: image,
+      cmd: cmd,
+      auto_assign_name: false,
+      args: args,
+      daemonize: detach,
+      restart: restart
+    end
+    activity = true
   end
 
   # always check for a provisioning script
