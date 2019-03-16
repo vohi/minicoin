@@ -33,6 +33,15 @@ machines:
     box: generic/ubuntu1804
     roles: doc-server
     memory: 2048
+  - name: wasm-builder
+    box: generic/ubuntu1804
+    roles:
+      - role: qt-wasm
+        tag: qtbuilder/wasm:5.13
+        build-arg: qt_version=5.13
+      - docker: webserver
+        image: netresearch/node-webserver
+        args: "-p 80:8080 --mount type=bind,source=/home/host,target=/app/public,readonly"
 
 ## Simple Windows boxes
   - name: windows7
