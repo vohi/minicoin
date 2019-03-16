@@ -193,6 +193,10 @@ def add_role(box, role, name)
     role_params.each do |param, value|
       if value.nil?
         docker_args += " --#{param}"
+      elsif value.is_a?(Array)
+        value.each do |entry|
+          docker_args += " --#{param} \"#{entry}\""
+        end
       else
         docker_args += " --#{param} \"#{value}\""
       end
