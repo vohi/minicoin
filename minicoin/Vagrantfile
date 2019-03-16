@@ -329,6 +329,10 @@ Vagrant.configure("2") do |config|
   machines.each do |machine|
     name = machine["name"]
     machine_box = machine["box"]
+    if machine_box.nil?
+      puts "==> #{name}: Machine has no box set"
+      exit
+    end
     machine_url = machine_box
     if machine_box.include?("$private")
       minicoin_key = ENV['minicoin_key']
