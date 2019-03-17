@@ -4,7 +4,7 @@ if [[ $1 == "" ]]; then
 fi
 
 project=$(basename $1)
-builder=qtbuilder/wasm
+builder=qtbuilder/wasm:latest
 
 if [[ ! -z $2 ]]; then
   builder=$2
