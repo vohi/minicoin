@@ -319,17 +319,6 @@ def mac_share_folder(box, host_path, guest_path)
 end
 
 Vagrant.configure("2") do |config|
-  if ARGV[0] == "up" and ARGV.length == 1
-    puts "This is a multi-machine environment. The following machines are available:"
-    puts
-    machines.each do |machine|
-      puts "- #{machine['name']}"
-    end
-    puts
-    puts "Please, specify which machine(s) you want to bring up."
-    exit
-  end
-
   machines.each do |machine|
     name = machine["name"]
     machine_box = machine["box"]
@@ -348,7 +337,7 @@ Vagrant.configure("2") do |config|
       machine_box = machine_box.gsub("$private/", "")
     end
 
-    config.vm.define machine["name"] do |box|
+    config.vm.define machine["name"], autostart: false do |box|
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 

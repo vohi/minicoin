@@ -42,16 +42,19 @@ To run a job on the machine, use the `run_on` script (requires bash)
 This will also start the machine if it's not running yet. To sign into a
 machine, use
 
-`$ vagrant ssh`
+`$ vagrant ssh machine`
 
-To interactively use the machine, use the VirtualBox UI to attach a GUI.
+To use the machine interactively, use the VirtualBox UI to attach a GUI.
 
-To destroy the machine after usage, run
+To destroy the machine after usage (without confirmation prompt), run
 
 `$ vagrant destroy -f machine`
 
 Other typical commands are `vagrant halt` to shut down the machine (restart
-with `up`), `vagrant suspend` to freeze the machine (restart with `resume`).
+with `up`), `vagrant suspend` to freeze the machine (restart with `resume`),
+and the `vagrant snapshot` sub-commands to save known good states of machines
+(for instance, after provisioning or cloning). For a full list of commands,
+see `vagrant help`.
 
 To destroy all (!) machines without prompting
 
@@ -59,7 +62,16 @@ To destroy all (!) machines without prompting
 
 *Note:* Any data that live only on the machines will be lost.
 
-For advanced options and usages, see the **Machine definition** sections below.
+vagrant can operate on multiple machines if you provide the machine name as a
+ruby-style regular expression, i.e. the following would shut down all Windows
+machines:
+
+`$ vagrant halt -f /windows.*/`
+
+Use `vagrant status /regexp/` to see which machines would be impacted by your
+expression (the above would also stop a machine named `no-windows-here`).
+
+For advanced operations, see the **Machine definition** sections below.
 
 # Jobs
 
@@ -217,11 +229,11 @@ machines:
 
 Provisioning is executed when the machine is booted up for the first time via
 
-`$ vagrant up [machine]`
+`$ vagrant up machine`
 
 or when provisioning is explicitly executed using
 
-`$ vagrant provision [machine]`
+`$ vagrant provision machine` or `$ vagrant up --provision machine`
 
 At the end of provisioning, the machine should be able to execute the tasks it
 is designed for.
@@ -244,8 +256,8 @@ else than `~`, or to `disabled` to only share the minicoin folder.
 
 ## Machine-specific provisioning
 
-Additional provisioning steps are defined in the subdirectories that the `roles`
-attribute points at in the machine's definition.
+Additional provisioning steps are defined using the `roles` attribute in the
+machine's definition.
 
 ```
 - name: simple
@@ -262,21 +274,25 @@ attribute points at in the machine's definition.
 - name: parameterized
   box: generic/ubuntu1804
   roles:
-    - role: arguments
+    - role: role-name
       param1: foo
       param2: bar
     - docker: name
       image: foo/bar
 ```
 
-minicoin supports a variety of provisioning mechanism. As far as the provisioning
-is executed on the guest, it will be run with root privileges.
+For each role name, a subdirectories needs to exist within the `roles` directory.
+minicoin will automatically set up the respective provisioning, depending on the
+diectory contents.
 
-## Support Provisioners
+## Supported Provisioners
 
-minicoin will set up a vagrant provisioner depending on the contents of the
-respective `role` directory. Docker containers can be run using the special role
-type `docker`.
+For each role specified, minicoin will set up one or more vagrant provisioners
+depending on the contents of the respective `role` directory. Docker containers
+can be run using the special role type `docker`.
+
+As far as the provisioning is executed on the guest, it will be run with root
+privileges.
 
 ### Scripted
 
