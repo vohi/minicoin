@@ -37,7 +37,7 @@ machines:
     box: generic/ubuntu1804
     roles:
       - role: qt-wasm
-        tag: qtbuilder/wasm:5.13 qtbuilder/wasm:latest
+        tag: ["qtbuilder/wasm:5.13", "qtbuilder/wasm:latest"]
         build-arg: qt_version=5.13
       - docker: webserver
         image: netresearch/node-webserver
