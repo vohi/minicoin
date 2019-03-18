@@ -218,7 +218,11 @@ def add_role(box, role, name)
     end
   end
 
-  role_path = "#{$PWD}/roles/#{role}"
+  # user can add or override roles
+  role_path = File.join($HOME, "minicoin/roles/#{role}")
+  if !File.exist?(role_path)
+    role_path = "#{$PWD}/roles/#{role}"
+  end
   activity = false
   if File.file?("#{role_path}/playbook.yml")
     box.vm.provision "ansible" do |ansible|
@@ -244,8 +248,11 @@ def add_role(box, role, name)
         docker_args += " --#{param} \"#{value}\""
       end
     end
+    box.vm.provision "file",
+      source: "#{role_path}/Dockerfile",
+      destination: "#{role}/Dockerfile"
     box.vm.provision "docker" do |docker|
-      docker.build_image "/minicoin/roles/#{role}", args: docker_args
+      docker.build_image "#{role}", args: docker_args
     end
     activity = true
   elsif role == "docker"
