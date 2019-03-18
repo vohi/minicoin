@@ -142,9 +142,37 @@ def insert_disk(box, disk_filename, role_params)
   return true
 end
 
+# expand environment variables in parameters
+# and adjust any occurence of $HOME to the home on the guest
+def expand_env(value, box)
+  while (matches = value.match(/\$([A-Za-z0-9_]*)/))
+    env_name = matches[1]
+    if env_name == ""
+      break
+    end
+    env_val = ENV[env_name]
+    if env_val.nil?
+      return nil
+    else
+      if env_val.start_with?($HOME)
+        if box.vm.guest == :windows
+          env_val = env_val.sub($HOME, "C:\\\\Users\\\\host")
+        else
+          env_val = env_val.sub($HOME, "/home/host")
+        end
+      end
+      value = value.sub("$#{env_name}", env_val)
+      if box.vm.guest == :windows
+        value = value.gsub("/", "\\\\")
+      end
+    end
+  end
+  return value
+end
+
 def add_role(box, role, name)
   role_params = role
-  if role.is_a?(Hash)
+  if role.is_a?(Hash) # parameterized role
     if !role["docker"].nil?
       role_params["name"] = role["docker"]
       role = "docker"
@@ -156,21 +184,24 @@ def add_role(box, role, name)
       if value.nil?
         next
       end
-      if value.is_a?(String) and matches = value.match(/\$([A-Z_]*)/)
-        env_val = ENV[matches[1]]
-        host_home = $HOME
-        if env_val.nil?
-          puts "==> #{name}: Environment variable '$#{matches[1]}' not set - skipping role '#{role}'"
+      if value.is_a?(String)
+        new_value = expand_env(value, box)
+        if new_value.nil?
+          puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
           return
-        elsif env_val.start_with?(host_home)
-          if box.vm.guest == :windows
-            env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
-            env_val = env_val.gsub("/", "\\\\")
-          else
-            env_val = env_val.sub(host_home, "/home/host")
-          end
         end
-        role_params[key] = env_val
+        role_params[key] = new_value
+      elsif value.is_a?(Array)
+        array = []
+        value.each do |entry|
+          new_entry = expand_env(entry, box)
+          if new_entry.nil?
+            puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
+            return
+          end
+          array << new_entry
+        end
+        role_params[key] = array
       end
     end
   end
