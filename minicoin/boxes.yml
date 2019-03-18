@@ -18,11 +18,53 @@ machines:
 
 ## Test machines
 
-  - name: ubuntu1804
+  - name: test-linux
     box: generic/ubuntu1804
     roles: hello-world
+  - name: test-windows
+    box: tqtc/windows81
+    roles: hello-world
+  - name: test-mac
+    box: tqtc/macos1013
+    roles: hello-world
 
-## Simple machines for fast but complete provisioning
+## Simple machines for reasonably fast but complete provisioning
+
+### Simple Windows boxes - different versions, different compiles
+  - name: windows7
+    box: tqtc/windows7
+    roles:
+      - mingw32
+      - qt-packages
+    memory: 1024
+    gui: false
+  - name: windows81
+    box: tqtc/windows81
+    roles:
+      - windows-tools
+      - msvc2015
+      - qt-packages
+    memory: 1024
+    gui: false
+  - name: windows10
+    box: tqtc/windows10
+    roles:
+      - windows-tools
+      - msvc2017
+      - qt-packages
+    memory: 2048
+    gui: false
+
+### Mac - nothing provisioned yet
+
+  - name: macos1011
+    box: tqtc/macos1011
+    memory: 1024
+  - name: macos1013
+    box: tqtc/macos1013
+    memory: 1024
+
+## Specialized machines
 
   - name: android-builder
     box: generic/ubuntu1804
@@ -42,47 +84,6 @@ machines:
       - docker: webserver
         image: netresearch/node-webserver
         args: "-p 80:8080 --mount type=bind,source=/home/host,target=/app/public,readonly"
-
-## Simple Windows boxes
-  - name: windows7
-    box: tqtc/windows7
-    roles:
-      - mingw32
-      - qt-packages
-      - hello-world
-    memory: 1024
-    gui: false
-  - name: windows81
-    box: tqtc/windows81
-    roles:
-      - windows-tools
-      - msvc2015
-      - qt-packages
-      - hello-world
-    memory: 1024
-    gui: false
-  - name: windows10
-    box: tqtc/windows10
-    roles:
-      - windows-tools
-      - msvc2017
-      - qt-packages
-      - hello-world
-    memory: 2048
-    gui: false
-
-## Mac - using sshfs for folder sharing
-
-  - name: macos1011
-    box: tqtc/macos1011
-    memory: 1024
-    roles:
-      - hello-world
-  - name: macos1013
-    box: tqtc/macos1013
-    memory: 1024
-    roles:
-      - hello-world
 
 ## Boxes provisioned via coin scripts
   - name: coin-ubuntu
