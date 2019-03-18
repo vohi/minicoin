@@ -61,6 +61,8 @@ if File.file?(user_machine_file)
   end
 end
 
+settings["home_share"] = settings["home_share"].gsub("~", $HOME)
+
 def fetch_file(uri, local)
   begin
     downloader = Vagrant::Util::Downloader.new(uri, local)
