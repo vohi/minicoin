@@ -25,7 +25,7 @@ settings = yaml["settings"]
 settings = [] if settings.nil?
 settings["home_share"] = $HOME if settings["home_share"].nil?
 
-user_machine_file = File.join(ENV['HOME'], 'minicoin/boxes.yml');
+user_machine_file = File.join($HOME, 'minicoin/boxes.yml');
 if File.file?(user_machine_file)
   user_yaml = YAML.load_file(user_machine_file)
   user_machines = user_yaml["machines"]
@@ -42,10 +42,21 @@ if File.file?(user_machine_file)
     end
   end
 
+  # a hash
   user_settings = user_yaml["settings"]
   if !user_settings.nil?
     user_settings.each do |key, value|
       settings[key] = value
+    end
+  end
+
+  # a hash of arrays
+  user_urls = user_yaml["urls"]
+  if !user_urls.nil?
+    user_urls.each do |key, array|
+      array.each do |value|
+        $urls[key] << value
+      end
     end
   end
 end
@@ -154,11 +165,12 @@ def expand_env(value, box)
     if env_val.nil?
       return nil
     else
-      if env_val.start_with?($HOME)
+      host_home = settings["home_share"]
+      if env_val.start_with?(host_home)
         if box.vm.guest == :windows
-          env_val = env_val.sub($HOME, "C:\\\\Users\\\\host")
+          env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
         else
-          env_val = env_val.sub($HOME, "/home/host")
+          env_val = env_val.sub(host_home, "/home/host")
         end
       end
       value = value.sub("$#{env_name}", env_val)
