@@ -96,14 +96,22 @@ function run_on_machine() {
   fi
 
   if [[ $ext == "cmd" ]]; then
-    host_home="c:\\Users\\host"
+    guest_home="c:\\Users\\host"
   else
-    host_home="/home/host"
+    guest_home="/home/host"
   fi
+
+  if [[ -f "$HOME/minicoin/boxes.yml" ]]; then
+    host_home=$(cat $HOME/minicoin/boxes.yml | grep "home_share:" | awk '{print $2}')
+  fi
+  if [[ $host_home == "" ]]; then
+    host_home=$(cat boxes.yml | grep "home_share:" | awk '{print $2}')
+  fi
+  host_home=${host_home/\~/$HOME}
 
   job_args=()
   for arg in ${script_args[@]}; do
-    job_args=(${job_args[@]} ${arg/$HOME/$host_home})
+    job_args=(${job_args[@]} ${arg/$host_home/$guest_home})
   done
 
   error=0

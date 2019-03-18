@@ -29,6 +29,7 @@ user_machine_file = File.join($HOME, 'minicoin/boxes.yml');
 if File.file?(user_machine_file)
   user_yaml = YAML.load_file(user_machine_file)
   user_machines = user_yaml["machines"]
+  user_machines = [] if user_machines.nil?
   user_machines.each do |user_machine|
     idx = machines.find_index {|m| m["name"] == user_machine["name"] }
     if !idx.nil?
@@ -61,6 +62,7 @@ if File.file?(user_machine_file)
   end
 end
 
+settings["home_share"] = settings["home_share"].gsub("$HOME", $HOME)
 settings["home_share"] = settings["home_share"].gsub("~", $HOME)
 
 def fetch_file(uri, local)
@@ -491,7 +493,7 @@ Vagrant.configure("2") do |config|
         # generate keys and authorize the guest to access the host
         box.trigger.before [:up] do |trigger|
           trigger.name = "Generating key pair and authorizing guest"
-          trigger.ruby do |env,machine|
+          trigger.ruby do |e,m|
             if !File.file?(key_file)
               `ssh-keygen -f #{key_file} -C minicoin@#{name} -q -N \"\"`
               public_key = File.read("#{key_file}.pub")
@@ -506,7 +508,7 @@ Vagrant.configure("2") do |config|
         # delete the keys, and de-authorize the guest
         box.trigger.after [:destroy] do |trigger|
           trigger.name = "Removing key-pair and de-authorising guest"
-          trigger.ruby do |env,machine|
+          trigger.ruby do |e,m|
             File.open("#{authorized_keys}.new", 'w') do |out|
               out.chmod(File.stat(authorized_keys).mode)
               File.foreach(authorized_keys) do |line|
@@ -551,7 +553,7 @@ Vagrant.configure("2") do |config|
       end
 
       # Copying files to guest
-      if !is_windows || box.vm.communicator == :winrm # file provisioning via winssh is broken
+      if !is_windows || (box.vm.communicator == :winrm) # file provisioning via winssh is broken
 	      if File.file?("#{$HOME}/.gitconfig")
           box.vm.provision "file", source: "#{$HOME}/.gitconfig", destination: "#{guest_filedir}.gitconfig"
         end

@@ -1,7 +1,7 @@
 ---
 # global values
 settings:
-  home_share: ~
+  home_share: $HOME
 
 ## locations from which we can download tqtc boxes and disk archives
 urls:
