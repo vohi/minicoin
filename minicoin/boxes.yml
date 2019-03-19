@@ -4,6 +4,7 @@ settings:
   home_share: $HOME
 
 ## locations from which we can download tqtc boxes and disk archives
+
 urls:
   disks:
     - https://tqtcvagrantboxes.z16.web.core.windows.net
@@ -22,24 +23,28 @@ machines:
     box: generic/ubuntu1804
     roles: hello-world
   - name: test-windows
-    box: tqtc/windows81
+    box: tqtc/$minicoin_key/windows81
     roles: hello-world
   - name: test-mac
-    box: tqtc/macos1013
+    box: tqtc/$minicoin_key/macos1013
     roles: hello-world
 
 ## Simple machines for reasonably fast but complete provisioning
 
+  - name: ubuntu1804
+    box: generic/ubuntu1804
+    roles: simple-apt
+
 ### Simple Windows boxes - different versions, different compiles
   - name: windows7
-    box: tqtc/windows7
+    box: tqtc/$minicoin_key/windows7
     roles:
       - mingw32
       - qt-packages
     memory: 1024
     gui: false
   - name: windows81
-    box: tqtc/windows81
+    box: tqtc/$minicoin_key/windows81
     roles:
       - windows-tools
       - msvc2015
@@ -47,7 +52,7 @@ machines:
     memory: 1024
     gui: false
   - name: windows10
-    box: tqtc/windows10
+    box: tqtc/$minicoin_key/windows10
     roles:
       - windows-tools
       - msvc2017
@@ -58,10 +63,10 @@ machines:
 ### Mac - nothing provisioned yet
 
   - name: macos1011
-    box: tqtc/macos1011
+    box: tqtc/$minicoin_key/macos1011
     memory: 1024
   - name: macos1013
-    box: tqtc/macos1013
+    box: tqtc/$minicoin_key/macos1013
     memory: 1024
 
 ## Specialized machines
@@ -107,19 +112,19 @@ machines:
         coin-root: $COIN_ROOT
 
   - name: coin-windows7
-    box: tqtc/windows7
+    box: tqtc/$minicoin_key/windows7
     roles:
       - role: coin-node
         template: qtci-windows-7-x86_64
         coin-root: $COIN_ROOT
   - name: coin-windows81
-    box: tqtc/windows81
+    box: tqtc/$minicoin_key/windows81
     roles:
       - role: coin-node
         template: qtci-windows-8.1-x86_64
         coin-root: $COIN_ROOT
   - name: coin-windows10
-    box: tqtc/windows10
+    box: tqtc/$minicoin_key/windows10
     roles:
       - msvc2017
       - role: coin-node

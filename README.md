@@ -214,13 +214,13 @@ For disk images, the URLs under the `disks` key will be attempted.
 ### Private boxes
 
 Boxes might be located at a private location, in which case the
-`box` value for the machine needs to be specified as `org/$private/box`, and
+`box` value for the machine needs to be specified as `org/$minicoin_key/box`, and
 the environment variable `$minicoin_key` needs to hold the key, e.g.
 
 ```
 machines:
   - name: proprietary_os
-    box: tqtc/$private/proprietary
+    box: tqtc/$minicoin_key/proprietary
 ```
 
 `$ minicoin_key=password123 vagrant up proprietary`
