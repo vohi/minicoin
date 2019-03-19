@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source=$(readlink $0)
+if [[ $source == "" ]]; then
+  echo "This script expects to be run via a symlink!"
+  exit 1
+fi
+
+minicoin_dir=$(dirname $source)
+project_dir=$PWD
+
+if [ "$#" -lt 2 ]; then
+  cd $minicoin_dir
+  . ./run_on.sh
+  cd $project_dir
+  exit 1
+fi
+
+machines=()
+job="-1"
+script_args=($project_dir)
+
+for arg in "${@}"; do
+  if [[ "$arg" = "--" ]]; then
+    job="--"
+  elif [[ "$job" = '-1' ]]; then
+    machines=( "${machines[@]}" "$arg" )
+  else
+    script_args=( "${script_args[@]}" "$arg" )
+  fi
+done
+
+job="${machines[@]: -1}"
+unset "machines[${#machines[@]}-1]"
+
+cd $minicoin_dir
+. ./run_on.sh ${machines[@]} $job -- ${script_args[@]}
+cd $project_dir
