@@ -101,13 +101,18 @@ function run_on_machine() {
     guest_home="/home/host"
   fi
 
+  # poorest-man yaml parser
   if [[ -f "$HOME/minicoin/boxes.yml" ]]; then
-    host_home=$(cat $HOME/minicoin/boxes.yml | grep "home_share:" | awk '{print $2}')
+    home_share=$(cat $HOME/minicoin/boxes.yml | grep "home_share:" | awk '{print $2}')
   fi
   if [[ $host_home == "" ]]; then
-    host_home=$(cat boxes.yml | grep "home_share:" | awk '{print $2}')
+    home_share=$(cat boxes.yml | grep "home_share:" | awk '{print $2}')
   fi
-  host_home=${host_home/\~/$HOME}
+  if [[ $home_share == "" ]]; then
+    home_share=$HOME
+  fi
+  host_home=${home_share/\~/$HOME}
+  host_home=${home_share/\$HOME/$HOME}
 
   job_args=()
   for arg in ${script_args[@]}; do
