@@ -15,7 +15,7 @@ IF NOT "%~2" == "" (
     git remote add local file://%2/qtbase
 
     git fetch local
-    SET BRANCH=local/%~3
+    SET BRANCH=local/%~1
 )
 
 echo Checking out %BRANCH%
@@ -45,6 +45,12 @@ REM shadow-build qtbase into qt5-build
 
 mkdir ..\qtbase-build
 cd ..\qtbase-build
-call ..\qtbase\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %CONFIGFLAGS%
+REM call ..\qtbase\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %CONFIGFLAGS%
 
-%MAKE%
+REM %MAKE%
+
+if errorlevel 0 (
+  echo %USERPROFILE%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\qmake.bat
+) else (
+  del %USERPROFILE%\qmake.bat
+)

@@ -26,3 +26,11 @@ cd ../qtbase-build
 ../qtbase/configure -confirm-license -developer-build -opensource -nomake examples -nomake tests
 
 make -j4
+error=$?
+
+if [[ $error == 0 ]]; then
+  echo "$PWD/bin/qmake \$@" > ~/qmake
+  chmod +x ~/qmake
+else
+  rm ~/qmake
+fi

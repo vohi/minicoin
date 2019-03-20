@@ -3,7 +3,7 @@ SETLOCAL
 
 IF "%~1" == "" (
     echo No project specified!
-    goto errorargs
+    goto errorargs:
 )
 
 for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
@@ -19,10 +19,10 @@ if NOT "%mingw32-make.exe%" == "" (
 if "%MAKE%" == "" (
     echo No build tool-chain found in PATH:
     echo PATH="%PATH%"
-    goto errorenv
+    goto errorenv:
 )
 
-set PATH=%PATH%;%USERPROFILE%\qt5-build\qtbase\bin
+set PATH=%PATH%;%USERPROFILE%\qtbase-build\bin
 
 set projectpath=%1
 IF %projectpath:~-1%==/ SET projectpath=%projectpath:~0,-1%
@@ -34,7 +34,7 @@ echo Building '%projectpath%' into '%projectname%'
 mkdir %projectname%
 cd %projectname%
 
-qmake "%projectpath%" || exit /B 3
+%USERPROFILE%\qmake.bat "%projectpath%" || exit /B 3
 %MAKE% clean || exit /B 4
 %MAKE% || exit /B 5
 
