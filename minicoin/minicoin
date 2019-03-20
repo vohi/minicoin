@@ -2,8 +2,12 @@
 
 source=$(readlink $0)
 if [[ $source == "" ]]; then
-  echo "This script expects to be run via a symlink!"
-  exit 1
+  if [[ $WINDIR != "" ]]; then
+    source=$(realpath $0)
+  else
+    echo "This script expects to be run via a symlink!"
+    exit 1
+  fi
 fi
 
 minicoin_dir=$(dirname $source)
@@ -18,11 +22,13 @@ function run() {
     exit $error
 }
 
-if [ $1 != "run" ]; then
-  run vagrant $@
-fi
+if [[ $# > 0 ]]; then
+  if [ $1 != "run" ]; then
+    run vagrant $@
+  fi
 
-shift
+  shift
+fi
 
 if [ "$#" -lt 2 ]; then
   echo "Controls the minicoin environment by forwarding calls to vagrant or executing"
