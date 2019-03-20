@@ -140,7 +140,7 @@ def insert_disk(box, disk_filename, role_params)
       elsif disk_file.end_with?(".vdi")
         disk_settings["port"] = "2" unless !disk_settings["port"].nil?
         disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
-        disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"]
+        disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"].nil?
       end
 
       # boxes can override disk settings
