@@ -56,11 +56,6 @@ if [ "$#" -lt 2 ]; then
   echo
   exit 1
 fi
-  cd $minicoin_dir
-  . ./run_on.sh
-  cd $project_dir
-  exit 1
-fi
 
 machines=()
 job="-1"
