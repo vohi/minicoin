@@ -57,7 +57,6 @@ function run_on_machine() {
   machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
   if [ ! $machine_state == 'running' ]; then
     vagrant up $machine
-    echo "$machine is up and ready to run $job!"
   fi
 
   vagrant winrm $machine &> /dev/null
@@ -76,6 +75,7 @@ function run_on_machine() {
     return
   fi
 
+  echo "$machine is up, running '$job' with args '${script_args[@]}'!"
   if [ -f "jobs/$job/pre-run.sh" ]; then
     log_progress "$machine ==> Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
