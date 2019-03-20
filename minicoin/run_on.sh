@@ -23,10 +23,10 @@ for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
   elif [[ "$arg" = "--parallel" && "$job" != "--" ]]; then
-    parallel="false"
+    parallel="true"
   elif [[ "$arg" = "--verbose" && "$job" != "--" ]]; then
-    verbose='true'
-  elif [[ "$job" = '-1' ]]; then
+    verbose="true"
+  elif [[ "$job" = "-1" ]]; then
     machines=( "${machines[@]}" "$arg" )
   else
     script_args=( "${script_args[@]}" "$arg" )
@@ -75,7 +75,7 @@ function run_on_machine() {
     return
   fi
 
-  echo "$machine is up, running '$job' with args '${script_args[@]}'!"
+  echo "$machine ==> running '$job' with args '${script_args[@]}'!"
   if [ -f "jobs/$job/pre-run.sh" ]; then
     log_progress "$machine ==> Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
