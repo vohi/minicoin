@@ -3,7 +3,7 @@
 if [ "$#" -lt 2 ]; then
   echo "Runs a script on a machine using the appropriate remoting mechanism."
   echo
-  echo "Usage: $0 [options] machine1 machine2 ... job [--] [args]"
+  echo "Usage: $(basename $0) [options] machine1 machine2 ... job [--] [args]"
   echo
   echo "  'machine1..n' is a list of machines on which the job will be run sequentially"
   echo "  'job' is the job to run, with the main script in the jobs/job as the entry point"
