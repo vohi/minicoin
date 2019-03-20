@@ -6,7 +6,6 @@ Vagrant.require_version ">= 2.2.4"
 # Import YAML
 require 'yaml'
 require 'net/http'
-require 'zip'
 
 $is_windows_host = !(ENV["windir"].nil?)
 $HOME = ENV["HOME"]
@@ -108,8 +107,11 @@ def insert_disk(box, disk_filename, role_params)
         puts "Failed to download '#{disk_archive}' from any of #{disk_urls}"
       else
         puts "Extracting '#{disk_archive}'"
-        Zip::File.open("#{disk_cache}/#{disk_archive}") do |zipfile|
-          zipfile.extract("#{disk_file}", "#{disk_cache}/#{disk_file}")
+        begin
+          require 'zip'
+          Zip::File.open("#{disk_cache}/#{disk_archive}") do |zipfile|
+            zipfile.extract("#{disk_file}", "#{disk_cache}/#{disk_file}")
+          end
         end
       end
     end
@@ -173,6 +175,8 @@ def expand_env(value, box)
       if env_val.start_with?(host_home)
         if box.vm.guest == :windows
           env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
+        elsif box.vm.guest == :darwin
+          env_val = env_val.sub(host_home, "/Users/host")
         else
           env_val = env_val.sub(host_home, "/home/host")
         end
@@ -470,8 +474,10 @@ Vagrant.configure("2") do |config|
           box.vm.communicator = :winssh
         end
       elsif is_mac
+        box.vm.guest = :darwin
         guest_home = "/Users/host"
       else
+        # rely on defaults and vagrant autodetection for nix'es
       end
 
       # Allow overriding defaults
