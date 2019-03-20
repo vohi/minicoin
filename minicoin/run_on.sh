@@ -51,6 +51,8 @@ function log_progress() {
   fi
 }
 
+redirect_output=$(( ${#machines[@]} - 1 ))
+
 function run_on_machine() {
   machine=$1
 
@@ -124,9 +126,13 @@ function run_on_machine() {
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
+
+    if [[ $redirect_output != 0 ]]; then
+      redirect=" > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log 2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log"
+      command=$command$redirect
+    fi
     vagrant winrm -s cmd -c \
-      "($command > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log \
-        2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log) || \
+      "($command) || \
         echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
       $machine
     if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
@@ -137,9 +143,11 @@ function run_on_machine() {
     command="$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
-    vagrant ssh -c \
-      "$command > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log" \
-      $machine 2> /dev/null
+    if [[ $redirect_output != 0 ]]; then
+      redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
+      command=$command$redirect
+    fi
+    vagrant ssh -c "$command" $machine 2> /dev/null
     error=$?
 
     vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
