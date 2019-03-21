@@ -1,56 +1,45 @@
 @echo off
 SETLOCAL
-SET BRANCH=dev
-IF NOT "%~1" == "" (SET branch=%~1)
 
-REM clone Qt from upstream
+IF "%~1" == "" (
+    echo Error: path to host clone of qtbase is required!
+    goto error
+)
 
-echo Building Qt branch %branch%
-git clone git://code.qt.io/qt/qtbase.git
+echo Building Qt Base from %~1
+
+git clone -o local file://%~1/qtbase qtbase
 cd qtbase
 
-IF NOT "%~2" == "" (
-    echo Fetching %2/qtbase
-    git remote remove local
-    git remote add local file://%2/qtbase
+echo Fetching %~1
+git fetch local
 
-    git fetch local
-    SET BRANCH=local/%~1
-)
+SET BRANCH=dev
+IF NOT "%~2" == "" (SET BRANCH=%~2)
 
 echo Checking out %BRANCH%
-git checkout %BRANCH%
+git checkout local/%BRANCH%
 
-REM discover build toolchain
+call C:\minicoin\util\discover-make.cmd
 
-SET CONFIGFLAGS=""
-
-for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
-
-if NOT "%mingw32-make.exe%" == "" (
-    set MAKE=mingw32-make.exe
-    set CONFIGFLAGS=-opengl desktop
-) else if NOT "%jom.exe%" == "" (
-    set MAKE=jom.exe
-) else if NOT "%nmake.exe%" == "" (
-    set MAKE=nmake.exe
-)
-
-if "%MAKE%" == "" (
+if "%MAKETOOL%" == "" (
     echo "No build tool-chain found in PATH"
-    goto errorenv
+    goto errorenv:
 )
-
-REM shadow-build qtbase into qt5-build
 
 mkdir ..\qtbase-build
 cd ..\qtbase-build
-REM call ..\qtbase\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %CONFIGFLAGS%
+call ..\qtbase\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %QTCONFIGFLAGS%
 
-REM %MAKE%
+%MAKETOOL%
+SET ERROR=%errorlevel%
 
-if errorlevel 0 (
+if %ERROR% == 0 (
   echo %USERPROFILE%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\qmake.bat
 ) else (
   del %USERPROFILE%\qmake.bat
 )
+exit %ERROR%
+
+:error
+exit 1

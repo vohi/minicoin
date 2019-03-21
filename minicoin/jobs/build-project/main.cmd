@@ -3,26 +3,16 @@ SETLOCAL
 
 IF "%~1" == "" (
     echo No project specified!
-    goto errorargs:
+    goto errorargs
 )
 
-for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
+call C:\minicoin\util\discover-make.cmd
 
-if NOT "%mingw32-make.exe%" == "" (
-    set MAKE=mingw32-make.exe
-) else if NOT "%jom.exe%" == "" (
-    set MAKE=jom.exe
-) else if NOT "%nmake.exe%" == "" (
-    set MAKE=nmake.exe
-)
-
-if "%MAKE%" == "" (
+if "%MAKETOOL%" == "" (
     echo No build tool-chain found in PATH:
     echo PATH="%PATH%"
-    goto errorenv:
+    goto errorenv
 )
-
-set PATH=%PATH%;%USERPROFILE%\qtbase-build\bin
 
 set projectpath=%1
 IF %projectpath:~-1%==/ SET projectpath=%projectpath:~0,-1%
@@ -34,16 +24,17 @@ echo Building '%projectpath%' into '%projectname%'
 mkdir %projectname%
 cd %projectname%
 
-%USERPROFILE%\qmake.bat "%projectpath%" || exit /B 3
-%MAKE% clean || exit /B 4
-%MAKE% || exit /B 5
+call %USERPROFILE%\qmake.bat "%projectpath%"
+echo Using %MAKETOOL%
+%MAKETOOL% clean
+%MAKETOOL%
 
 echo Project '%projectname%' built successfully
 
 exit 0
 
-errorargs:
+:errorargs
 exit 1
 
-errorenv:
+:errorenv
 exit 2

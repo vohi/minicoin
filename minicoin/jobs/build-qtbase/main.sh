@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
-echo "Building Qt branch $1"
-git clone git://code.qt.io/qt/qtbase.git
-cd qtbase
-
-BRANCH=dev
-
-if [[ $1 != "" ]]; then
-  BRANCH=$1
+if [[ "$1" == "" ]]; then
+  echo "Error: path to host clone of qtbase is required!"
+  exit 1
 fi
 
-if [[ $2 != "" ]]; then
-  echo "Fetching $2/qtbase"
-  $(git remote remove local)
-  $(git remote add local file://$2/qtbase)
+echo "Building Qt Base from $1"
 
-  git fetch local
-  BRANCH=local/$1
+$(git clone --origin local file://$1/qtbase qtbase)
+cd qtbase
+
+echo "Fetching $1"
+git fetch local
+
+BRANCH=dev
+if [[ $2 != "" ]]; then
+  BRANCH=$2
 fi
 
 echo "Checking out $BRANCH"
-git checkout $BRANCH
+git checkout local/$BRANCH
 
 mkdir ../qtbase-build
 cd ../qtbase-build
