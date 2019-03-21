@@ -7,9 +7,30 @@ All the useful stuff is in the subdirectory `minicoin`.
 # Teaser
 
 ```
-$ cd minicoin
-$ ./run_on.sh ubuntu1804 build-qtbase -- my_branch ~/qt5
+$ cd ~/qt5
+$ minicoin run ubuntu1804 build-qtbase -- my_branch
+$ cd ~/my_project
+$ minicoin run ubuntu1804 build-project
 ```
+
+# Setup
+
+You need to install [vagrant](vagrantup.com), and a virtual machine provider
+that vagrant supports, like [VirtualBox](virtualbox.org).
+
+After cloning this repository, create a symbolic link to the `minicoin`
+script in a PATH directory:
+
+`$ ln -s ~/qt-developer-environments/minicoin/minicoin /usr/local/bin/minicoin`
+
+If you are on Windows, you will need a bash shell to use minicoin (f.ex the
+bash that comes with git), and also create a script that forwards calls to
+the `minicoin` script:
+
+`$ echo "~/qt-developer-environments/minicoin/minicoin $@" > /bin/minicion`
+`$ chmod +x /bin/minicoin`
+
+See the **Host System Requirements** section for platform specific details.
 
 # Basic Usage
 
@@ -22,43 +43,44 @@ workflows for multi-machine environments:
 
 To see which machines are declared and to check their status, run
 
-`$ vagrant status`
+`$ minicoin status`
 
 To start a machine, run
 
-`$ vagrant up windows10`
+`$ minicoin up ubuntu1804`
 
 This will download the virtual machine image if needed, boot up the machine,
 and run provisioning actions.
 
-*Note:* Running just `$ vagrant up` is not possible, as this would
+*Note:* Running just `$ minicoin up` is not possible, as this would
 bring up all machines, downloading several dozen GB of base box images, and
-possibly killing the host.
+possibly killing the host. Also, note that machines might rely on private
+boxes.
 
-To run a job on the machine, use the `run_on` script (requires bash)
+To run a job on the machine, use the `minicoin` script (requires bash)
 
-`$ ./run_on.sh test ubunu1804 -- arg1 arg2`
+`$ minicoin run ubuntu1804 job`
 
 This will also start the machine if it's not running yet. To sign into a
 machine, use
 
-`$ vagrant ssh machine`
+`$ minicoin ssh ubuntu1804`
 
 To use the machine interactively, use the VirtualBox UI to attach a GUI.
 
 To destroy the machine after usage (without confirmation prompt), run
 
-`$ vagrant destroy -f machine`
+`$ minicoin destroy -f ubuntu1804`
 
-Other typical commands are `vagrant halt` to shut down the machine (restart
-with `up`), `vagrant suspend` to freeze the machine (restart with `resume`),
-and the `vagrant snapshot` sub-commands to save known good states of machines
+Other typical commands are `halt` to shut down the machine (restart
+with `up`), `suspend` to freeze the machine (restart with `resume`),
+and the `snapshot` sub-commands to save known good states of machines
 (for instance, after provisioning or cloning). For a full list of commands,
-see `vagrant help`.
+see `help`.
 
 To destroy all (!) machines without prompting
 
-`$ vagrant destroy -f`
+`$ minicoin destroy -f`
 
 *Note:* Any data that live only on the machines will be lost.
 
@@ -66,9 +88,9 @@ vagrant can operate on multiple machines if you provide the machine name as a
 ruby-style regular expression, i.e. the following would shut down all Windows
 machines:
 
-`$ vagrant halt -f /windows.*/`
+`$ minicoin halt -f /windows/`
 
-Use `vagrant status /regexp/` to see which machines would be impacted by your
+Use `minicoin status /regexp/` to see which machines would be impacted by your
 expression (the above would also stop a machine named `no-windows-here`).
 
 For advanced operations, see the **Machine definition** sections below.
@@ -84,19 +106,21 @@ provisioning steps.
 
 ## Executing Jobs
 
-Jobs are executed using the `run_on.sh` shell script.
+Jobs are executed using the `minicoin run` command.
 
-`$ ./run_on.sh ubuntu1804 test -- p1 p2 p3`
+`$ minicoin run ubuntu1804 test -- p1 p2 p3`
 
 This starts the `ubuntu1804` machine if it's not already running, uploads the
 `jobs/test` subdirectory to the machine, and then runs the `main.sh` script
 (if the guest is Linux or Mac; on Windows the `main.cmd` script).
-Any parameters after the double dash `--` will be passed on to the `main`
-script.
 
-Output from the script will be directed to time-stamped log files in the `.logs`
-subdirectory, one for stdout and one for stderr with a `latest` symlink for the
-currnet run. Use `tail -f` to see the output while the script is running, e.g
+The current directory, and any parameters after the double dash `--` will be
+passed on to the `main` script.
+
+If multiple machines are used, then output from the job will be directed
+to time-stamped log files in the `.logs` subdirectory of the minicoin clone.
+There will be one for stdout and one for stderr, with a `latest` symlink 
+the last run. Use `tail -f` to see the output while the script is running, e.g
 
 `$ tail -f .logs/test-ubuntu1804-latest.log`
 `$ tail -f .logs/test-error-ubuntu1804-latest.log`
@@ -110,18 +134,27 @@ step.
 Unless folder sharing is disabled, job scripts can safely make the following
 assumptions:
 
+* the first argument passed into the script is the directory from which
+`minicoin` was run
 * the minicoin directory is available in `/minicoin` (or `C:\minicoin`), so
 scripts can be found there
 * the user's home directory (if not disabled) is available in a "host"
 subdirectory the platform's location for user directories (ie 
 `/home/host` for linux, `/Users/host` for macOS, `C:\Users\host` on Windows)
-* an argument passed to the `run_on` script that includes the user's home on
-the host will be adjusted to point to the user's home on the guest, e.g
+* an argument passed to the `minicoin` script that includes the user's home
+on the host will be adjusted to point to the user's home on the guest
 
-`$ run_on.sh ubuntu test -- ~/qt`
+This means that running minicoin in your home directory will automatically
+pass in the directory mapped to the guest into the job script:
 
-will call the test script with `/home/host/qt` on Linux, with `/Users/host/qt`
-on macOS, and with `C:\Users\host\qt` on Windows.
+```
+$ cd ~
+$ minicoin run ubuntu1804 test -- ~/qt
+```
+
+will call the test script with `/home/host` on Linux, with `/Users/host`
+on macOS, and with `C:\Users\host` on Windows as the first parameter, and
+with `/home/host/qt` etc as the second parameter.
 
 Otherwise, the roles for the machines will define what other
 assumptions scripts can make. See the **Provisioning** section below for
@@ -130,15 +163,17 @@ details.
 
 ## Available jobs
 
-`$ ./run_on.sh machine1 build-qdoc -- dev`
+`$ minicoin run [machines...] build-qtbase -- my_feature`
 
-Builds qdoc on the doc-server machine. Clones qt5 from code.qt.io, checks out
-the dev branch, and builds qtbase and qttools into `/home/vagrant/qt5-build`.
+Fetches the local qtbase clone from current directory on the host, checks
+out the `my_feature` branch, runs configure, and then make. You usually
+run this from within your qt5.git clone.
 
-`$ ./run_on.sh machine1 build-qtbase -- my_feature ~/qt5`
+`$ minicoin run [machines...] build-project`
 
-Clones qt5 from code.qt.io, fetches the local qtbase clone from `~/qt5` on
-the host, checks out the `my_feature` branch, runs configure, and then make.
+Build the project in the current working directory, using the Qt that was
+built last via the build-qtbase script.
+
 
 
 # Machines
