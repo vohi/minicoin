@@ -154,8 +154,10 @@ function run_on_machine() {
   fi
   if [ $error != 0 ]; then
     >&2 echo "$machine ==> Job $job started at $log_stamp ended with error"
-    >&2 echo "$machine ==> See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
-    >&2 echo "$machine ==> See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
+    if [[ $redirect_output != 0 ]]; then
+      >&2 echo "$machine ==> See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
+      >&2 echo "$machine ==> See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
+    fi
   fi
 
   if [ -f "jobs/$job/post-run.sh" ]; then
