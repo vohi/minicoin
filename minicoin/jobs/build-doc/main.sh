@@ -1,25 +1,34 @@
 #!/usr/bin/env bash
-if [[ $2 != "" ]]; then
-  echo "Fetching module $1 from local $2"
-  cd ~/qt5/$1
-  $(git remote add local file://$2)
-  git fetch local
+. /minicoin/util/parse-opts.sh "$@"
 
-  if [[ $3 != "" ]]; then
-    echo "Checking out branch $3"
-    git checkout local/$3
-  fi
+sources=${POSITIONAL[0]}
+build_dir=~/qt5-build
+modules=
+
+if [[ $PARAM_build != "" ]]; then
+  build_dir=$PARAM_build
+fi
+if [[ $PARAM_modules != "" ]]; then
+  modules=$PARAM_modules
 fi
 
-outputdir=~/qt5-build/qtbase/doc
+outputdir=$build_dir/qtbase/doc
 
-echo "Building HTML docs for '$1' into '$outputdir'"
-cd ~/qt5-build
-if [[ $1 != "" ]]; then
-  cd $1
+echo "Building HTML docs for '$sources' into '$outputdir'"
+cd $build_dir
+
+if [[ $modules == "" ]]; then
+  make html_docs
+else
+  module_array=()
+  IFS=',' read -r -a module_array <<< "$modules"
+  for module in "${module_array[@]}"; do
+    echo "Building $module"
+    cd $module
+    make html_docs
+    cd ..
+  done
 fi
-
-make html_docs
 
 cd $outputdir
 rm diff.txt
@@ -27,19 +36,5 @@ date > now.log # make sure there's a change
 git init -q
 git add .
 
-commit="Build of '$1'"
-if [[ $2 != "" ]]; then
-  commit+=" from '$2'"
-  if [[ $3 != "" ]]; then
-    commit+=" branch '$3'"
-  fi
-fi
-
-git commit -q -m "$commit"
+git commit -q -m "Build of '$sources'"
 git show > diff.txt
-
-if [[ $2 != "" ]]; then
-  cd ~/qt5/$1
-  git remote remove local
-fi
-
