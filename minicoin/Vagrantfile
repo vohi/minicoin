@@ -301,9 +301,16 @@ def add_role(box, role, name)
     activity = true
     script_args = [role, name, $USER]
     if role_params.is_a?(Hash)
-      role_params.each do |key, value|
-        script_args += ["--#{key}"]
-        script_args += ["#{value}"] unless value.nil?
+      role_params.each do |key, param|
+        array=param
+        if !param.is_a?(Array)
+          array=[]
+          array << param
+        end
+        array.each do |value|
+          script_args += ["--#{key}"]
+          script_args += ["#{value}"] unless value.nil?
+        end
       end
     end
     box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",

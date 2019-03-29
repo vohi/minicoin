@@ -1,15 +1,23 @@
-if [[ $1 == "" ]]; then
+#!/usr/bin/env bash
+. /minicoin/util/parse-opts.sh "$@"
+
+sources=${POSITIONAL[0]}
+
+if [[ $sources == "" ]]; then
   echo "No project specified"
   exit 1
 fi
 
-echo "Building project in $1"
+echo "Building project in $sources"
 
-project=$(basename $1)
-cd $HOME
+project=$(basename $sources)
 mkdir $project > /dev/null
 
-cd $project
-~/qmake $1
-make clean
-make
+if [[ -f "$HOME/make" ]]; then
+  $HOME/make $sources $project
+else
+  cd $project
+  $HOME/qmake $sources
+  make clean
+  make
+fi
