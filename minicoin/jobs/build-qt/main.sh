@@ -6,9 +6,11 @@ branch=
 modules=essential
 repo=git://code.qt.io/qt/qt5.git
 sources=../qt5 # location of sources relative to build dir
+build_dir=qt5-build
 configure=
 generate_qmake=false
 error=0
+
 
 if [[ $PARAM_branch != "" ]]; then
   # branch implies cloning from upstream, a local clone can't be init'ed from
@@ -28,6 +30,9 @@ if [[ $PARAM_modules != "" ]]; then
 fi
 if [[ $PARAM_configure != "" ]]; then
   configure=$PARAM_configure
+fi
+if [[ $PARAM_build != "" ]]; then
+  build_dir=$PARAM_build
 fi
 
 if [[ $repo != "" ]]; then
@@ -56,8 +61,8 @@ if [[ $modules == "essential" ]]; then
   modules=
 fi
 
-mkdir qt5-build
-cd qt5-build
+mkdir $build_dir
+cd $build_dir
 
 echo "Configuring with options '$configure'"
 $sources/configure -confirm-license -developer-build -opensource -nomake examples -nomake tests $configure
@@ -78,6 +83,10 @@ else
 fi
 
 if [[ $generate_qmake == "true" ]]; then
-  echo "$PWD/qtbase/bin/qmake \$@" > ~/qmake
-  chmod +x ~/qmake
+  qmake_name=qmake
+  if [[ $PARAM_build != "" ]]; then
+    qmake_name=qmake-$PARAM_build
+  fi
+  echo "$PWD/qtbase/bin/qmake \$@" > ~/$qmake_name
+  chmod +x ~/$qmake_name
 fi

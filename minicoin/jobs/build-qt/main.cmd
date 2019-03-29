@@ -9,6 +9,7 @@ SET branch=
 SET modules=essential
 SET repo=git://code.qt.io/qt/qt5.git
 SET sources=../qt5
+SET build_dir=qt5-build
 SET configure=%QTCONFIGFLAGS%
 SET generate_qmake=false
 SET error=0
@@ -34,6 +35,9 @@ if NOT "%PARAM_modules%" == "" (
 if NOT "%PARAM_configure%" == "" (
   SET configure=%PARAM_configure%
 )
+if NOT "%PARAM_build%" == "" (
+  SET build_dir=%PARAM_build%
+)
 
 if NOT "!repo!" == "" (
     echo Cloning from '!repo!'
@@ -53,8 +57,8 @@ if "!modules!" == "essential" (
     SET modules=
 )
 
-mkdir qt5-build
-cd qt5-build
+mkdir !build_dir!
+cd !build_dir!
 
 echo Configuring with options '!configure!'
 call !sources!\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests !configure!
@@ -74,7 +78,11 @@ FOR %%m in (!modules!) do (
 :qmake
 
 if "%generate_qmake%" == "true" (
-  echo %CD%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\qmake.bat
+  SET qmake_name=qmake
+  if NOT "%PARAM_build%" == "" (
+    SET qmake_name=qmake-%PARAM_build%
+  )
+  echo %CD%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
 )
 
 :eof
