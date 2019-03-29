@@ -1,35 +1,80 @@
 @echo off
-SETLOCAL
-SET branch=dev
+setlocal
+SETLOCAL ENABLEDELAYEDEXPANSION
+
+call \minicoin\util\parse-opts.cmd %*
+call \minicoin\util\discover-make.cmd
+
+SET branch=
 SET modules=essential
-IF NOT "%~1" == "" (SET branch=%~1)
-IF NOT "%~2" == "" (SET modules=%~2)
+SET repo=git://code.qt.io/qt/qt5.git
+SET sources=../qt5
+SET configure=%QTCONFIGFLAGS%
+SET generate_qmake=false
+SET error=0
 
-SET configflags=""
-
-for %%C in (nmake.exe jom.exe mingw32-make.exe) do set %%C=%%~$PATH:C
-
-if NOT "%mingw32-make.exe%" == "" (
-    set MAKE=mingw32-make.exe
-    set configflags=-opengl desktop
-) else if NOT "%jom.exe%" == "" (
-    set MAKE=jom.exe
-) else if NOT "%nmake.exe%" == "" (
-    set MAKE=nmake.exe
+if NOT "%PARAM_branch%" == "" (
+  SET branch=%PARAM_branch%
+) else (
+  if %posCount% GTR 0 (
+    SET origin=!POSITIONAL[1]!
+    if exist !origin! (
+        SET repo=
+        SET sources=!origin!
+    ) else (
+        echo !origin! is not a Qt5 super repo!
+        goto :eof
+    )
+  )
 )
 
-if "%MAKE%" == "" (
-    echo "No build tool-chain found in PATH"
-    goto errorenv
+if NOT "%PARAM_modules%" == "" (
+  SET modules=%PARAM_modules%
+)
+if NOT "%PARAM_configure%" == "" (
+  SET configure=%PARAM_configure%
 )
 
-echo Building Qt branch %branch%
-git clone git://code.qt.io/qt/qt5.git
-cd qt5
-git checkout %branch%
-perl init-repository --force --module-subset=%modules%
-mkdir ..\qt5-build
-cd ..\qt5-build
-call ..\qt5\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests %configflags%
+if NOT "!repo!" == "" (
+    echo Cloning from '!repo!'
+    if NOT "!branch!" == "" (
+        echo Checking out '!branch!'
+        SET branch="--branch !branch!"
+    )
+    git clone !branch! !repo!
+    cd qt5
 
-%MAKE% module-qtbase
+    echo Initializing repository for modules '!modules!'
+    perl init-repository --force --module-subset=!modules!
+    cd ..
+)
+
+if "!modules!" == "essential" (
+    SET modules=
+)
+
+mkdir qt5-build
+cd qt5-build
+
+echo Configuring with options '!configure!'
+call !sources!\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests !configure!
+
+if "!modules!" == "" (
+  %MAKETOOL%
+  set generate_qmake=true
+  goto :qmake
+)
+
+FOR %%m in (!modules!) do (
+  echo Building %%m
+  %MAKETOOL% module-%%m
+  if "%%m" == "qtbase" SET generate_qmake=true
+)
+
+:qmake
+
+if "%generate_qmake%" == "true" (
+  echo %CD%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\qmake.bat
+)
+
+:eof
