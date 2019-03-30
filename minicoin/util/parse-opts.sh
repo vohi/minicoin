@@ -2,6 +2,7 @@ names=()
 args=()
 POSITIONAL=()
 FLAGS=()
+PARAMS=()
 count=()
 index=0
 
@@ -33,16 +34,19 @@ done
 for i in ${count[@]}; do
   arg=${args[$i]}
   name=${names[$i]}
-  if [[ "$arg" == '""' ]]; then
+  name="${name//-/_}"
+
+  if [[ "$arg" == '""' ]] || [[ $arg == "" ]]; then
     FLAGS=( ${FLAGS[@]} "$name" )
-    declare "FLAG_$name"="false"
+    declare "FLAG_$name"="true"
   elif [[ $name != "" ]]; then
     param="PARAM_$name";
     value=${!param}
     if [[ $value ]]; then
-      echo "$param already set to '$value' - ignoring $arg"
+      declare "$param+=($arg)"
     else
-      declare "$param"="$arg"
+      declare -a "$param=( '$arg' )"
+      PARAMS=( ${PARAMS[@]} "$name" )
     fi
   fi
 done
