@@ -15,12 +15,12 @@ echo Named:
 for %%p in (!PARAMS[@]!) do (
   if NOT "!PARAM_%%p[1]!" == "" (
     echo - %%p
-    for %%a in (!PARAM_%%p[@]!) do echo   - %%a
+    for /L %%i in (0, 1, !PARAM_%%p[#]!) do echo   - !PARAM_%%p[%%i]!
   ) else (
     echo - %%p: !PARAM_%%p!
   )
 )
 echo Positional:
-for %%p in (!POSITIONAL[@]!) do echo - %%p
+for /L %%i in (0, 1, !POSITIONAL[#]!) do echo - !POSITIONAL[%%i]!
 echo Flags:
 for %%f in (!FLAGS[@]!) do echo - %%f
