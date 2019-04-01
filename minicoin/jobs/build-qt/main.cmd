@@ -82,7 +82,7 @@ if "%generate_qmake%" == "true" (
   if NOT "%PARAM_build%" == "" (
     SET qmake_name=qmake-%PARAM_build%
   )
-  echo %CD%\qtbase-build\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
+  echo %CD%\qtbase\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
 )
 
 :eof
