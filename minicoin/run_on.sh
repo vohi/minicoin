@@ -64,8 +64,15 @@ function run_on_machine() {
   vagrant winrm $machine &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
+    guest_home="c:\\Users\\host"
     ext="cmd"
   else
+    uname=$(vagrant ssh -c uname $machine 2> /dev/null)
+    if [[ "$uname" =~ "Darwin" ]]; then
+      guest_home="/Users/host"
+    else
+      guest_home="/home/host"
+    fi
     ext="sh"
   fi
 
@@ -95,12 +102,6 @@ function run_on_machine() {
   if [ ! $error == 0 ]; then
     echo "$machine ==> Error uploading '$upload_source' to machine '$machine' - skipping machine"
     return
-  fi
-
-  if [[ $ext == "cmd" ]]; then
-    guest_home="c:\\Users\\host"
-  else
-    guest_home="/home/host"
   fi
 
   # poorest-man yaml parser
