@@ -163,18 +163,15 @@ details.
 
 ## Available jobs
 
-`$ minicoin run [machines...] build-qtbase -- my_feature`
+`$ minicoin run [machines...] build-qt -- [--modules a,b]`
 
-Fetches the local qtbase clone from current directory on the host, checks
-out the `my_feature` branch, runs configure, and then make. You usually
-run this from within your qt5.git clone.
+Configures and build the Qt5 clone in the local directory on the listed
+machines. The optional modules parameter defines which modules to build.
 
 `$ minicoin run [machines...] build-project`
 
-Build the project in the current working directory, using the Qt that was
-built last via the build-qtbase script.
-
-
+Build the project in the current working directory on the listed machines,
+using the Qt that was built last via the build-qt script.
 
 # Machines
 
