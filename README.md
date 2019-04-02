@@ -8,7 +8,7 @@ All the useful stuff is in the subdirectory `minicoin`.
 
 ```
 $ cd ~/qt5
-$ minicoin run ubuntu1804 build-qtbase -- my_branch
+$ minicoin run ubuntu1804 build-qt -- --modules qtbase,qtdeclarative
 $ cd ~/my_project
 $ minicoin run ubuntu1804 build-project
 ```
