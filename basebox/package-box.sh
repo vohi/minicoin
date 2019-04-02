@@ -5,18 +5,15 @@ if [ $# -lt 1 ]; then
 
   echo "Export an existing virtual machine to a box file and register with vagrant"
   echo ""
-  echo "Usage: $0 vm-name [boxname]"
+  echo "Usage: $0 vm-name [boxname] [vagrantfile]"
   echo ""
   exit -1
 fi
 
 vmname=$1
 
-if [ -z "$2" ]; then
-  boxbase=$vmname
-else
-  boxbase=$2
-fi
+[[ ! -z "$2" ]] && boxbase=$2 || boxbase=$vmname
+[[ ! -z "$3" ]] && vagrantfile="--vagrantfile $3"
 
 boxfile=$boxbase.box
 clear_backup=false
@@ -30,8 +27,11 @@ if [ -f $boxfile ]; then
 fi
 
 echo "Exporting VM '$vmname' to file '$boxfile' and adding to vagrant as '$boxbase'..."
+if [[ $vagrantfile != "" ]]; then
+  echo "Including vagrantfile $3"
+fi
 
-vagrant package --base $vmname --output $boxfile $boxbase
+vagrant package --base $vmname --output $boxfile $vagrantfile $boxbase
 error=$?
 
 if [[ $error != 0 ]]; then
