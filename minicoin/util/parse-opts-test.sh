@@ -13,7 +13,29 @@ function assert()
     fi
 }
 
+if [[ $1 == --debug ]]; then
+  debug=true
+  shift
+  unset args
+  declare -a args=( "$@" )
+  echo "Testing ${args[*]}"
+fi
+
 . parse-opts.sh "${args[@]}"
+
+if [[ $debug == true ]]; then
+  echo "Positional: ${POSITIONAL[@]}"
+  for p in ${POSITIONAL[@]}; do echo "- $p"; done
+  echo "Flags: ${FLAGS[@]}"
+  for f in ${FLAGS[@]}; do echo "- $f"; done
+  echo "Params: ${PARAMS[@]}"
+  for p in ${PARAMS[@]}; do
+    name="PARAM_$p"
+    value="${!name}"
+    echo "- $p: $value"
+  done
+  exit 0
+fi
 
 assert "${POSITIONAL[*]}" "pos1 pos2 pos3 pos 4"
 assert ${POSITIONAL[0]} "pos1"

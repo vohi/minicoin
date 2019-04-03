@@ -4,8 +4,26 @@ setlocal enabledelayedexpansion
 
 set args=pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3
 set /A errors=0
+set debug=false
+
+if "%1" == "--debug" (
+  set debug=true
+  shift
+  set args=%*
+)
 
 call parse-opts.cmd %args%
+
+if "%debug%" == "true" (
+  echo Positional: !POSITIONAL[@]!
+  for %%p in (!POSITIONAL[@]!) do echo - %%p
+  echo Flags: !FLAGS[@]!
+  for %%f in (!FLAGS[@]!) do echo - %%f
+  echo Params: !PARAMS[@]!
+  for %%p in (!PARAMS[@]!) do echo - %%p: !PARAM_%%p!
+
+  exit /B
+)
 
 call :assert "!POSITIONAL[@]!" "pos1 pos2 pos3 pos 4"
 call :assert !POSITIONAL[#]! 4

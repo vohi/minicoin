@@ -14,36 +14,41 @@ set PARAMS[@]=
 
 :parseargs
   if /i "%~1" == "" goto endargs
-
+  
   set "arg=%~1"
 
-  if "%arg:~0,2%" == "--" (
-    if %argCount% LSS %nameCount% (
-      set args[!argCount!]=
+  set "short=false"
+  if "!arg:~0,1!" == "-" if "!arg:~2!" == "" (
+    set "short=true"
+  )
+
+  if "!arg:~0,2!" == "--" (
+    if !argCount! LSS !nameCount! (
+      set args[!argCount!]=""
       set /A argCount+=1
     )
-    set names[!nameCount!]=%arg:~2%
+    set names[!nameCount!]=!arg:~2!
     set /A nameCount+=1
-  ) else if "%arg:~0,1%" == "-" (
-    if %argCount% LSS %nameCount% (
-      set args[!argCount!]=
+  ) else if "!short!" == "true" (
+    if !argCount! LSS !nameCount! (
+      set args[!argCount!]=""
       set /A argCount+=1
     )
-    set names[!nameCount!]=%arg:~1%
-    set /A nameCount+=1
+    set names[!nameCount!]=!arg:~1!
+    set /A nameCount+=1      
   ) else (
-    if %nameCount% EQU %argCount% (
-      set POSITIONAL[!posCount!]=%arg%
+    if !nameCount! EQU !argCount! (
+      set POSITIONAL[!posCount!]=!arg!
       if "!POSITIONAL[@]!" == "" (
-        set "POSITIONAL[@]=%arg%"
+        set "POSITIONAL[@]=!arg!"
         set /A "POSITIONAL[#]=1"
       ) else (
-        set "POSITIONAL[@]=!POSITIONAL[@]! %arg%"
+        set "POSITIONAL[@]=!POSITIONAL[@]! !arg!"
         set /A "POSITIONAL[#]+=1"
       )
       set /A posCount+=1
     ) else (
-      set "args[!argCount!]=%arg%"
+      set "args[!argCount!]=!arg!"
       set /A argCount+=1
     )
   )
