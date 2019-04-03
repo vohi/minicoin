@@ -60,8 +60,25 @@ if "!modules!" == "essential" (
 mkdir !build_dir!
 cd !build_dir!
 
+if NOT "!configure!" == "" (
+  if exist "%USERPROFILE%\!configure!.opt" (
+    SET "config_opt=%USERPROFILE%\!configure!.opt"
+  )
+) else (
+  SET config_opt="%USERPROFILE%\config.opt"
+)
+
+if exist "!config_opt!" (
+  copy !config_opt! .\config.opt
+  SET configure=-redo
+  echo Using configure options from !config_opt!:
+  type config.opt
+) else (
+  SET configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests !configure!
+)
+
 echo Configuring with options '!configure!'
-call !sources!\configure -confirm-license -developer-build -opensource -nomake examples -nomake tests !configure!
+call !sources!\configure !configure!
 
 if "!modules!" == "" (
   %MAKETOOL%
@@ -71,7 +88,8 @@ if "!modules!" == "" (
 
 FOR %%m in (!modules!) do (
   echo Building %%m
-  %MAKETOOL% module-%%m
+  call %MAKETOOL% module-%%m
+  if !errorlevel! neq 0 exit /b !errorlevel!
   if "%%m" == "qtbase" SET generate_qmake=true
 )
 

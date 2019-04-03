@@ -64,8 +64,24 @@ fi
 mkdir $build_dir
 cd $build_dir
 
+if [[ $configure != "" ]]; then
+  if [[ -f "$HOME/$configure.opt" ]]; then
+    config_opt=$HOME/$configure.opt
+  fi
+else
+  config_opt=$HOME/config.opt
+fi
+
+if [[ -f $config_opt ]]; then
+  cp $config_opt ./config.opt
+  configure="-redo"
+  echo "Using configure options from $config_opt:"
+  cat $config_opt
+else
+  configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
+fi
 echo "Configuring with options '$configure'"
-$sources/configure -confirm-license -developer-build -opensource -nomake examples -nomake tests $configure
+$sources/configure $configure
 
 if [[ $modules != "" ]]; then
   module_array=()
@@ -73,6 +89,10 @@ if [[ $modules != "" ]]; then
   for module in "${module_array[@]}"; do
     echo "Building $module"
     make -j4 module-$module
+    error=$?
+    if [[ $error != 0 ]]; then
+      exit $error
+    fi
     if [[ $module == "qtbase" ]]; then
       generate_qmake=true
     fi
