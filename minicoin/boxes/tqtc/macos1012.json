@@ -1,0 +1,16 @@
+{
+    "name": "tqtc/macos1012",
+    "description": "macOS 10.12 Sierra",
+    "versions": [
+        {
+            "version": "0.0.1",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "https://$server/$minicoin_key/macos1012/macos1012-0.0.1.box"
+                }
+            ]
+        }
+    ]
+}

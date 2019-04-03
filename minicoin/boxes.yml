@@ -67,7 +67,6 @@ machines:
     memory: 1024
   - name: macos1012
     box: tqtc/$minicoin_key/macos1012
-    box_version: 0.0.1
     memory: 1024
   - name: macos1013
     box: tqtc/$minicoin_key/macos1013

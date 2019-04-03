@@ -415,15 +415,12 @@ Vagrant.configure("2") do |config|
         if sources.is_a?(String)
           sources = [sources];
         end
-        if machine["box_version"].nil?
-          sources.each do |source|
-            box.vm.box_url += [
-              "#{source}/#{machine_url}/metadata.json",
-              "#{source}/#{machine_url}.box"
-              ]
-          end
+        if File.file?("boxes/#{maker}/#{name}.json")
+          box.vm.box_url = ["#{sources[0]}/#{machine_url}.json"]
         else
-          box.vm.box_url = ["#{sources[0]}/#{machine_url}/metadata.json"]
+          sources.each do |source|
+            box.vm.box_url += ["#{source}/#{machine_url}.box"]
+          end
         end
       end
       box.vm.box = machine_box
