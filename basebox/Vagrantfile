@@ -1,22 +1,20 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-boxfile = ARGV[ARGV.length-1] # naively assume last argument is box
+if ARGV.length > 1
+  boxfile = ARGV[ARGV.length-1] # naively assume last argument is box
+end
 
 # This is a generic Vagrant configuration that allows launching
-# a virtual machine from a box file. This is not useful to do
-# anything except for maintaining base boxes incrementally without
+# a virtual machine from an available box. This is not useful to do
+# for anything except for maintaining base boxes incrementally without
 # having to keep VMs alive and eating disk-space in VirtualBox.
 Vagrant.configure("2") do |config|
   config.vm.define "#{boxfile}" do |basebox|
-    basebox.vm.box = "#{boxfile}.box"
-
+    basebox.vm.box = "tqtc/#{boxfile}"
     basebox.vm.provider "virtualbox" do |vb|
-      vb.gui = true
-      vb.memory = "2048"
-      vb.name = boxfile
+      vb.name = "#{boxfile}-basebox"
     end
-
 
     # don't share anything
     basebox.vm.synced_folder ".", "/vagrant", disabled: true
@@ -24,5 +22,15 @@ Vagrant.configure("2") do |config|
     # since we launch a base box to maintain it as a base box...
     basebox.winssh.insert_key = false
     basebox.ssh.insert_key = false
+
+    is_windows = (boxfile.include? "windows")
+    is_mac = (boxfile.include? "mac")
+
+    if is_windows
+      basebox.vm.guest = :windows
+      basebox.vm.communicator = :winrm
+    elsif is_mac
+      basebox.vm.guest = :darwin
+    end
   end
 end
