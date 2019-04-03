@@ -17,8 +17,8 @@ SET error=0
 if NOT "%PARAM_branch%" == "" (
   SET branch=%PARAM_branch%
 ) else (
-  if %posCount% GTR 0 (
-    SET origin=!POSITIONAL[1]!
+  if NOT "!POSITIONAL[0]!" == "" (
+    SET origin=!POSITIONAL[0]!
     if exist !origin! (
         SET repo=
         SET sources=!origin!
