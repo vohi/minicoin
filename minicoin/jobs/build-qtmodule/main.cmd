@@ -16,7 +16,6 @@ if "!POSITIONAL[0]!" == "" (
 set "sources=!POSITIONAL[0]!"
 set module=
 for %%f in ("%sources%/*.pro") do (
-  echo %%f %%~nf
   if NOT "!module!" == "" (
     echo %sources% needs to have exactly one .pro file!
     exit /B 1
