@@ -59,8 +59,8 @@ if "%module%" == "qtbase" (
   call %USERPROFILE%\%qmake_name% %sources%
 )
 
-%MAKETOOL%
+call %MAKETOOL%
 
-if %generate_qmake% == "true" (
+if %generate_qmake% == true (
   echo %CD%\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
 )
