@@ -14,23 +14,34 @@ minicoin_dir=$(dirname $source)
 project_dir=$PWD
 
 function run() {
-    cd $minicoin_dir
-    $@
-    # . ./run_on.sh ${machines[@]} $job -- ${script_args[@]}
-    error=$?
-    cd $project_dir
-    exit $error
+  cd $minicoin_dir
+  "$@"
+  error=$?
+  cd $project_dir
+  return $error
 }
 
-if [[ $# > 0 ]]; then
-  if [ $1 != "run" ]; then
-    run vagrant $@
-  fi
+minicoin_command=
+min_args=
 
-  shift
+if [[ $# > 0 ]]; then
+  if [ $1 == "run" ]; then
+    minicoin_command=minicoin_run
+    min_args=2
+    shift
+  elif [ $1 == "ls" ]; then
+    minicoin_command=minicoin_ls
+    min_args=1
+    shift
+  fi
 fi
 
-if [ "$#" -lt 2 ]; then
+if [[ $minicoin_command == "" ]]; then
+  run vagrant "$@"
+  exit $?
+fi
+
+if [ "$#" -lt $min_args ]; then
   echo "Controls the minicoin environment by forwarding calls to vagrant or executing"
   echo "a job on machines, operating on the code in the current working environment."
   echo
@@ -44,6 +55,12 @@ if [ "$#" -lt 2 ]; then
   echo "    '--parallel' triggers parallel execution of the job on several machines"
   echo "    Arguments after '--' will be passed on to the job script. Job arguments that"
   echo "    expand to paths on the host will be adjusted to the guest's file system."
+  echo
+  echo "  ls machine1 machine2 ... [-- [args]]"
+  echo
+  echo "    Show the directory contents of each machine. 'args' will be passed to the"
+  echo "    respective command, ie 'ls' on mac and Linux guests, and the 'dir' command"
+  echo "    on Windows guests."
   echo
   echo "  <vagrant-command> [options] [machines...]"
   echo "    status      outputs status of the machines"
@@ -59,7 +76,7 @@ fi
 
 machines=()
 job="-1"
-script_args=($project_dir)
+script_args=()
 
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
@@ -71,9 +88,35 @@ for arg in "${@}"; do
   fi
 done
 
-job="${machines[@]: -1}"
-unset "machines[${#machines[@]}-1]"
-run_args=(${machines[@]} $job -- ${script_args[@]})
+function minicoin_run()
+{
+  job="${machines[@]: -1}"
+  unset "machines[${#machines[@]}-1]"
+  script_args=($project_dir ${script_args[@]})
+  run_args=(${machines[@]} $job -- ${script_args[@]})
 
-run . run_on.sh ${run_args[@]}
+  run . run_on.sh ${run_args[@]}
+  error=$?
+  return $?
+}
+
+function minicoin_ls()
+{
+  args=
+  if [[ ! ${script_args[@]} == "" ]]; then
+    args=" ${script_args[@]}"
+  fi
+  for machine in ${machines[@]}; do
+    echo "==> $machine:"
+    if [[ "$machine" =~ windows ]]; then
+      run vagrant winrm -c "cd \$Env:USERPROFILE; cmd /c dir$args" $machine
+    else
+      run vagrant ssh -c "ls -l$args" $machine
+    fi
+  done
+  error=$?
+  return $error
+}
+
+$minicoin_command
 exit $?
