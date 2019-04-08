@@ -5,7 +5,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 call C:\minicoin\util\parse-opts.cmd %*
 call C:\minicoin\util\discover-make.cmd
 
-SET sources=!POSITIONAL[1]!
+SET sources=!POSITIONAL[0]!
 
 IF "!sources!" == "" (
   echo No project specified!
