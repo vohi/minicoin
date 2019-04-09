@@ -205,6 +205,7 @@ The following parameters are available:
 # Optional virtual machine configurations
 
     private_net: optional # IP address, or "disabled"; use dhcp otherwise
+    ports: optional # a list of port mappings; see vagrant's attributes
     memory: optional # amount of MBs of RAM the machine should have
     cpus: optional # number of CPUs the machine should have
     gui: optional # "true" if the VirtualBox gui should be shown
