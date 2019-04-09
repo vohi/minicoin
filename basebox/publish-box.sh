@@ -6,7 +6,7 @@ if [ $# -lt 2 ]; then
   echo ""
   echo "Usage: $0 boxfile aws|azure [private]"
   echo ""
-  echo "Uses the AWS cli client. Make sure access credentials are configured."
+  echo "Uses the AWS and Azure cli clients. Make sure access credentials are configured."
   echo "The box file will be world-readable, so make sure it doesn't contain any secrets."
   exit -1
 fi

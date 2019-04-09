@@ -1,0 +1,16 @@
+{
+    "name": "$name",
+    "description": "$description",
+    "versions": [
+        {
+            "version": "$version",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "$provider",
+                    "url": "https://$server/$minicoin_key/$provider/$name-$version.box"
+                }
+            ]
+        }
+    ]
+}
