@@ -1,0 +1,16 @@
+{
+    "name": "tqtc/macos1014",
+    "description": "macOS 10.14 Mojave",
+    "versions": [
+        {
+            "version": "0.0.1",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "https://$server/$minicoin_key/virtualbox/macos1014-0.0.1.box"
+                }
+            ]
+        }
+    ]
+}
