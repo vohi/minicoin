@@ -209,6 +209,8 @@ The following parameters are available:
     cpus: optional # number of CPUs the machine should have
     gui: optional # "true" if the VirtualBox gui should be shown
     vram: optional # amount of MBs of video memory the machine should have
+    resolution: optional # display resolution, e.g UXGA or WQXGA
+    guiscale: optional # scale factor for the GUI
 
 # Expert options for platform specific quirks
 
