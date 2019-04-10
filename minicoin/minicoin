@@ -55,6 +55,10 @@ if [ "$#" -lt $min_args ]; then
   echo "    '--parallel' triggers parallel execution of the job on several machines"
   echo "    Arguments after '--' will be passed on to the job script. Job arguments that"
   echo "    expand to paths on the host will be adjusted to the guest's file system."
+  echo "    '--continuous' runs the job in a loop (implies --parallel), waiting"
+  echo "    after each run for the next invocation, which will be executed without"
+  echo "    the overhead of setting the job up again."
+  echo "    '--abort' makes a current continuous run break out of the loop and exit."
   echo
   echo "  ls machine1 machine2 ... [-- [args]]"
   echo

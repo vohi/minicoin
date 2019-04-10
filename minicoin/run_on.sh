@@ -18,16 +18,26 @@ job="-1"
 script_args=()
 parallel="false"
 verbose="false"
+continuous="false"
+abort="false"
+redirect_output="false"
 
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
-  elif [[ "$arg" = "--parallel" && "$job" != "--" ]]; then
-    parallel="true"
-  elif [[ "$arg" = "--verbose" && "$job" != "--" ]]; then
-    verbose="true"
-  elif [[ "$job" = "-1" ]]; then
-    machines=( "${machines[@]}" "$arg" )
+  elif [[ "$job" == "-1" ]]; then
+    if [[ "$arg" == "--parallel" ]]; then
+      parallel="true"
+      redirect_output="true"
+    elif [[ "$arg" == "--verbose" ]]; then
+      verbose="true"
+    elif [[ "$arg" == "--continuous" ]]; then
+      continuous="true"
+    elif [[ "$arg" == "--abort" ]]; then
+      abort="true"
+    else
+      machines=( "${machines[@]}" "$arg" )
+    fi
   else
     script_args=( "${script_args[@]}" "$arg" )
   fi
@@ -47,14 +57,62 @@ log_stamp=$(date "+%Y%m%d-%H%M%S")
 
 function log_progress() {
   if [[ "$verbose" == "true" ]]; then
-    echo $1
+    >&2 echo $1
   fi
 }
 
-redirect_output=$(( ${#machines[@]} - 1 ))
+# continuous runs with more than one machine need to run parallel
+if [[ $continuous == "true" && $(( ${#machines[@]} - 1 )) -gt 0 ]]; then
+  log_progress "More than one machine running continuously - running parallel"
+  parallel="true"
+  redirect_output="true"
+fi
+
+function test_continue() {
+  continuous_file=$1
+  continuous=$2
+  machine=$3
+  local run="true"
+
+  if [ $continuous == "true" ]; then
+    log_progress "==> $machine: Continuous process, waiting to wake up..."
+    run="wait"
+
+    continuous_last=$(stat -f "%m" $continuous_file 2> /dev/null)
+    while [[ $run == "wait" ]]; do
+      continuous_now=$(stat -f "%m" $continuous_file 2> /dev/null)
+      error=$?
+      if [[ "$error" != 0 ]]; then
+        log_progress "==> $machine: Aborted, exiting"
+        run="false"
+      elif [[ "$continuous_now" != "$continuous_last" ]]; then
+        log_progress "==> $machine: Woken up, starting next run!"
+        run="true"
+      else
+        sleep 2
+      fi
+    done
+  else
+    run="false"
+  fi
+
+  echo $run
+}
 
 function run_on_machine() {
   machine=$1
+  continuous_file="/tmp/minicoin-$machine-run-$job.pid"
+  if [[ $abort == "true" ]]; then
+    if [[ -f $continuous_file ]]; then
+      echo "==> $machine: Exiting current job!"
+      rm $continuous_file 2> /dev/null
+    fi
+    return 0
+  elif [[ -f $continuous_file ]]; then
+    echo "==> $machine: Waking up current job!"
+    touch $continuous_file
+    return 0
+  fi
 
   machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
   if [ ! $machine_state == 'running' ]; then
@@ -90,11 +148,13 @@ function run_on_machine() {
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
-  mkdir .logs &> /dev/null
-  touch $PWD/.logs/$job-$machine-$log_stamp.log
-  touch $PWD/.logs/$job-error-$machine-$log_stamp.log
-  ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
-  ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
+  if [[ $redirect_output == "true" ]]; then
+    mkdir .logs &> /dev/null
+    touch $PWD/.logs/$job-$machine-$log_stamp.log
+    touch $PWD/.logs/$job-error-$machine-$log_stamp.log
+    ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
+    ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
+  fi
 
   log_progress "$machine ==> Uploading '$upload_source'..."
   out=$(vagrant upload $upload_source $job $machine)
@@ -123,43 +183,55 @@ function run_on_machine() {
   done
 
   error=0
+  run="true"
+  echo $$ > $continuous_file
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
-    if [[ $redirect_output != 0 ]]; then
+    if [[ $redirect_output == "true" ]]; then
       redirect=" > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log 2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log"
       command=$command$redirect
     fi
-    vagrant winrm -s cmd -c \
-      "($command) || \
-        echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
-      $machine
-    if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
-      error=1
-    fi
+
+    while [ "$run" == "true" ]; do
+      vagrant winrm -s cmd -c \
+        "($command) || \
+          echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
+        $machine
+      if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
+        error=1
+      fi
+
+      run=$(test_continue $continuous_file $continuous $machine)
+    done
     vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
   else
     command="$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
-    if [[ $redirect_output != 0 ]]; then
+    if [[ $redirect_output == "true" ]]; then
       redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
       command=$command$redirect
     fi
-    vagrant ssh -c "$command" $machine 2> /dev/null
-    error=$?
+    while [ "$run" == "true" ]; do
+      vagrant ssh -c "$command" $machine 2> /dev/null
+      error=$?
+
+      run=$(test_continue $continuous_file $continuous $machine)
+    done
 
     vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
   fi
   if [ $error != 0 ]; then
     >&2 echo "$machine ==> Job $job started at $log_stamp ended with error"
-    if [[ $redirect_output != 0 ]]; then
+    if [[ $redirect_output == "true" ]]; then
       >&2 echo "$machine ==> See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
       >&2 echo "$machine ==> See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
     fi
   fi
+  rm $continuous_file 2> /dev/null
 
   if [ -f "jobs/$job/post-run.sh" ]; then
     log_progress "$machine ==> Cleaning up after '$job'"
