@@ -27,7 +27,7 @@ If you are on Windows, you will need a bash shell to use minicoin (f.ex the
 bash that comes with git), and also create a script that forwards calls to
 the `minicoin` script:
 
-`$ echo "~/qt-developer-environments/minicoin/minicoin $@" > /bin/minicion`
+`$ echo "~/qt-developer-environments/minicoin/minicoin $@" > /bin/minicoin`
 `$ chmod +x /bin/minicoin`
 
 See the **Host System Requirements** section for platform specific details.
