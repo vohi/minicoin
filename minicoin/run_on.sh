@@ -117,18 +117,14 @@ function run_on_machine() {
     return $error
   fi
 
-  machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
-  if [ ! $machine_state == 'running' ]; then
-    vagrant up $machine
-  fi
-
+  vagrant up $machine &> /dev/null
   vagrant winrm $machine &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
     guest_home="c:\\Users\\host"
     ext="cmd"
   else
-    uname=$(vagrant ssh -c uname $machine 2> /dev/null)
+    uname=$(vagrant ssh -c uname $machine &> /dev/null)
     if [[ "$uname" =~ "Darwin" ]]; then
       guest_home="/Users/host"
     else
