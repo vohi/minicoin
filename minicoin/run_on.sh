@@ -89,7 +89,7 @@ function test_continue() {
         log_progress "==> $machine: Woken up, starting next run!"
         run="true"
       else
-        sleep 2
+        sleep 1
       fi
     done
   else
@@ -111,7 +111,10 @@ function run_on_machine() {
   elif [[ -f $continuous_file ]]; then
     echo "==> $machine: Waking up current job!"
     touch $continuous_file
-    return 0
+    run=$(test_continue $continuous_file "true" $machine)
+    error=$(tail -n 1 $continuous_file)
+    log_progress "Last job existed with $error"
+    return $error
   fi
 
   machine_state=$(vagrant status $machine | grep $machine | awk '{print $2}')
@@ -196,6 +199,7 @@ function run_on_machine() {
     fi
 
     while [ "$run" == "true" ]; do
+      error=0
       vagrant winrm -s cmd -c \
         "($command) || \
           echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
@@ -204,6 +208,7 @@ function run_on_machine() {
         error=1
       fi
 
+      echo $error >> $continuous_file
       run=$(test_continue $continuous_file $continuous $machine)
     done
     vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
@@ -216,9 +221,11 @@ function run_on_machine() {
       command=$command$redirect
     fi
     while [ "$run" == "true" ]; do
+      error=0
       vagrant ssh -c "$command" $machine 2> /dev/null
       error=$?
 
+      echo $error >> $continuous_file
       run=$(test_continue $continuous_file $continuous $machine)
     done
 
@@ -239,6 +246,7 @@ function run_on_machine() {
   fi
 }
 
+error=0
 for machine in "${machines[@]}"; do
   if [[ "$parallel" == "true" ]]; then
     log_progress "Starting job on '$machine'..."
@@ -246,9 +254,13 @@ for machine in "${machines[@]}"; do
     pids[${machine}]=$!
   else
     run_on_machine $machine
+    error=$(( $error+$? ))
   fi
 done
 
 for pid in ${pids[*]}; do
   wait $pid
+  error=$(( $error+$? ))
 done
+
+exit $error
