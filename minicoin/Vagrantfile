@@ -16,42 +16,29 @@ if $is_windows_host
 end
 
 $PWD = File.dirname(__FILE__)
-yaml = YAML.load_file(File.join($PWD, 'boxes.yml'))
-$urls = yaml["urls"]
-machines = yaml["machines"]
 
-$settings = yaml["settings"]
-$settings = [] if $settings.nil?
-$settings["home_share"] = $HOME if $settings["home_share"].nil?
-
-user_machine_file = File.join($HOME, 'minicoin/boxes.yml');
-if File.file?(user_machine_file)
-  user_yaml = YAML.load_file(user_machine_file)
-  user_machines = user_yaml["machines"]
-  user_machines = [] if user_machines.nil?
-  user_machines.each do |user_machine|
-    idx = machines.find_index {|m| m["name"] == user_machine["name"] }
-    if !idx.nil?
-      machines[idx].each do |key, value|
-        if !user_machine[key].nil?
-          machines[idx][key] = user_machine[key]
-        end
-      end
-    else
-      machines << user_machine
-    end
-  end
-
+def load_settings(yaml, user_yaml)
   # a hash
-  user_settings = user_yaml["settings"]
+  $settings = yaml["settings"]
+  $settings = {} if $settings.nil?
+  $settings["home_share"] = $HOME if $settings["home_share"].nil?
+
+  user_settings = user_yaml["settings"] unless user_yaml.nil?
   if !user_settings.nil?
     user_settings.each do |key, value|
       $settings[key] = value
     end
   end
 
+  $settings["home_share"] = $settings["home_share"].gsub("$HOME", $HOME)
+  $settings["home_share"] = $settings["home_share"].gsub("~", $HOME)
+end
+
+def load_urls(yaml, user_yaml)
   # a hash of arrays
-  user_urls = user_yaml["urls"]
+  $urls = yaml["urls"]
+
+  user_urls = user_yaml["urls"] unless user_yaml.nil?
   if !user_urls.nil?
     user_urls.each do |key, array|
       array.each do |value|
@@ -61,8 +48,73 @@ if File.file?(user_machine_file)
   end
 end
 
-$settings["home_share"] = $settings["home_share"].gsub("$HOME", $HOME)
-$settings["home_share"] = $settings["home_share"].gsub("~", $HOME)
+def load_boxes(yaml, user_yaml)
+  machines = yaml["machines"]
+
+  unless user_yaml.nil?
+    user_machines = user_yaml["machines"]
+    user_machines = [] if user_machines.nil?
+    user_machines.each do |user_machine|
+      idx = machines.find_index {|m| m["name"] == user_machine["name"] }
+      if !idx.nil?
+        machines[idx].each do |key, value|
+          if !user_machine[key].nil?
+            machines[idx][key] = user_machine[key]
+          end
+        end
+      else
+        machines << user_machine
+      end
+    end
+  end
+
+  return machines
+end
+
+def load_includes(yaml, basedir)
+  includes = yaml["includes"] unless yaml.nil?
+
+  unless includes.nil?
+    includes.each do |include|
+      include_file = File.join(basedir, include)
+      begin
+        include_yaml = YAML.load_file(include_file)
+        include_yaml = load_includes(include_yaml, File.dirname(include_file))
+        include_yaml.each do |section, data|
+          if yaml[section].nil?
+            yaml[section] = data
+          else
+            yaml[section] = yaml[section] + data
+          end
+        end
+      rescue => error
+        puts "Error loading file #{include_file}: #{error}"
+      end
+    end
+  end
+
+  return yaml
+end
+
+def load_minicoin()
+  global_file = File.join($PWD, 'boxes.yml')
+  yaml = YAML.load_file(global_file)
+
+  user_file = File.join($HOME, 'minicoin/boxes.yml')
+  user_yaml = nil
+  if File.file?(user_file)
+    user_yaml = YAML.load_file(user_file)
+  end
+
+  yaml = load_includes(yaml, $PWD)
+  user_yaml = load_includes(user_yaml, $HOME)
+
+  machines = load_boxes(yaml, user_yaml)
+  load_settings(yaml, user_yaml)
+  load_urls(yaml, user_yaml)
+
+  return machines
+end
 
 def fetch_file(uri, local)
   begin
@@ -463,12 +515,17 @@ def virtualbox_setup(box, machine)
 end
 
 Vagrant.configure("2") do |config|
+  machines = load_minicoin()
   machines.each do |machine|
     name = machine["name"]
+    if name.nil?
+      puts "==> Machine without name: #{machine}"
+      next
+    end
     machine_box = machine["box"]
     if machine_box.nil?
       puts "==> #{name}: Machine has no box set"
-      exit
+      next
     end
     machine_url = machine_box
     if machine_box.include?("$minicoin_key")

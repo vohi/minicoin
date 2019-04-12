@@ -35,6 +35,7 @@ class Tester
     @error_count
     def initialize()
         @error_count = 0
+        load_minicoin()
     end
     def test_expand_env()
         test_data = {
