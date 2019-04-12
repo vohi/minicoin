@@ -17,6 +17,33 @@ end
 
 $PWD = File.dirname(__FILE__)
 
+def merge_yaml(first, second)
+  if first.nil? && second.nil?
+    nil
+  elsif first.nil?
+    second
+  elsif second.nil?
+    first
+  elsif first.is_a?(Hash) && second.is_a?(Hash)
+    first.merge!(second) do |key, one, two|
+      merge_yaml(one, two)
+    end
+  elsif first.is_a?(Array)
+    if second.is_a?(Array)
+      second.each do |s|
+        first << s
+      end
+      first
+    else
+      first << second
+    end
+  elsif second.is_a?(Array)
+    second << first
+  else # two values - make an array
+    [first, second]
+  end
+end
+
 def load_settings(yaml, user_yaml)
   # a hash
   $settings = yaml["settings"]
@@ -24,11 +51,7 @@ def load_settings(yaml, user_yaml)
   $settings["home_share"] = $HOME if $settings["home_share"].nil?
 
   user_settings = user_yaml["settings"] unless user_yaml.nil?
-  if !user_settings.nil?
-    user_settings.each do |key, value|
-      $settings[key] = value
-    end
-  end
+  $settings = merge_yaml($settings, user_settings)
 
   $settings["home_share"] = $settings["home_share"].gsub("$HOME", $HOME)
   $settings["home_share"] = $settings["home_share"].gsub("~", $HOME)
@@ -37,34 +60,26 @@ end
 def load_urls(yaml, user_yaml)
   # a hash of arrays
   $urls = yaml["urls"]
-
   user_urls = user_yaml["urls"] unless user_yaml.nil?
-  if !user_urls.nil?
-    user_urls.each do |key, array|
-      array.each do |value|
-        $urls[key] << value
-      end
-    end
-  end
+
+  $urls = merge_yaml($urls, user_urls)
 end
 
 def load_boxes(yaml, user_yaml)
   machines = yaml["machines"]
 
-  unless user_yaml.nil?
-    user_machines = user_yaml["machines"]
-    user_machines = [] if user_machines.nil?
-    user_machines.each do |user_machine|
-      idx = machines.find_index {|m| m["name"] == user_machine["name"] }
-      if !idx.nil?
-        machines[idx].each do |key, value|
-          if !user_machine[key].nil?
-            machines[idx][key] = user_machine[key]
-          end
+  user_machines = user_yaml["machines"] unless user_yaml.nil?
+  user_machines = [] if user_machines.nil?
+  user_machines.each do |user_machine|
+    idx = machines.find_index {|m| m["name"] == user_machine["name"] }
+    if !idx.nil?
+      machines[idx].each do |key, value|
+        if !user_machine[key].nil?
+          machines[idx][key] = user_machine[key]
         end
-      else
-        machines << user_machine
       end
+    else
+      machines << user_machine
     end
   end
 
@@ -81,11 +96,7 @@ def load_includes(yaml, basedir)
         include_yaml = YAML.load_file(include_file)
         include_yaml = load_includes(include_yaml, File.dirname(include_file))
         include_yaml.each do |section, data|
-          if yaml[section].nil?
-            yaml[section] = data
-          else
-            yaml[section] = yaml[section] + data
-          end
+          yaml[section] = merge_yaml(yaml[section], data) unless section == "includes"
         end
       rescue => error
         puts "Error loading file #{include_file}: #{error}"

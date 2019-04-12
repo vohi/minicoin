@@ -1,0 +1,14 @@
+---
+
+urls:
+  domain:
+    - userserver
+  userdomain:
+    - a
+    - b
+
+machines:
+  - name: machine2
+    box: generic2
+  - name: override
+    gui: true

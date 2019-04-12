@@ -1,0 +1,18 @@
+---
+
+settings:
+  value: subsub
+  newvalue: local_option
+
+urls:
+  domain:
+    - leaf1
+    - leaf2
+
+new_stuff:
+  foo: bar
+
+machines:
+  - name: machine1
+    box: duplicate
+    gui: true

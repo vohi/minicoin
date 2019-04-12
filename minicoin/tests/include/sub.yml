@@ -1,0 +1,16 @@
+---
+
+settings:
+  value: sub
+
+urls:
+  domain:
+    - subdomain1
+    - subdomain2
+
+includes:
+  - subinclude/subsub.yml
+
+machines:
+  - name: submachine
+    box: subgeneric

@@ -1,0 +1,19 @@
+---
+settings:
+  value: test
+
+urls:
+  domain:
+    - domain1
+    - domain2
+
+includes:
+  - include/sub.yml
+
+machines:
+  - name: machine1
+    box: generic
+    gui: false
+  - name: machine2
+  - name: override
+    gui: false
