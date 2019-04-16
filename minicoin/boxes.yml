@@ -79,8 +79,7 @@ machines:
   - name: android-builder
     box: generic/ubuntu1804
     roles:
-      - linux-android
-      - hello-world
+      - android-builder
   - name: doc-server
     box: generic/ubuntu1804
     roles: doc-server
@@ -88,7 +87,7 @@ machines:
   - name: wasm-builder
     box: generic/ubuntu1804
     roles:
-      - role: qt-wasm
+      - role: wasm-builder
         tag: ["qtbuilder/wasm:5.13", "qtbuilder/wasm:latest"]
         build-arg: qt_version=5.13
       - docker: webserver
