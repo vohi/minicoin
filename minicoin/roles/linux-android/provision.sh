@@ -15,8 +15,11 @@ fi
 # the rest of the provisioning is executed as user vagrant
 ndkVersion="r18b"
 ndkHost="linux-x86_64"
+ndkToolchainVersion="4.9"
 sdkBuildToolsVersion="28.0.3"
 sdkApiLevel="android-28"
+android_arch="x86"
+android_image="android-21"
 
 repository=https://dl.google.com/android/repository
 toolsFile=sdk-tools-linux-4333796.zip
@@ -28,12 +31,24 @@ targetFolder=/home/vagrant
 rm -rf $toolsFolder
 rm -rf $ndkFolder
 
-echo "Downloading SDK tools from $repository"
+echo "Downloading SDK tools from '$repository/$toolsFile'"
 wget -q $repository/$toolsFile
-unzip -qq $toolsFile -d $targetFolder/$toolsFolder
+error=$?
+if [[ ! $error -eq 0 ]]; then
+  >&2 echo "Error downloading SDK tools!"
+  exit $error
+fi
 
-echo "Downloading NDK from $repository"
+echo "Downloading NDK from '$repository/$ndkFile'"
 wget -q $repository/$ndkFile
+error=$?
+if [[ ! $error -eq 0 ]]; then
+  >&2 echo "Error downloading NDK!"
+  exit $error
+fi
+
+echo "Unpacking SDK and NDK into '$targetFolder'"
+unzip -qq $toolsFile -d $targetFolder/$toolsFolder
 unzip -qq $ndkFile -d $targetFolder
 
 chown -R vagrant $toolsFolder
@@ -50,13 +65,13 @@ echo "Configuring environment"
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 export PATH=$PATH:$JAVA_HOME/bin
 
-cp /home/vagrant/.bashrc /home/vagrant/.bashrc.backup
-echo "export JAVA_HOME=$JAVA_HOME" >> /home/vagrant/.bashrc
-echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /home/vagrant/.bashrc
-echo "export ANDROID_SDK_HOME=$targetFolder/$toolsFolder/tools" >> /home/vagrant/.bashrc
-echo "export ANDROID_NDK_HOME=$targetFolder/$ndkFolder" >> /home/vagrant/.bashrc
-echo "export ANDROID_NDK_HOST=$ndkHost" >> /home/vagrant/.bashrc
-echo "export ANDROID_API_VERSION=$sdkApiLevel" >> /home/vagrant/.bashrc
+cp ~/.bashrc ~/.bashrc.backup
+echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> ~/.bashrc
+echo "export ANDROID_SDK_HOME=$targetFolder/$toolsFolder" >> ~/.bashrc
+echo "export ANDROID_NDK_HOME=$targetFolder/$ndkFolder" >> ~/.bashrc
+echo "export ANDROID_NDK_HOST=$ndkHost" >> ~/.bashrc
+echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.bashrc
 
 # Optional workaround for issue with certain JDK/JRE versions
 #cp $toolsFolder/tools/bin/sdkmanager $toolsFolder/tools/bin/sdkmanager.backup
@@ -67,11 +82,11 @@ echo "Installing SDK packages"
 cd $toolsFolder/tools/bin
 echo "y" | ./sdkmanager "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log
 echo "y" | ./sdkmanager --install "emulator" >> sdkmanager.log
-echo "y" | ./sdkmanager --install "system-images;android-21;google_apis;x86" >> sdkmanager.log
+echo "y" | ./sdkmanager --install "system-images;$android_image;google_apis;$android_arch" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "add-ons;addon-google_apis-google-21" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "extras;android;m2repository" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "extras;google;m2repository" >> sdkmanager.log
-echo "no" | ./avdmanager create avd -n x86emulator -k "system-images;android-21;google_apis;x86" -c 2048M -f >> sdkmanager.log
+echo "no" | ./avdmanager create avd -n $($android_arch)emulator -k "system-images;$android_image;google_apis;$android_arch" -c 2048M -f >> sdkmanager.log
 
 echo "Provisioning complete. Here's the list of packages and avd devices:"
 ./sdkmanager --list
@@ -88,17 +103,24 @@ printf "%s\n" \
     -android-ndk \
     $targetFolder/$ndkFolder \
     -android-sdk \
-    /usr/lib/android-sdk \
+    $targetFolder/$toolsFolder \
     -android-ndk-host \
     $ndkHost \
+    -android-arch \
+    $android_arch \
     -android-toolchain-version \
-    4.9 \
+    $ndkToolchainVersion \
     -skip \
     qttranslations \
     -skip \
     qtserialport \
+    -no-dbus \
     -no-warnings-are-errors \
+    -opengl es2 \
+    -no-use-gold-linker \
+    -no-qpa-platform-guard \
     -opensource \
+    -developer-build \
     -confirm-license > ~/$1-config.opt
 
 ln -fs ~/$1-config.opt ~/config.opt
