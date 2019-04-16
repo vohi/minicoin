@@ -117,8 +117,13 @@ function run_on_machine() {
     return $error
   fi
 
-  vagrant up $machine &> /dev/null
-  vagrant winrm $machine &> /dev/null
+  vagrant ssh-config $machine &> /dev/null
+  error=$?
+  if [[ $error -gt 0 ]]; then
+    log_progress "==> $machine: Machine not running - bringing it up"
+    vagrant up $machine
+  fi
+  vagrant winrm-config $machine &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
     guest_home="c:\\Users\\host"
@@ -137,13 +142,13 @@ function run_on_machine() {
   scriptfile=$job/main.$ext
 
   if [ ! -f "jobs/$scriptfile" ]; then
-    echo "'$scriptfile' does not exist - skipping '$machine'"
+    >&2 echo "'$scriptfile' does not exist - skipping '$machine'"
     return
   fi
 
-  echo "$machine ==> running '$job' with args '${script_args[@]}'!"
+  echo "==> $machine: running '$job' with args '${script_args[@]}'!"
   if [ -f "jobs/$job/pre-run.sh" ]; then
-    log_progress "$machine ==> Initializing $job"
+    log_progress "==> $machine: Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
@@ -155,11 +160,11 @@ function run_on_machine() {
     ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
   fi
 
-  log_progress "$machine ==> Uploading '$upload_source'..."
+  log_progress "==> $machine: Uploading '$upload_source'..."
   out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
-    echo "$machine ==> Error uploading '$upload_source' to machine '$machine' - skipping machine"
+    >&2 echo "==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine"
     return
   fi
 
@@ -210,7 +215,7 @@ function run_on_machine() {
     vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
   else
     command="$scriptfile ${job_args[@]}"
-    log_progress "$machine ==> Executing '$command' at $log_stamp"
+    log_progress "==> $machine: Executing '$command' at $log_stamp"
 
     if [[ $redirect_output == "true" ]]; then
       redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
@@ -228,16 +233,16 @@ function run_on_machine() {
     vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
   fi
   if [ $error != 0 ]; then
-    >&2 echo "$machine ==> Job $job started at $log_stamp ended with error"
+    >&2 echo "==> $machine: Job $job started at $log_stamp ended with error"
     if [[ $redirect_output == "true" ]]; then
-      >&2 echo "$machine ==> See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
-      >&2 echo "$machine ==> See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
+      >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
+      >&2 echo "    $machine: See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
     fi
   fi
   rm $continuous_file 2> /dev/null
 
   if [ -f "jobs/$job/post-run.sh" ]; then
-    log_progress "$machine ==> Cleaning up after '$job'"
+    log_progress "==> $machine: Cleaning up after '$job'"
     source jobs/$job/post-run.sh $machine "${script_args[@]}"
   fi
 }
