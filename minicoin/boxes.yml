@@ -33,7 +33,7 @@ machines:
 
   - name: ubuntu1804
     box: generic/ubuntu1804
-    roles: simple-apt
+    roles: linux-builder
 
 ### Simple Windows boxes - different versions, different compiles
   - name: windows7
