@@ -1,5 +1,6 @@
 if [[ $UID -eq 0 ]]; then
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
+    echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
 
     apt-get -q update
     apt-get -q install -y build-essential
