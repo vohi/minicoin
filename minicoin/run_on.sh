@@ -123,7 +123,7 @@ function run_on_machine() {
     log_progress "==> $machine: Machine not running - bringing it up"
     vagrant up $machine
   fi
-  vagrant winrm-config $machine &> /dev/null
+  vagrant winrm $machine &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
     guest_home="c:\\Users\\host"
