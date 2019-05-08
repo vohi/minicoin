@@ -1,4 +1,14 @@
 @echo off
+SETLOCAL ENABLEDELAYEDEXPANSION
+
+call c:\minicoin\util\parse-opts.cmd %*
+
+if defined FLAG_debug (
+    echo Running parse-opts-test
+    cd c:\minicoin\tests
+    call parse-opts-test.cmd
+    exit /B %errorcode%
+)
 
 echo Hello runner!
 systeminfo | findstr /B /C:"OS Name" /C:"OS Version"

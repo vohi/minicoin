@@ -1,3 +1,12 @@
+. /minicoin/util/parse-opts.sh "$@"
+
+if [ ! -z "$FLAG_debug" ]; then
+    echo "Running parse-opts-test"
+    cd /minicoin/tests
+    . parse-opts-test.sh
+    exit $?
+fi
+
 echo "Hello runner!"
 echo "This is $(uname -a)"
 echo "Args received:"
