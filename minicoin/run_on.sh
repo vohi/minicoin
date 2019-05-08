@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -lt 2 ]; then
+function print_help() {
   echo "Runs a script on a machine using the appropriate remoting mechanism."
   echo
   echo "Usage: $(basename $0) [options] machine1 machine2 ... job [--] [args]"
@@ -9,8 +9,7 @@ if [ "$#" -lt 2 ]; then
   echo "  'job' is the job to run, with the main script in the jobs/job as the entry point"
   echo "  The optional 'args' will be passed to the main script"
   echo
-  exit 1
-fi
+}
 
 machines=()
 pids=()
@@ -22,11 +21,21 @@ continuous="false"
 abort="false"
 redirect_output="false"
 
+function list_jobs() {
+  ls jobs | awk {'printf (" - %s\n", $1)'}  
+}
+
 for arg in "${@}"; do
   if [[ "$arg" = "--" ]]; then
     job="--"
   elif [[ "$job" == "-1" ]]; then
-    if [[ "$arg" == "--parallel" ]]; then
+    if [[ "$arg" == "--jobs" ]]; then
+      list_jobs
+      exit 0
+    elif [[ "$arg" == "--help" ]]; then
+      print_help
+      exit 0
+    elif [[ "$arg" == "--parallel" ]]; then
       parallel="true"
       redirect_output="true"
     elif [[ "$arg" == "--verbose" ]]; then
@@ -47,11 +56,16 @@ job="${machines[@]: -1}"
 
 if [ ! -d "jobs/$job" ]; then
   echo "There's no job '$job'. Available jobs are:"
-  ls jobs | awk {'printf (" - %s\n", $1)'}
+  list_jobs
   exit -1
 fi
 
 unset "machines[${#machines[@]}-1]"
+
+if [[ ${#machines} == 0 ]]; then
+  print_help
+  exit 0
+fi
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
 

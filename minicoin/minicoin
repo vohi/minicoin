@@ -22,7 +22,7 @@ function run() {
 }
 
 minicoin_command=
-min_args=
+min_args=1
 
 if [[ $# > 0 ]]; then
   if [ $1 == "run" ]; then
@@ -34,11 +34,11 @@ if [[ $# > 0 ]]; then
     min_args=1
     shift
   fi
-fi
 
-if [[ $minicoin_command == "" ]]; then
-  run vagrant "$@"
-  exit $?
+  if [[ $minicoin_command == "" ]]; then
+    run vagrant "$@"
+    exit $?
+  fi
 fi
 
 if [ "$#" -lt $min_args ]; then
