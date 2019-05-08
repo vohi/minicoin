@@ -21,7 +21,7 @@ if [[ $1 == --debug ]]; then
   echo "Testing ${args[*]}"
 fi
 
-. parse-opts.sh "${args[@]}"
+. ../util/parse-opts.sh "${args[@]}"
 
 if [[ $debug == true ]]; then
   echo "Positional: ${POSITIONAL[@]}"

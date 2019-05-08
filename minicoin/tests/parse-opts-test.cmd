@@ -12,7 +12,7 @@ if "%1" == "--debug" (
   set args=%*
 )
 
-call parse-opts.cmd %args%
+call ..\util\parse-opts.cmd %args%
 
 if "%debug%" == "true" (
   echo Positional: !POSITIONAL[@]!
