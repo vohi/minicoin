@@ -57,7 +57,7 @@ machines:
       - windows-tools
       - msvc2017
       - qt-packages
-    memory: 2048
+    memory: 3072
     gui: false
 
 ### Mac - nothing provisioned yet
