@@ -29,6 +29,14 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_run
     min_args=2
     shift
+  elif [ $1 == "jobs" ]; then
+    minicoin_command=minicoin_jobs
+    min_args=0
+    shift
+  elif [ $1 == "job-help" ]; then
+    minicoin_command=minicoin_jobhelp
+    min_args=0
+    shift
   elif [ $1 == "ls" ]; then
     minicoin_command=minicoin_ls
     min_args=1
@@ -66,6 +74,14 @@ if [ "$#" -lt $min_args ]; then
   echo "    respective command, ie 'ls' on mac and Linux guests, and the 'dir' command"
   echo "    on Windows guests."
   echo
+  echo "  jobs"
+  echo
+  echo "    Lists the available jobs."
+  echo
+  echo "  job-help job"
+  echo
+  echo "    Prints the help for 'job', if available."
+  echo
   echo "  <vagrant-command> [options] [machines...]"
   echo "    status      outputs status of the machines"
   echo "    up          starts and provisions the machines"
@@ -81,14 +97,16 @@ fi
 machines=()
 job="-1"
 script_args=()
+args=()
 
 for arg in "${@}"; do
+  args+=("$arg")
   if [[ "$arg" = "--" ]]; then
     job="--"
   elif [[ "$job" = '-1' ]]; then
-    machines=( "${machines[@]}" "$arg" )
+    machines+=("$arg")
   else
-    script_args=( "${script_args[@]}" "$arg" )
+    script_args+=("$arg")
   fi
 done
 
@@ -102,6 +120,26 @@ function minicoin_run()
   run . run_on.sh ${run_args[@]}
   error=$?
   return $?
+}
+
+function minicoin_jobs()
+{
+  echo "Available jobs are:"
+  run . run_on.sh --jobs
+  return $?
+}
+
+function minicoin_jobhelp()
+{
+  job=${args[0]}
+  echo "Help for $job:"
+  run cat jobs/$job/help.txt
+  echo
+  error=$?
+  if [ ! $error -eq 0 ]; then
+    echo "Failed to print help for $job"
+  fi
+  return $error
 }
 
 function minicoin_ls()
