@@ -49,7 +49,7 @@ if "%module%" == "qtbase" (
     echo Using configure options from !config_opt!:
     type config.opt
   ) else (
-    set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests !configure! %QTCONFIGFLAGS%"
+    set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure! %QTCONFIGFLAGS%"
   )
   echo Configuring with options '!configure!'
 

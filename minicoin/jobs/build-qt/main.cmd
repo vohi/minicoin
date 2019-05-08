@@ -74,7 +74,7 @@ if exist "!config_opt!" (
   echo Using configure options from !config_opt!:
   type config.opt
 ) else (
-  SET configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests !configure!
+  SET configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure!
 )
 
 echo Configuring with options '!configure!'
