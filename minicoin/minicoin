@@ -114,10 +114,9 @@ function minicoin_run()
 {
   job="${machines[@]: -1}"
   unset "machines[${#machines[@]}-1]"
-  script_args=($project_dir ${script_args[@]})
-  run_args=(${machines[@]} $job -- ${script_args[@]})
+  run_args=(${machines[@]} $job -- $project_dir "${script_args[@]}")
 
-  run . run_on.sh ${run_args[@]}
+  run . run_on.sh "${run_args[@]}"
   error=$?
   return $?
 }

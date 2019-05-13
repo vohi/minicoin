@@ -45,10 +45,10 @@ for arg in "${@}"; do
     elif [[ "$arg" == "--abort" ]]; then
       abort="true"
     else
-      machines=( "${machines[@]}" "$arg" )
+      machines+=("$arg")
     fi
   else
-    script_args=( "${script_args[@]}" "$arg" )
+    script_args+=("$arg")
   fi
 done
 
@@ -114,7 +114,7 @@ function test_continue() {
 }
 
 function run_on_machine() {
-  machine=$1
+  machine="$1"
   continuous_file="/tmp/minicoin-$machine-run-$job.pid"
   if [[ $abort == "true" ]]; then
     if [[ -f $continuous_file ]]; then
@@ -196,8 +196,17 @@ function run_on_machine() {
   host_home=${home_share/\$HOME/$HOME}
 
   job_args=()
-  for arg in ${script_args[@]}; do
-    job_args=(${job_args[@]} ${arg/$host_home/$guest_home})
+
+  # replace host home with guest home in all arguments
+  # and quote to make guests behave identically
+  whitespace=" |'|,"
+  for arg in "${script_args[@]}"; do
+    mapped="${arg/$host_home/$guest_home}"
+    if [[ $mapped =~ $whitespace ]]; then
+      mapped=\"$mapped\"
+    fi
+
+    job_args+=($mapped)
   done
 
   error=0
@@ -205,6 +214,7 @@ function run_on_machine() {
   echo $$ > $continuous_file
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
+
     command="Documents\\$scriptfile ${job_args[@]}"
     log_progress "$machine ==> Executing '$command' at $log_stamp"
 
@@ -233,7 +243,7 @@ function run_on_machine() {
 
     if [[ $redirect_output == "true" ]]; then
       redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
-      command=$command$redirect
+      command="$command$redirect"
     fi
     while [ "$run" == "true" ]; do
       error=0
