@@ -36,9 +36,9 @@ if NOT "!PARAM_configure!" == "" (
   SET "config_opt=%USERPROFILE%\config.opt"
 )
 
-set "qmake_name=qmake%build%"
-mkdir %module%-build%build%
-cd %module%-build%build%
+set "qmake_name=qmake!build!"
+mkdir %module%-build!build!
+cd %module%-build!build!
 
 echo Building %module% from %sources%
 
@@ -56,11 +56,17 @@ if "%module%" == "qtbase" (
   call %sources%\configure !configure!
   set generate_qmake=true
 ) else (
-  call %USERPROFILE%\%qmake_name% %sources%
+  call %USERPROFILE%\!qmake_name! %sources%
 )
 
 call %MAKETOOL%
 
-if %generate_qmake% == true (
-  echo %CD%\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
+if "%generate_qmake%" == "true" (
+  del %USERPROFILE%\!qmake_name!.bat
+  if defined PARAM_build (
+    del %USERPROFILE%\qmake.bat
+    mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
+  )
+
+  echo %CD%\bin\qmake.exe %%* > %USERPROFILE%\!qmake_name!.bat
 )

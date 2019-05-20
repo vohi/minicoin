@@ -96,11 +96,14 @@ FOR %%m in (!modules!) do (
 :qmake
 
 if "%generate_qmake%" == "true" (
-  SET qmake_name=qmake
-  if NOT "%PARAM_build%" == "" (
-    SET qmake_name=qmake-%PARAM_build%
+  SET "qmake_name=qmake"
+  del %USERPROFILE%\!qmake_name!.bat
+  if defined build_dir (
+    SET "qmake_name=qmake-!build_dir!"
+    del %USERPROFILE%\qmake.bat
+    mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
   )
-  echo %CD%\qtbase\bin\qmake.exe %%* > %USERPROFILE%\%qmake_name%.bat
+  echo %CD%\qtbase\bin\qmake.exe %%* > %USERPROFILE%\!qmake_name!.bat
 )
 
 :eof
