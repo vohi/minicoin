@@ -107,6 +107,9 @@ if [[ $generate_qmake == "true" ]]; then
   if [[ $PARAM_build != "" ]]; then
     qmake_name=qmake-$PARAM_build
   fi
+  rm ~/$qmake_name > /dev/null
   echo "$PWD/qtbase/bin/qmake \$@" > ~/$qmake_name
   chmod +x ~/$qmake_name
+  rm ~/qmake > /dev/null
+  ln -s -f ~/$qmake_name ~/qmake
 fi

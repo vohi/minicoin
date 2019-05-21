@@ -55,6 +55,9 @@ fi
 make -j4
 
 if [[ $generate_qmake == "true" ]]; then
+  rm ~/$qmake_name > /dev/null
   echo "$PWD/bin/qmake \$@" > ~/$qmake_name
   chmod +x ~/$qmake_name
+  rm ~/qmake > /dev/null
+  ln -s -f ~/$qmake_name ~/qmake
 fi
