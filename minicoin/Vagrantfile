@@ -183,40 +183,58 @@ def insert_disk(box, disk_filename, role_params)
       return false
     end
 
-    box.vm.provider "virtualbox" do |vb|
+    disk_settings = disk_data["settings"] unless disk_data.nil?
+    if disk_settings.nil?
+      disk_settings = {}
+    end
+    # default settings, disks can override
+    disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
+
+    if disk_file.end_with?(".iso")
+      disk_settings["port"] = "1" unless !disk_settings["port"].nil?
+      disk_settings["type"] = "dvddrive" unless !disk_settings["type"].nil?
+    elsif disk_file.end_with?(".vdi") || disk_file.end_with?(".vmdk")
+      disk_settings["port"] = "2" unless !disk_settings["port"].nil?
+      disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
+      disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"].nil?
+    end
+
+    # boxes can override disk settings
+    if role_params.is_a?(Hash)
+      role_params.each do |key, value|
+        disk_settings[key] = value
+      end
+    end
+
+    box.vm.provider :virtualbox do |vb|
       storage_params = [
         "storageattach", :id,
         "--medium", "#{disk_cache}/#{disk_file}",
       ]
 
-      disk_settings = disk_data["settings"] unless disk_data.nil?
-      if disk_settings.nil?
-        disk_settings = {}
-      end
-
-      # default settings, disks can override
-      disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
-
-      if disk_file.end_with?(".iso")
-        disk_settings["port"] = "1" unless !disk_settings["port"].nil?
-        disk_settings["type"] = "dvddrive" unless !disk_settings["type"].nil?
-      elsif disk_file.end_with?(".vdi")
-        disk_settings["port"] = "2" unless !disk_settings["port"].nil?
-        disk_settings["type"] = "hdd" unless !disk_settings["type"].nil?
-        disk_settings["mtype"] = "multiattach" unless !disk_settings["mtype"].nil?
-      end
-
-      # boxes can override disk settings
-      if role_params.is_a?(Hash)
-        role_params.each do |key, value|
-          disk_settings[key] = value
-        end
-      end
-
       disk_settings.each do |key, value|
         storage_params += ["--#{key}", "#{value}"]
       end
       vb.customize storage_params
+    end
+    box.vm.provider :vmware_desktop do |vmware|
+      # map defaults to VMWare
+      device_ctl = "sata0:" if disk_settings["storagectl"] == "SATA"
+      device_ctl = "ide0:" if disk_settings["storagectrl"] == "IDE"
+      device_port = disk_settings["port"]
+
+      device_string = "#{device_ctl}#{device_port}"
+      puts "Inserting disk in #{device_string}"
+      if disk_settings["type"] == "dvddrive"
+        device_type = "cdrom-image"
+      elsif disk_settings["type"] == "hdd"
+        device_type = "disk"
+      end
+
+      vmware.vmx["#{device_string}.present"] = "TRUE"
+      vmware.vmx["#{device_string}.deviceType"] = device_type
+      vmware.vmx["#{device_string}.filename"] = "#{disk_cache}/#{disk_file}"
+      vmware.vmx["#{device_string}.startConnected"] = "TRUE"
     end
   end
   return true
@@ -448,7 +466,7 @@ end
 
   # VirtualBox specific settings
 def virtualbox_setup(box, machine)
-  box.vm.provider "virtualbox" do |vb|
+  box.vm.provider :virtualbox do |vb|
     vb.memory = machine["memory"] unless machine["memory"].nil?
     vb.cpus = machine["cpus"] unless machine["cpus"].nil?
     vb.gui = machine["gui"] unless machine["gui"].nil?
@@ -521,8 +539,34 @@ def virtualbox_setup(box, machine)
         key, value
       ]
     end
-
   end
+end
+
+def vmware_setup(box, machine)
+  box.vm.provider :vmware_desktop do |vmware|
+    vmware.gui = machine["gui"] unless machine["gui"].nil?
+    vmware.vmx["memsize"] = machine["memory"] unless machine["memory"].nil?
+    vmware.vmx["numvcpus"] = machine["cpus"] unless machine["cpus"].nil?
+    vmware.vmx["svga.vramSize"] = machine["vram"] unless machine["vram"].nil?
+  end
+end
+
+def win_link_folders(box)
+  link_cmd = <<-SCRIPT
+  function Link-Host {
+    Param($Hostname)
+    if (!(Test-Path -Path "$($Hostname)minicoin")) { return }
+    New-Item -ItemType SymbolicLink -Path c:\\minicoin -Target "$($Hostname)minicoin" -Force
+    New-Item -ItemType SymbolicLink -Path c:\\host -Target "$($Hostname)host" -Force
+  }
+  Link-Host -Hostname \\\\VBOXSVR\\
+  Link-Host -Hostname "\\\\vmware-host\\Shared Folders\\-"
+  cmd /c "rd c:\\Users\\host"
+  New-Item -ItemType Junction -Path c:\\Users\\host -Target c:\\host -Force
+  SCRIPT
+
+  box.vm.provision "shell",
+    inline: link_cmd
 end
 
 Vagrant.configure("2") do |config|
@@ -658,6 +702,7 @@ Vagrant.configure("2") do |config|
       end
 
       virtualbox_setup(box, machine)
+      vmware_setup(box, machine)
 
       if machine["shared_folders"] == "disabled"
         box.vm.synced_folder ".", "/minicoin", disabled: true
@@ -724,11 +769,7 @@ Vagrant.configure("2") do |config|
         end
         box.vm.synced_folder ".", "/minicoin"
         if is_windows
-          box.vm.provision "shell", inline: \
-            'cmd /c "rd c:\\minicoin & rd c:\\host & rd c:\\Users\\host & ' \
-            'mklink /D C:\\minicoin \\\\VBOXSRV\\minicoin & ' \
-            'mklink /D C:\\host \\\\VBOXSRV\\host & ' \
-            'mklink /J C:\\Users\\host C:\\host"'
+          win_link_folders(box)
         end
       end
 
