@@ -78,6 +78,7 @@ machines:
 
   - name: android-builder
     box: generic/ubuntu1804
+    provider: vmware_desktop
     roles:
       - android-builder
   - name: doc-server

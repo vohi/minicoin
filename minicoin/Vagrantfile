@@ -598,6 +598,10 @@ Vagrant.configure("2") do |config|
     end
 
     config.vm.define machine["name"], autostart: false do |box|
+      if !machine["provider"].nil?
+        box.vm.provider machine["provider"]
+      end
+  
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
