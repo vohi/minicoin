@@ -17,13 +17,13 @@ if [[ $UID -eq 0 ]]; then
 fi
 
 # the rest of the provisioning is executed as user vagrant
-ndkVersion="r18b"
+ndkVersion="${PARAM_ndkVersion:-r18b}"
 ndkHost="linux-x86_64"
-ndkToolchainVersion="4.9"
-sdkBuildToolsVersion="28.0.3"
-sdkApiLevel="android-28"
-android_arch="x86"
-android_image="android-21"
+ndkToolchainVersion="${PARAM_ndkToolchainVersion:-4.9}"
+sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-28.0.3}"
+sdkApiLevel="${PARAM_sdkApiLevel:-android-28}"
+androidArch="${PARAM_androidArch:-x86}"
+androidImage="${PARAM_androidImage:-android-21}"
 
 repository=https://dl.google.com/android/repository
 toolsFile=sdk-tools-linux-4333796.zip
@@ -86,11 +86,11 @@ echo "Installing SDK packages"
 cd $toolsFolder/tools/bin
 echo "y" | ./sdkmanager "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log
 echo "y" | ./sdkmanager --install "emulator" >> sdkmanager.log
-echo "y" | ./sdkmanager --install "system-images;$android_image;google_apis;$android_arch" >> sdkmanager.log
+echo "y" | ./sdkmanager --install "system-images;$androidImage;google_apis;$androidArch" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "add-ons;addon-google_apis-google-21" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "extras;android;m2repository" >> sdkmanager.log
 # echo "y" | ./sdkmanager --install "extras;google;m2repository" >> sdkmanager.log
-echo "no" | ./avdmanager create avd -n $android_arch"emulator" -k "system-images;$android_image;google_apis;$android_arch" -c 2048M -f >> sdkmanager.log
+echo "no" | ./avdmanager create avd -n $androidArch"emulator" -k "system-images;$androidImage;google_apis;$androidArch" -c 2048M -f >> sdkmanager.log
 
 echo "Provisioning complete. Here's the list of packages and avd devices:"
 ./sdkmanager --list
@@ -114,7 +114,7 @@ printf "%s\n" \
     -android-ndk-host \
     $ndkHost \
     -android-arch \
-    $android_arch \
+    $androidArch \
     -android-toolchain-version \
     $ndkToolchainVersion \
     -skip \
