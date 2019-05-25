@@ -90,30 +90,29 @@ class Tester
     end
   end
   def test_expand_env()
+    user = ENV["USER"]
     test_data = {
       "plain" => [:windows, "foo", "foo"],
       "$home_win" => [:windows, "$HOME", "C:\\Users\\host"],
       "$home_nix" => [:linux, "$HOME", "/home/host"],
-      "$home_mac" => [:darwin, "$HOME", "/Users/host"]
+      "$home_mac" => [:darwin, "$HOME", "/Users/host"],
+      "$user" => [nil, "$USER", user],
+      "$user$user" => [nil, "$USER$USER", "#{user}#{user}"]
     }
+
     test_data.each do |name, data|
       @data_count += 1
       guest = data[0]
       input = data[1]
       output = data[2]
 
-      box = Box.new(guest)
+      box = Box.new(guest) unless guest.nil?
       result = expand_env(input, box)
       if result != output
         puts "Fail! for '#{name}', produced '#{result}', expected '#{output}'"
         @error_count += 1
       end
-      end
-
-    box = Box.new(:linux)
-    test_data = {
-      "$HOME" => "C:\\Users\\host"
-    }
+    end
   end
 
   def errors()
