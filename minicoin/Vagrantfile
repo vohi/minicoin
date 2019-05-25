@@ -579,7 +579,7 @@ Vagrant.configure("2") do |config|
       puts "==> Machine without name: #{machine}"
       next
     end
-    machine_box = machine["box"]
+    machine_box = expand_env(machine["box"], nil)
     if machine_box.nil?
       puts "==> #{name}: Machine has no box set"
       next
