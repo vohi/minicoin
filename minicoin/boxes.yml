@@ -40,7 +40,6 @@ machines:
     box: tqtc/$minicoin_key/windows7
     roles:
       - mingw32
-      - qt-packages
     memory: 1024
     gui: false
   - name: windows81
@@ -48,7 +47,6 @@ machines:
     roles:
       - windows-tools
       - msvc2015
-      - qt-packages
     memory: 1024
     gui: false
   - name: windows10
@@ -56,7 +54,6 @@ machines:
     roles:
       - windows-tools
       - msvc2017
-      - qt-packages
     memory: 3072
     gui: false
 
@@ -79,8 +76,11 @@ machines:
   - name: android-builder
     box: generic/ubuntu1804
     provider: vmware_desktop
+    gui: true
     roles:
-      - android-builder
+      - role: linux-desktop
+        desktop: lxde
+      - role: android-builder
   - name: doc-server
     box: generic/ubuntu1804
     roles: doc-server
