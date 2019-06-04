@@ -15,30 +15,33 @@ $ minicoin run ubuntu1804 build-project
 
 # Setup
 
-You need to install [vagrant](vagrantup.com), and a virtual machine provider
+You need to install [Vagrant](vagrantup.com), and a virtual machine provider
 that vagrant supports, like [VirtualBox](virtualbox.org).
 
-After cloning this repository, create a symbolic link to the `minicoin`
-script in a PATH directory:
+Clone this repository, and create a symbolic link to the `minicoin` script in
+a PATH directory, for example:
 
-`$ ln -s ~/qt-developer-environments/minicoin/minicoin /usr/local/bin/minicoin`
+`$ ln -s ~/minicoin/minicoin/minicoin /usr/local/bin/minicoin`
 
-If you are on Windows, you will need a bash shell to use minicoin (f.ex the
-bash that comes with git), and also create a script that forwards calls to
+(yes, that's three minicoin's).
+
+If you are on a Windows host, you will need a bash shell to use minicoin (f.ex
+the bash that comes with git), and also create a script that forwards calls to
 the `minicoin` script:
 
-`$ echo "~/qt-developer-environments/minicoin/minicoin $@" > /bin/minicoin`
+`$ echo "~/minicoin/minicoin/minicoin $@" > /bin/minicoin`
 `$ chmod +x /bin/minicoin`
 
-See the **Host System Requirements** section for platform specific details.
+See the **Platform Notes and System Requirements** section for platform
+specific details.
 
 # Basic Usage
 
-The intended use case is to use the managed machines to build and test a local
-clone of Qt, and to run test cases (such as from bug reports or during package
-testing), on a wide range of platforms.
+The intended use case is to build and test Qt on VMs managed with minicoin,
+and to run test cases (such as from bug reports or during package testing),
+on a wide range of platforms.
 
-Basic machine operations are identical to regular [vagrant](vagrantup.com)
+Basic machine operations are identical to regular [Vagrant](vagrantup.com)
 workflows for multi-machine environments:
 
 To see which machines are declared and to check their status, run
@@ -57,7 +60,7 @@ bring up all machines, downloading several dozen GB of base box images, and
 possibly killing the host. Also, note that machines might rely on private
 boxes.
 
-To run a job on the machine, use the `minicoin` script (requires bash)
+To run a job on the machine, execute
 
 `$ minicoin run ubuntu1804 job`
 
@@ -84,7 +87,7 @@ To destroy all (!) machines without prompting
 
 *Note:* Any data that live only on the machines will be lost.
 
-vagrant can operate on multiple machines if you provide the machine name as a
+You can operate on multiple machines if you provide the machine name as a
 ruby-style regular expression, i.e. the following would shut down all Windows
 machines:
 
@@ -116,14 +119,6 @@ This starts the `ubuntu1804` machine if it's not already running, uploads the
 
 The current directory, and any parameters after the double dash `--` will be
 passed on to the `main` script.
-
-If multiple machines are used, then output from the job will be directed
-to time-stamped log files in the `.logs` subdirectory of the minicoin clone.
-There will be one for stdout and one for stderr, with a `latest` symlink 
-the last run. Use `tail -f` to see the output while the script is running, e.g
-
-`$ tail -f .logs/test-ubuntu1804-latest.log`
-`$ tail -f .logs/test-error-ubuntu1804-latest.log`
 
 Jobs are executed on the guest as the `vagrant` user. If your script requires
 root privileges, use `sudo` etc, or consider making your job a provisioning
@@ -168,6 +163,11 @@ details.
 Configures and build the Qt5 clone in the local directory on the listed
 machines. The optional modules parameter defines which modules to build.
 
+`$ minicoin run [machines...] build-qtmodule`
+
+Builds the Qt submodule in the local directory on the listed machines,
+using the qmake from the last build of qtbase.
+
 `$ minicoin run [machines...] build-project`
 
 Build the project in the current working directory on the listed machines,
@@ -175,7 +175,7 @@ using the Qt that was built last via the build-qt script.
 
 # Machines
 
-minicoin is based on [vagrant](vagrantup.com), but tries to provide a clearer
+minicoin is based on [Vagrant](vagrantup.com), but tries to provide a clearer
 separation of the data defining machines, and the code implementing the logic.
 
 ## Machine definition
@@ -222,7 +222,8 @@ The following parameters are available:
 There is only one `Vagrantfile` which contains the vagrant configuration
 code, takes care of setting appropriate defaults, works around limitations,
 and runs the provisioning steps from the machine's definition. You will
-probably never have to change this file.
+probably never have to change this file, unless you want to contribute to
+minicoin.
 
 ## Vagrant boxes
 
@@ -417,17 +418,18 @@ parameters in the provisioner, e.g
       mtype: standard # defaults to multiattach for VDI
 ```
 
-# Host System Requirements
+# Platform Notes and System Requirements
 
-The virtual machine images are built for [VirtualBox](virtualbox.org).
-The machines are managed using [vagrant](vagrantup.com), vagrant 2.2.4
+Things are mostly tested with [VirtualBox](virtualbox.org), and to some
+degree with VMware Fusion.
+The machines are managed using [vagrant](vagrantup.com); vagrant 2.2.4
 is required.
 
-Remote execution is tested with macOS and Windows 10 as host, using the
-bash shell.
+Scripts are developed and tested on macOS and Windows 10 as hosts, using
+the bash shell.
 
-While vagrant and minicoin try to make the boxes all behave the same from
-the host's perspective, there are some guest-system specific requirements.
+While Vagrant and minicoin try to make the boxes all behave the same from
+the host's perspective, there are some guest-system specific requirements:
 
 ## Windows
 
@@ -435,14 +437,14 @@ A guest is identified as running Windows when either the name of the machine,
 or the name of the box includes the string "windows".
 
 Windows machines support WinRM and ssh, but only WinRM works reliably for
-provisioning. To be able to talk WinRM via vagrant, install the ruby gem
+provisioning. To be able to talk WinRM via Vagrant, install the ruby gem
 on the host:
 
 `$ sudo gem install winrm`
 
 ## Mac
 
-A guest is identified as running MacOS when either the name of the machine,
+A guest is identified as running macOS when either the name of the machine,
 or the name of the box includes the string "mac".
 
 Since VirtualBox doesn't provide guest additions for Mac systems, minicoin is
@@ -453,6 +455,9 @@ When bringing a Mac guest up, minicoin will create a dedicated SSH key pair,
 and add the public key to the `~/.ssh/authorized_keys` file. After a box has
 been destroyed, these keys will be deleted again, and removed from the
 `authorized_keys` file.
+
+VMware tools are supported for macOS guests, but the setup is not thoroughly
+tested.
 
 # Security notice
 
