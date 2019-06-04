@@ -6,5 +6,7 @@ if [[ $# < 2 ]]; then
   exit 1
 fi
 
+rm "$2"/*.log
+rm "$2"/*.plist
+
 tar zcvf $1.box -Cvmware ./metadata.json "-C$2" .
-vagrant box add $1.box --name vmware/$1 --provider vmware_desktop
