@@ -11,13 +11,13 @@ if [[ $source == "" ]]; then
 fi
 
 minicoin_dir=$(dirname $source)
-project_dir=$PWD
+project_dir="$PWD"
 
 function run() {
   cd $minicoin_dir
   "$@"
   error=$?
-  cd $project_dir
+  cd "$project_dir"
   return $error
 }
 
@@ -114,7 +114,7 @@ function minicoin_run()
 {
   job="${machines[@]: -1}"
   unset "machines[${#machines[@]}-1]"
-  run_args=(${machines[@]} $job -- $project_dir "${script_args[@]}")
+  run_args=(${machines[@]} $job -- "$project_dir" "${script_args[@]}")
 
   run . run_on.sh "${run_args[@]}"
   error=$?
