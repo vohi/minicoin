@@ -17,3 +17,8 @@ machines:
   - name: machine2
   - name: override
     gui: false
+  - name: environment1
+    box: $USER
+
+  - name: environment2
+    box: private/$minicoin_key/box

@@ -108,6 +108,10 @@ def load_includes(yaml, basedir)
 end
 
 def load_minicoin()
+  begin # see tests/autotest.rb
+    return load_testmachines()["machines"]
+  rescue
+  end
   global_file = File.join($PWD, 'boxes.yml')
   yaml = YAML.load_file(global_file)
 
@@ -574,27 +578,30 @@ end
 Vagrant.configure("2") do |config|
   machines = load_minicoin()
   machines.each do |machine|
-    name = machine["name"]
+    name = machine["name"]    
     if name.nil?
       puts "==> Machine without name: #{machine}"
       next
     end
-    machine_box = expand_env(machine["box"], nil)
+    machine_box = machine["box"]
+    machine_url = machine_box
+    if !machine_box.nil?
+      if machine_box.include?("$minicoin_key")
+        minicoin_key = ENV['minicoin_key']
+        if minicoin_key.nil?
+          if ["validate"].include? ARGV[0]
+            puts "==> #{name}: Box is private, but key is not set. Set 'minicoin_key' environment variable!"
+          end
+          next
+        end
+        machine_url = machine_url.gsub("$minicoin_key", minicoin_key)
+        machine_box = machine_box.gsub("$minicoin_key/", "")
+      end
+      machine_box = expand_env(machine_box, nil)
+    end
     if machine_box.nil?
       puts "==> #{name}: Machine has no box set"
       next
-    end
-    machine_url = machine_box
-    if machine_box.include?("$minicoin_key")
-      minicoin_key = ENV['minicoin_key']
-      if minicoin_key.nil?
-        if ["validate"].include? ARGV[0]
-          puts "==> #{name}: Box is private, but key is not set. Set 'minicoin_key' environment variable!"
-        end
-        next
-      end
-      machine_url = machine_url.gsub("$minicoin_key", minicoin_key)
-      machine_box = machine_box.gsub("$minicoin_key/", "")
     end
 
     config.vm.define machine["name"], autostart: false do |box|
