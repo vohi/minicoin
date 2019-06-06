@@ -5,7 +5,6 @@ if [[ $UID -eq 0 ]]; then
     apt-get -qq update
     apt-get -q install -y build-essential
     apt-get -q install -y default-jre openjdk-8-jdk-headless
-    apt-get -q install -y android-sdk android-sdk-platform-23
     apt-get -q install -y libc6-i386 libpulse-dev
     apt-get -q install -y qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils virt-manager
 
@@ -69,13 +68,13 @@ echo "Configuring environment"
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 export PATH=$PATH:$JAVA_HOME/bin
 
-cp ~/.bashrc ~/.bashrc.backup
-echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc
-echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> ~/.bashrc
-echo "export ANDROID_SDK_HOME=$targetFolder/$toolsFolder" >> ~/.bashrc
-echo "export ANDROID_NDK_HOME=$targetFolder/$ndkFolder" >> ~/.bashrc
-echo "export ANDROID_NDK_HOST=$ndkHost" >> ~/.bashrc
-echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.bashrc
+cp ~/.profile ~/.profile.backup
+echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
+echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> ~/.profile
+echo "export ANDROID_SDK_HOME=$targetFolder/$toolsFolder" >> ~/.profile
+echo "export ANDROID_NDK_HOME=$targetFolder/$ndkFolder" >> ~/.profile
+echo "export ANDROID_NDK_HOST=$ndkHost" >> ~/.profile
+echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.profile
 
 # Optional workaround for issue with certain JDK/JRE versions
 #cp $toolsFolder/tools/bin/sdkmanager $toolsFolder/tools/bin/sdkmanager.backup
@@ -95,9 +94,13 @@ echo "no" | ./avdmanager create avd -n $androidArch"emulator" -k "system-images;
 echo "Provisioning complete. Here's the list of packages and avd devices:"
 ./sdkmanager --list
 ./avdmanager list avd
-echo "Verifying emulator:"
 cd ..
+echo "Verifying emulator:"
 ./emulator-check accel
+echo "Starting adb"
+../platform-tools/adb start-server
+echo "Starting windowless emulator"
+./emulator -avd $androidArch"emulator" -no-window &
 
 printf "%s\n" \
     -xplatform \
