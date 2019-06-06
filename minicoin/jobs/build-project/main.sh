@@ -8,16 +8,15 @@ if [[ $sources == "" ]]; then
   exit 1
 fi
 
-echo "Building project in $sources"
+echo "Building project in '$sources'"
 
 project=$(basename $sources)
-mkdir $project > /dev/null
+mkdir $project > /dev/null 2>&1
 
 if [[ -f "$HOME/make" ]]; then
-  $HOME/make $sources $project
+  $HOME/make $sources $project $PARAM_make
 else
   cd $project
   $HOME/qmake $sources
-  make clean
-  make
+  make $PARAM_make
 fi

@@ -22,13 +22,12 @@ echo Building '%projectpath%' into '%projectname%'
 mkdir %projectname%
 
 if exist %USERPROFILE%\make.bat (
-  call %USERPROFILE%\make.bat %projectpath% %projectname%
+  call %USERPROFILE%\make.bat %projectpath% %projectname% !PARAM_make!
 ) else (
   cd %projectname%
   call %USERPROFILE%\qmake.bat "%projectpath%"
   echo Using %MAKETOOL%
-  %MAKETOOL% clean
-  %MAKETOOL%
+  %MAKETOOL% !PARAM_make!
 )
 
 echo Project '%projectname%' built successfully
