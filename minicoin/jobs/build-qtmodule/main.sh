@@ -29,7 +29,6 @@ else
   config_opt=$HOME/config.opt
 fi
 
-qmake_name="qmake$build"
 mkdir $module-build$build
 cd $module-build$build
 
@@ -49,15 +48,20 @@ if [[ $module == "qtbase" ]]; then
   $sources/configure $configure
   generate_qmake=true
 else
-  ~/$qmake_name $sources
+  ~/qmake $sources
 fi
 
 make -j4
 
 if [[ $generate_qmake == "true" ]]; then
-  rm ~/$qmake_name > /dev/null
-  echo "$PWD/bin/qmake \$@" > ~/$qmake_name
+  qmake_name="qmake-latest"
+
+  if [[ $build != "" ]]; then
+    qmake_name=qmake$build
+  fi
+  rm ~/$qmake_name > /dev/null 2> /dev/null
+  echo "$PWD/bin/qmake \"\$@\"" > ~/$qmake_name
   chmod +x ~/$qmake_name
-  rm ~/qmake > /dev/null
+  rm ~/qmake > /dev/null 2> /dev/null
   ln -s -f ~/$qmake_name ~/qmake
 fi

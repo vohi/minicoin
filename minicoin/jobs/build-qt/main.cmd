@@ -36,7 +36,7 @@ if NOT "%PARAM_configure%" == "" (
   SET configure=%PARAM_configure%
 )
 if NOT "%PARAM_build%" == "" (
-  SET build_dir=%PARAM_build%
+  SET build_dir=%build_dir%-%PARAM_build%
 )
 
 if NOT "!repo!" == "" (
@@ -96,14 +96,15 @@ FOR %%m in (!modules!) do (
 :qmake
 
 if "%generate_qmake%" == "true" (
-  SET "qmake_name=qmake"
-  del %USERPROFILE%\!qmake_name!.bat
-  if defined build_dir (
-    SET "qmake_name=qmake-!build_dir!"
-    del %USERPROFILE%\qmake.bat
-    mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
+  SET "qmake_name=qmake-latest"
+  if defined PARAM_build (
+    SET "qmake_name=qmake-!PARAM_build!"
   )
+  del %USERPROFILE%\!qmake-name!.bat
+
   echo %CD%\qtbase\bin\qmake.exe %%* > %USERPROFILE%\!qmake_name!.bat
+  del %USERPROFILE%\qmake.bat
+  mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
 )
 
 :eof

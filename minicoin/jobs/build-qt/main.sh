@@ -32,7 +32,7 @@ if [[ $PARAM_configure != "" ]]; then
   configure=$PARAM_configure
 fi
 if [[ $PARAM_build != "" ]]; then
-  build_dir=$PARAM_build
+  build_dir=$build_dir-$PARAM_build
 fi
 
 if [[ $repo != "" ]]; then
@@ -103,13 +103,13 @@ else
 fi
 
 if [[ $generate_qmake == "true" ]]; then
-  qmake_name=qmake
+  qmake_name=qmake-latest
   if [[ $PARAM_build != "" ]]; then
     qmake_name=qmake-$PARAM_build
   fi
-  rm ~/$qmake_name > /dev/null
-  echo "$PWD/qtbase/bin/qmake \$@" > ~/$qmake_name
+  rm ~/$qmake_name > /dev/null 2> /dev/null
+  echo "$PWD/qtbase/bin/qmake \"\$@\"" > ~/$qmake_name
   chmod +x ~/$qmake_name
-  rm ~/qmake > /dev/null
+  rm ~/qmake > /dev/null 2> /dev/null
   ln -s -f ~/$qmake_name ~/qmake
 fi
