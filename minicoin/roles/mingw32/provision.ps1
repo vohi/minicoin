@@ -1,3 +1,13 @@
-[Environment]::SetEnvironmentVariable("PATH", `
-  "D:\git\cmd;d:\strawberry\perl\bin;d:\mingw-w64\x86_64-8.1.0-win32-seh-rt_v6-rev0\mingw64\bin", `
-  [System.EnvironmentVariableTarget]::User)
+param (
+    [string]$role,
+    [string]$name,
+    [string]$user,
+    [string]$version = "8.1.0",
+    [string]$package = "mingw"
+)
+
+write-host $role $name $user $package $version
+
+cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
+
+.\choco install --no-progress -y $package -version $version

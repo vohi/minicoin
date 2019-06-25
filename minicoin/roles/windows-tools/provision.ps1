@@ -13,11 +13,13 @@ if (!(Test-Path $ChocoInstallPath)) {
 
 cd $ChocoInstallPath
 
-$packages = ( "notepadplusplus", "cmake",
-              "strawberryperl", "python2",
-              "git", "llvm", "jom")
+$packages = ( "notepadplusplus", "git",
+              "strawberryperl", "python2" )
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
-
 .\chocolatey feature disable -n=allowGlobalConfirmation
+
+[Environment]::SetEnvironmentVariable("PATH", `
+  "c:\strawberry\perl\bin;c:\Python27;c:\program files\git\cmd", `
+  [System.EnvironmentVariableTarget]::User)

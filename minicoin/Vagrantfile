@@ -372,11 +372,15 @@ def add_role(box, role, name)
 
   # always check for a provisioning script
   script_ext = ".sh"
+  arg_marker = "--"
+  script_args = [role, name, $USER]
   upload_path = "/tmp/vagrant-shell/"
   if box.vm.guest == :windows
     script_ext = ".cmd"
     if File.file?("#{role_path}/provision.ps1")
       script_ext = ".ps1"
+      arg_marker = "-"
+      script_args = ["-role", role, "-name", name, "-user", $USER]
     end
     upload_path = "c:\\Windows\\temp\\"
   end
@@ -384,7 +388,6 @@ def add_role(box, role, name)
   provisioning_file = "#{role_path}/provision#{script_ext}"
   if File.file?(provisioning_file)
     activity = true
-    script_args = [role, name, $USER]
     if role_params.is_a?(Hash)
       role_params.each do |key, param|
         array=param
@@ -393,7 +396,7 @@ def add_role(box, role, name)
           array << param
         end
         array.each do |value|
-          script_args += ["--#{key}"]
+          script_args += ["#{arg_marker}#{key}"]
           script_args += ["#{value}"] unless value.nil?
         end
       end

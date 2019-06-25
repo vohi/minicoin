@@ -39,6 +39,7 @@ machines:
   - name: windows7
     box: tqtc/$minicoin_key/windows7
     roles:
+      - windows-tools
       - mingw32
     memory: 1024
     gui: false
