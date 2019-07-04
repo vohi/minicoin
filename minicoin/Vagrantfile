@@ -430,7 +430,7 @@ def add_role(box, role, name)
   end
 end
 
-def mac_share_folder(box, host_path, guest_path)
+def sshfs_share_folder(box, host_path, guest_path)
   guest_base = guest_path.split('/').last
 
   if $is_windows_host
@@ -466,6 +466,14 @@ def mac_share_folder(box, host_path, guest_path)
     trigger.name = "Mounting shared folder #{host_path}"
     trigger.run_remote = mount_command
   end
+end
+
+def share_folders(box, guest_home)
+  host_home = $settings["home_share"]
+  if host_home != "disabled"
+    box.vm.synced_folder host_home, guest_home
+  end
+  box.vm.synced_folder ".", "/minicoin"
 end
 
   # VirtualBox specific settings
@@ -575,6 +583,73 @@ def win_link_folders(box)
     inline: link_cmd
 end
 
+def mac_share_folders(mac, machine, guest_home)
+  name = machine["name"]
+  mac.vm.provider :virtualbox do |vb, box|
+    # on VirtualBox, folder sharing is not supported on BSD/Mac systems
+    # instead, mount shared folders via sshfs
+
+    box.vm.synced_folder ".", "/minicoin", disabled: true 
+
+    # ensure users private key is on the guest for authenticating back to host
+    key_file = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
+    authorized_keys = "#{$HOME}/.ssh/authorized_keys"
+
+    # generate keys and authorize the guest to access the host
+    box.trigger.before [:up] do |trigger|
+      trigger.name = "Generating key pair and authorizing guest"
+      trigger.ruby do |e,m|
+        if !File.file?(key_file)
+          `ssh-keygen -f #{key_file} -C minicoin@#{name} -q -N \"\"`
+          public_key = File.read("#{key_file}.pub")
+          open(authorized_keys, 'a') do |file|
+            file.puts "#{public_key}"
+          end
+          File.chmod(0600, authorized_keys)
+        end
+      end
+    end
+
+    # delete the keys, and de-authorize the guest
+    box.trigger.after [:destroy] do |trigger|
+      trigger.name = "Removing key-pair and de-authorising guest"
+      trigger.ruby do |e,m|
+        File.open("#{authorized_keys}.new", 'w') do |out|
+          out.chmod(File.stat(authorized_keys).mode)
+          File.foreach(authorized_keys) do |line|
+            out.puts line unless line =~ /minicoin@#{name}/
+          end
+        end
+        File.rename("#{authorized_keys}.new", authorized_keys)
+        File.delete(key_file) if File.exist?(key_file)
+        File.delete("#{key_file}.pub") if File.exist?("#{key_file}.pub")
+      end
+    end
+
+    # upload the private key to the guest
+    if !["validate"].include? ARGV[0]
+      box.vm.provision "file",
+        source: key_file,
+        destination: ".ssh/#{$USER}"
+        box.vm.provision "shell",
+        inline: "chmod 0600 .ssh/#{$USER}",
+        upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+    end
+
+    host_home = $settings["home_share"]
+    if host_home != "disabled"
+      sshfs_share_folder(box, host_home, guest_home)
+    end
+
+    sshfs_share_folder(box, $PWD, "/minicoin")
+  end
+
+  # on VMware, everything works normal
+  mac.vm.provider :vmware_desktop do |vmware, box|
+    share_folders(box, guest_home)
+  end
+end
+
 Vagrant.configure("2") do |config|
   machines = load_minicoin()
   machines.each do |machine|
@@ -629,6 +704,8 @@ Vagrant.configure("2") do |config|
       end
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
+
+      # network setup
       if !is_windows
         box.vm.hostname = name
       end
@@ -714,73 +791,17 @@ Vagrant.configure("2") do |config|
         box.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       end
 
+      # map virtual machine configurations to provider specific settings
       virtualbox_setup(box, machine)
       vmware_setup(box, machine)
 
+      # folder sharing, taking guest OS and provider specific quirks into account
       if machine["shared_folders"] == "disabled"
         box.vm.synced_folder ".", "/minicoin", disabled: true
       elsif is_mac
-        # folder sharing is not supported on BSD/Mac systems
-        # instead, mount shared folders via sshfs
-        box.vm.synced_folder ".", "/minicoin", disabled: true 
-
-        # ensure users private key is on the guest for authenticating back to host
-        key_file = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
-        authorized_keys = "#{$HOME}/.ssh/authorized_keys"
-
-        # generate keys and authorize the guest to access the host
-        box.trigger.before [:up] do |trigger|
-          trigger.name = "Generating key pair and authorizing guest"
-          trigger.ruby do |e,m|
-            if !File.file?(key_file)
-              `ssh-keygen -f #{key_file} -C minicoin@#{name} -q -N \"\"`
-              public_key = File.read("#{key_file}.pub")
-              open(authorized_keys, 'a') do |file|
-                file.puts "#{public_key}"
-              end
-              File.chmod(0600, authorized_keys)
-            end
-          end
-        end
-
-        # delete the keys, and de-authorize the guest
-        box.trigger.after [:destroy] do |trigger|
-          trigger.name = "Removing key-pair and de-authorising guest"
-          trigger.ruby do |e,m|
-            File.open("#{authorized_keys}.new", 'w') do |out|
-              out.chmod(File.stat(authorized_keys).mode)
-              File.foreach(authorized_keys) do |line|
-                out.puts line unless line =~ /minicoin@#{name}/
-              end
-            end
-            File.rename("#{authorized_keys}.new", authorized_keys)
-            File.delete(key_file) if File.exist?(key_file)
-            File.delete("#{key_file}.pub") if File.exist?("#{key_file}.pub")
-          end
-        end
-
-        # upload the private key to the guest
-        if !["validate"].include? ARGV[0]
-          box.vm.provision "file",
-            source: key_file,
-            destination: "#{guest_filedir}.ssh/#{$USER}"
-          box.vm.provision "shell",
-            inline: "chmod 0600 #{guest_filedir}.ssh/#{$USER}",
-            upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
-        end
-
-        host_home = $settings["home_share"]
-        if host_home != "disabled"
-          mac_share_folder(box, host_home, guest_home)
-        end
-
-        mac_share_folder(box, $PWD, "/minicoin")
+        mac_share_folders(box, machine, guest_home)
       else
-        host_home = $settings["home_share"]
-        if host_home != "disabled"
-          box.vm.synced_folder host_home, guest_home
-        end
-        box.vm.synced_folder ".", "/minicoin"
+        share_folders(box, guest_home)
         if is_windows
           win_link_folders(box)
         end
