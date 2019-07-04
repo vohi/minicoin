@@ -76,7 +76,6 @@ machines:
   - name: android-builder
     box: generic/ubuntu1804
     provider: vmware_desktop
-    gui: true
     roles:
       - role: linux-desktop
         desktop: lxde

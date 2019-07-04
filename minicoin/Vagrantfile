@@ -228,7 +228,6 @@ def insert_disk(box, disk_filename, role_params)
       device_port = disk_settings["port"]
 
       device_string = "#{device_ctl}#{device_port}"
-      puts "Inserting disk in #{device_string}"
       if disk_settings["type"] == "dvddrive"
         device_type = "cdrom-image"
       elsif disk_settings["type"] == "hdd"
