@@ -1,6 +1,6 @@
 {
-    "name": "tqtc/macos1012",
-    "description": "macOS 10.12 Sierra",
+    "name": "tqtc/macos1011",
+    "description": "macOS 10.11 El Capitan",
     "versions": [
         {
             "version": "0.0.1",
@@ -8,7 +8,7 @@
             "providers": [
                 {
                     "name": "virtualbox",
-                    "url": "https://$server/$minicoin_key/virtualbox/macos1012-0.0.1.box"
+                    "url": "https://$server/$minicoin_key/virtualbox/macos1011-0.0.1.box"
                 }
             ]
         }
