@@ -11,6 +11,16 @@
                     "url": "https://$server/$minicoin_key/virtualbox/macos1014-0.0.1.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.1",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "vmware_desktop",
+                    "url": "https://$server/$minicoin_key/vmware_desktop/macos1014-0.0.1.box"
+                }
+            ]
         }
     ]
 }
