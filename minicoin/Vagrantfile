@@ -8,6 +8,7 @@ require 'yaml'
 require 'net/http'
 
 $is_windows_host = !(ENV["windir"].nil?)
+$has_winrm = false
 $HOME = ENV["HOME"]
 $USER = ENV['USER']
 if $is_windows_host
@@ -760,13 +761,13 @@ Vagrant.configure("2") do |config|
 
         # Test if winrm is available
         begin
-          has_winrm = require 'winrm'
+          $has_winrm = require 'winrm' unless $has_winrm
         rescue LoadError
           puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
           puts "    #{name}: Shared folder support and file provisioning might fail"
         end
 
-        if has_winrm
+        if $has_winrm
           box.vm.communicator = :winrm
           box.winrm.transport = :plaintext
           box.winrm.basic_auth_only = true
