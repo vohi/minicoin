@@ -188,7 +188,10 @@ class Tester
       "$home_nix" => [:linux, "$HOME", "/home/host"],
       "$home_mac" => [:darwin, "$HOME", "/Users/host"],
       "$user" => [nil, "$USER", user],
-      "$user$user" => [nil, "$USER$USER", "#{user}#{user}"]
+      "$user$user" => [nil, "$USER$USER", "#{user}#{user}"],
+      "$$PWD" => [nil, "$$PWD", "$PWD"],
+      "echo guest home" => [nil, "echo $$HOME", "echo $HOME"],
+      "both" => [nil, "echo $USER $$USER $USER $$USER", "echo #{user} $USER #{user} $USER"]
     }
 
     test_data.each do |name, data|
@@ -197,7 +200,7 @@ class Tester
       input = data[1]
       output = data[2]
 
-      box = MockVm.new(guest) unless guest.nil?
+      box = MockVm.new(guest)
       result = expand_env(input, box)
       if result != output
         puts "Fail! for '#{name}'!"

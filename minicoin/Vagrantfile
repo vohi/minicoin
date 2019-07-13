@@ -247,8 +247,17 @@ end
 # expand environment variables in parameters
 # and adjust any occurence of $HOME to the home on the guest
 def expand_env(value, box)
-  while (matches = value.match(/\$([A-Za-z0-9_]*)/))
+  guest_sub_indices = []
+  while (matches = value.match(/\$([A-Za-z0-9_]+)/))
     env_name = matches[1]
+    match_index = matches.begin(1)
+    # guest substituation
+    if value[match_index-2] == '$'
+      value[match_index-2] = '?'
+      value[match_index-1] = ''
+      guest_sub_indices << match_index-2
+      next
+    end
     if env_name == ""
       break
     end
@@ -271,6 +280,9 @@ def expand_env(value, box)
         value = value.gsub("/", "\\\\")
       end
     end
+  end
+  guest_sub_indices.each do |i|
+    value[i] = '$'
   end
   return value
 end
@@ -348,26 +360,18 @@ def add_role(box, role, name)
       docker.build_image "#{role}", args: docker_args
     end
     activity = true
-  elsif role == "docker"
-    detach = true
-    restart = "always"
+  end
 
-    name = role_params["docker"]
-    image = role_params["image"]
-    cmd = role_params["cmd"]
-    args = role_params["args"]
-    detach = (role_params["detach"] == true) unless role_params["detach"].nil?
-    restart = role_params["restart"] unless role_params["restart"].nil?
-    box.vm.provision "docker" do |docker|
-      docker.run name,
-      image: image,
-      cmd: cmd,
-      auto_assign_name: false,
-      args: args,
-      daemonize: detach,
-      restart: restart
+  # always check for a provisioning extension
+  provisioning_file = "#{role_path}/provision.rb"
+  if File.file?(provisioning_file)
+    require provisioning_file
+    begin
+      eval("#{role}_provision(box.vm, role_params)")
+      activity = true
+    rescue => error
+      puts "==> #{name}: Error with #{role} role: #{error}"
     end
-    activity = true
   end
 
   # always check for a provisioning script
@@ -408,7 +412,7 @@ def add_role(box, role, name)
   end
 
   if ! activity
-    puts "==> #{role}: Provisioning script at '#{provisioning_file}' not found!"
+    puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!"
   else
     # check for pre-/post-provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
@@ -634,7 +638,7 @@ def mac_share_folders(mac, machine, guest_home)
       box.vm.provision "file",
         source: key_file,
         destination: ".ssh/#{$USER}"
-        box.vm.provision "shell",
+      box.vm.provision "shell",
         inline: "chmod 0600 .ssh/#{$USER}",
         upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
     end
