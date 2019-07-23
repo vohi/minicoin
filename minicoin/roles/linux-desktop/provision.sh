@@ -8,6 +8,7 @@ desktop=$(echo $PARAM_desktop | awk '{print tolower($1)}')
 echo "Requested: '$desktop' on '$distro'"
 
 setdefault="systemctl set-default graphical.target"
+startdesktop="systemctl isolate graphical.target"
 case $distro in
   ubuntu*)
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
@@ -17,7 +18,7 @@ case $distro in
     command="apt-get -y install"
     case $desktop in
       kde)
-        desktop="kubuntu-desktop"
+        desktop="kde-plasma-desktop"
         ;;
       lxde)
         desktop="lubuntu-desktop"
@@ -65,4 +66,7 @@ echo "Installation of '$desktop' complete, enabling..."
 
 if [[ ! -z $setdefault ]]; then
   $setdefault
+fi
+if [[ ! -z $startdesktop ]]; then
+  $startdesktop
 fi
