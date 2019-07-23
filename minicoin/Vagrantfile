@@ -456,6 +456,7 @@ def sshfs_share_folder(box, host_path, guest_path)
   upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
   mount_command = {
     privileged: false,
+    name: "sshfs_mount",
     upload_path: "#{upload_path}.sh",
     inline: \
     "if [[ ! -d #{mount_point} ]]; then " \
@@ -587,6 +588,7 @@ def win_link_folders(box)
   SCRIPT
 
   box.vm.provision "shell",
+    name: "win_link_folders",
     inline: link_cmd
 end
 
