@@ -3,7 +3,8 @@
 . /etc/os-release
 
 distro=$(echo $NAME | awk '{print tolower($1)}')
-desktop=$(echo $PARAM_desktop | awk '{print tolower($1)}')
+desktop=${PARAM_desktop:-$PARAM_linux_desktop}
+desktop=$(echo $desktop | awk '{print tolower($1)}')
 
 echo "Requested: '$desktop' on '$distro'"
 
