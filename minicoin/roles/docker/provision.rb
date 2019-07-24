@@ -1,4 +1,4 @@
-def docker_provision(vm, role_params)
+def docker_provision(box, role_params)
   detach = true
   restart = "always"
 
@@ -8,7 +8,7 @@ def docker_provision(vm, role_params)
   args = role_params["args"]
   detach = (role_params["detach"] == true) unless role_params["detach"].nil?
   restart = role_params["restart"] unless role_params["restart"].nil?
-  vm.provision "docker" do |docker|
+  box.vm.provision "docker" do |docker|
     docker.run name,
     image: image,
     cmd: cmd,
