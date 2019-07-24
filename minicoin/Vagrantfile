@@ -290,13 +290,13 @@ end
 def add_role(box, role, name)
   role_params = role
   if role.is_a?(Hash) # parameterized role
-    if !role["docker"].nil?
-      role_params["name"] = role["docker"]
-      role = "docker"
-    else
-      role = role["role"]
-      role_params.delete("role")
+    role, role_name = role.shift
+    if role == "role"
+      role = role_name
+    elsif role_name != nil
+      role_params[role] = role_name
     end
+
     role_params.each do |key, value|
       if value.nil?
         next
