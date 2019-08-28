@@ -790,6 +790,7 @@ Vagrant.configure("2") do |config|
         # "Intel Pro/1000 MT Server" must be used on Mac
         machine["nictype1"] = "82545EM"
       else
+        box.vm.guest = machine["guest"] unless machine["guest"].nil?
         # rely on defaults and vagrant autodetection for nix'es
       end
 
@@ -799,6 +800,10 @@ Vagrant.configure("2") do |config|
       if box.vm.communicator == :winssh
         box.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       end
+      if machine["basebox"] == true
+        box.ssh.insert_key = false
+      end
+      config.ssh.shell = machine["shell"] unless machine["shell"].nil?
 
       # map virtual machine configurations to provider specific settings
       virtualbox_setup(box, machine)
