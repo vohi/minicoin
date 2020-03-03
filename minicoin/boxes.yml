@@ -46,18 +46,11 @@ machines:
       - mingw32
     memory: 1024
     gui: false
-  - name: windows81
-    box: tqtc/$minicoin_key/windows81
-    roles:
-      - windows-tools
-      - msvc2015
-    memory: 1024
-    gui: false
   - name: windows10
     box: tqtc/$minicoin_key/windows10
     roles:
       - windows-tools
-      - msvc2017
+      - msvc2019
     memory: 3072
     gui: false
 
