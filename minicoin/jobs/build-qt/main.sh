@@ -88,7 +88,7 @@ if [[ $modules != "" ]]; then
   IFS=',' read -r -a module_array <<< "$modules"
   for module in "${module_array[@]}"; do
     echo "Building $module"
-    make -j4 module-$module
+    make -j$(nproc) module-$module
     error=$?
     if [[ $error != 0 ]]; then
       exit $error
@@ -98,7 +98,7 @@ if [[ $modules != "" ]]; then
     fi
   done
 else
-  make -j4
+  make -j$(nproc)
   generate_qmake=true
 fi
 

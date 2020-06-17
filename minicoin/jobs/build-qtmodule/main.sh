@@ -41,6 +41,10 @@ if [[ $module == "qtbase" ]]; then
     echo "Using configure options from $config_opt:"
     cat $config_opt
   else
+    if [ -f $sources/CMakeLists.txt ]
+    then
+      configure="$configure -cmake"
+    fi
     configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
   fi
   echo "Configuring with options '$configure'"
@@ -51,7 +55,12 @@ else
   ~/qmake $sources
 fi
 
-make -j4
+if [ -f build.ninja ]
+then
+  ninja qmake src/all
+else
+  make -j$(nproc)
+fi
 
 if [[ $generate_qmake == "true" ]]; then
   qmake_name="qmake-latest"
