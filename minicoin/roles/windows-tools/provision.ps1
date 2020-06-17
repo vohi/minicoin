@@ -1,3 +1,14 @@
+$registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+$Name = "NoAutoUpdate"
+$value = "1"
+
+IF(!(Test-Path $registryPath)) {
+    New-Item -Path $registryPath -Force | Out-Null
+    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
+} ELSE {
+    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
+}
+
 $ChocoInstallPath = "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 
 if (!(Test-Path $ChocoInstallPath)) {
@@ -16,7 +27,8 @@ if (!(Test-Path $ChocoInstallPath)) {
 cd $ChocoInstallPath
 
 $packages = ( "notepadplusplus", "git",
-              "strawberryperl", "python2" )
+              "strawberryperl", "python2",
+              "cmake", "ninja" )
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
