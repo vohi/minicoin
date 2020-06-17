@@ -2,7 +2,7 @@
 . /minicoin/util/parse-opts.sh "$@"
 
 sources=${POSITIONAL[0]}
-build_dir=~/qt5-build
+build_dir=~/qt-build
 modules=
 
 if [[ $PARAM_build != "" ]]; then
@@ -15,6 +15,7 @@ fi
 outputdir=$build_dir/qtbase/doc
 
 echo "Building HTML docs for '$sources' into '$outputdir'"
+mkdir -p $build_dir/qtbase/doc
 cd $build_dir
 
 if [[ $modules == "" ]]; then
