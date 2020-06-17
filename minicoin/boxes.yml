@@ -19,17 +19,17 @@ machines:
 
 ## Test machines
 
-  - name: test-linux
-    box: generic/ubuntu1804
-    roles: hello-world
-  - name: test-windows
-    box: tqtc/$minicoin_key/windows81
-    roles: hello-world
-  - name: test-mac
-    box: tqtc/$minicoin_key/macos1013
-    roles: hello-world
+##  - name: test-linux
+##    box: generic/ubuntu1804
+##    roles: hello-world
+##  - name: test-windows
+##    box: tqtc/$minicoin_key/windows81
+##    roles: hello-world
+##  - name: test-mac
+##    box: tqtc/$minicoin_key/macos1013
+##    roles: hello-world
 
-## Simple machines for reasonably fast but complete provisioning
+## Simple Linux machine
 
   - name: ubuntu1804
     box: generic/ubuntu1804
@@ -56,12 +56,6 @@ machines:
 
 ### Mac - nothing provisioned yet
 
-  - name: macos1011
-    box: tqtc/$minicoin_key/macos1011
-    memory: 1024
-  - name: macos1012
-    box: tqtc/$minicoin_key/macos1012
-    memory: 1024
   - name: macos1013
     box: tqtc/$minicoin_key/macos1013
     memory: 1024
@@ -99,35 +93,3 @@ machines:
         template: qtci-linux-Ubuntu-18.04-x86_64
         coin-root: $COIN_ROOT
     memory: 2048
-  - name: coin-rhel
-    box: generic/centos7
-    roles:
-      - role: coin-node
-        template: qtci-linux-RHEL-7.4-x86_64
-        coin-root: $COIN_ROOT
-  - name: coin-opensuse
-    box: opensuse/openSUSE-15.0-x86_64
-    roles:
-      - role: coin-node
-        template: qtci-linux-openSUSE-15.0-x86_64
-        coin-root: $COIN_ROOT
-
-  - name: coin-windows7
-    box: tqtc/$minicoin_key/windows7
-    roles:
-      - role: coin-node
-        template: qtci-windows-7-x86_64
-        coin-root: $COIN_ROOT
-  - name: coin-windows81
-    box: tqtc/$minicoin_key/windows81
-    roles:
-      - role: coin-node
-        template: qtci-windows-8.1-x86_64
-        coin-root: $COIN_ROOT
-  - name: coin-windows10
-    box: tqtc/$minicoin_key/windows10
-    roles:
-      - msvc2017
-      - role: coin-node
-        template: qtci-windows-10-x86_64
-        coin-root: $COIN_ROOT
