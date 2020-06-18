@@ -24,6 +24,8 @@ if (!(Test-Path $ChocoInstallPath)) {
     write-host "END Upgrade Chocolatey!"
 }
 
+$oldpath = [Environment]::GetEnvironmentVariable("PATH",[System.EnvironmentVariableTarget]::Machine)
+
 cd $ChocoInstallPath
 
 $packages = ( "notepadplusplus", "git",
@@ -34,6 +36,6 @@ $packages = ( "notepadplusplus", "git",
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
-[Environment]::SetEnvironmentVariable("PATH", `
-  "c:\strawberry\perl\bin;c:\Python27;c:\program files\git\cmd", `
-  [System.EnvironmentVariableTarget]::User)
+
+$oldpath += ";c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
+[Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
