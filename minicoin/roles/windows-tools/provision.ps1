@@ -39,3 +39,5 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 
 $oldpath += ";c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
 [Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
+
+refreshenv

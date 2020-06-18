@@ -29,3 +29,5 @@ Invoke-CmdScript "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools
 [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
 [Environment]::SetEnvironmentVariable("INCLUDE", $env:INCLUDE, [System.EnvironmentVariableTarget]::User)
 [Environment]::SetEnvironmentVariable("LIB", $env:LIB, [System.EnvironmentVariableTarget]::User)
+
+refreshenv
