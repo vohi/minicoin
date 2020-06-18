@@ -29,13 +29,24 @@ else
   config_opt=$HOME/config.opt
 fi
 
-mkdir $module-build$build
+mkdir $module-build$build 2>&1 > /dev/null
 cd $module-build$build
 
 echo "Building $module from $sources"
 
-if [[ $module == "qtbase" ]]; then
-  if [[ -f $config_opt ]]; then
+built=0
+if [ -f build.ninja ]
+then
+  ninja qmake src/all
+  built=1
+elif [ -f Makefile ]
+then
+  make sub-src -j$(nproc)
+  built=1
+elif [[ $module == "qtbase" ]]
+then
+  if [[ -f $config_opt ]]
+  then
     cp $config_opt ./config.opt
     configure="-redo"
     echo "Using configure options from $config_opt:"
@@ -55,11 +66,14 @@ else
   ~/qmake $sources
 fi
 
-if [ -f build.ninja ]
+if [ $built -eq 0 ]
 then
-  ninja qmake src/all
-else
-  make sub-src -j$(nproc)
+  if [ -f build.ninja ]
+  then
+    ninja qmake src/all
+  else
+    make sub-src -j$(nproc)
+  fi
 fi
 
 if [[ $generate_qmake == "true" ]]; then
