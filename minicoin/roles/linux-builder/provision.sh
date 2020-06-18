@@ -12,9 +12,9 @@ sed -i '/deb-src http.*xenial.* main restricted$/s/^# //g' /etc/apt/sources.list
 apt-get update
 apt-get -qq -y install build-essential python perl
 apt-get -qq -y build-dep qt5-default
-apt-get -qq -y install libx11-xcb-dev libxcb-xinerama0-dev libxkbcommon-x11-dev
+apt-get -qq -y install '^libxcb.*-dev' libx11-xcb-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
 apt-get -qq -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-apt-get -qq -y install libssl-dev
+apt-get -qq -y install libssl-dev libpcre2
 apt-get -qq -y install bison flex gperf ninja-build
 
 mkdir -p /tmp
@@ -22,15 +22,18 @@ cd /tmp
 
 # install latest cmake
 cmake_version=3.17
-apt-get -y install cmake=$cmake_version
+apt-get -qq -y install cmake=$cmake_version
 if [ $? -gt 0 ]
 then
+    echo "Downloading cmake $cmake_version"
     build=3
-    wget https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$build.tar.gz  2>&1 > /dev/null
+    wget -q https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$build.tar.gz  2>&1 > /dev/null
     tar -xzvf cmake-$cmake_version.$build.tar.gz  2>&1 > /dev/null
     cd cmake-$cmake_version.$build/
     ./bootstrap > /dev/null
+    echo "... Building cmake"
     make -j$(nproc)  > /dev/null
+    echo "... Installing cmake"
     sudo make install  > /dev/null
 fi
 
