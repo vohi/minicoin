@@ -8,7 +8,7 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
-write-host "Updating PATH"
+write-host "Updating Environment"
 refreshenv
 
 function Invoke-CmdScript {
