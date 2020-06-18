@@ -6,7 +6,7 @@ call c:\minicoin\util\discover-make.cmd
 
 set build=
 set generate_qmake=false
-set configure=%QTCONFIGFLAGS%
+set configure=
 
 if "!POSITIONAL[0]!" == "" (
   echo Error: path to host clone of Qt module is required!
@@ -34,6 +34,10 @@ if NOT "!PARAM_configure!" == "" (
   )
 ) else (
   SET "config_opt=%USERPROFILE%\config.opt"
+)
+
+if exist %sources%\CMakeLists.txt (
+  set "QTCONFIGFLAGS=%QTCONFIGFLAGS% -cmake"
 )
 
 mkdir %module%-build!build!
