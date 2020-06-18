@@ -123,12 +123,20 @@ function run_on_machine() {
     fi
     return 0
   elif [[ -f $continuous_file ]]; then
-    echo "==> $machine: Waking up current job!"
-    touch $continuous_file
-    run=$(test_continue $continuous_file "true" $machine)
-    error=$(tail -n 1 $continuous_file)
-    log_progress "Last job existed with $error"
-    return $error
+    pid=$(cat $continuous_file)
+    pid=$(ps $pid)
+    if [ $? -eq 0 ]
+    then
+      echo "==> $machine: Waking up current job!"
+      touch $continuous_file
+      run=$(test_continue $continuous_file "true" $machine)
+      error=$(tail -n 1 $continuous_file)
+      log_progress "Last job existed with $error"
+      return $error
+    else
+      echo "Aborted job discovered, deleting"
+      rm $continuous_file
+    fi
   fi
 
   vagrant ssh-config $machine &> /dev/null
