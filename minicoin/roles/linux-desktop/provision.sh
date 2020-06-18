@@ -16,7 +16,7 @@ case $distro in
     echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
     apt-get -qq update
 
-    command="apt-get -y install"
+    command="apt-get -qq -y install"
     case $desktop in
       kde)
         desktop="kde-plasma-desktop"
