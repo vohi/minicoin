@@ -14,7 +14,7 @@ apt-get -qq -y install build-essential python perl
 apt-get -qq -y build-dep qt5-default
 apt-get -qq -y install '^libxcb.*-dev' libx11-xcb-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
 apt-get -qq -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-apt-get -qq -y install libssl-dev libpcre2
+apt-get -qq -y install libssl-dev libpcre2-dev
 apt-get -qq -y install bison flex gperf ninja-build
 
 mkdir -p /tmp

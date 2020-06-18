@@ -45,7 +45,7 @@ if [[ $module == "qtbase" ]]; then
     then
       configure="$configure -cmake"
     fi
-    configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
+    configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests -pcre system -xcb $configure"
   fi
   echo "Configuring with options '$configure'"
 
@@ -59,7 +59,7 @@ if [ -f build.ninja ]
 then
   ninja qmake src/all
 else
-  make -j$(nproc)
+  make sub-src -j$(nproc)
 fi
 
 if [[ $generate_qmake == "true" ]]; then
