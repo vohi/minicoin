@@ -12,6 +12,7 @@ setdefault="systemctl set-default graphical.target"
 startdesktop="systemctl isolate graphical.target"
 case $distro in
   ubuntu*)
+    export DEBIAN_FRONTEND=noninteractive
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
     echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
     apt-get -qq update

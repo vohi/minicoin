@@ -38,6 +38,16 @@ machines:
         desktop: lxde
       - role: linux-builder
 
+  - name: ubuntu2004
+    box: generic/ubuntu2004
+    roles:
+      - role: linux-desktop
+        desktop: kde
+      - role: linux-builder
+      # libiconv is missing on ubuntu20.04, so remove header as well
+      - role: script
+        script: "rm -f /usr/include/iconv.h"
+
 ### Simple Windows boxes - different versions, different compiles
   - name: windows7
     box: tqtc/$minicoin_key/windows7
