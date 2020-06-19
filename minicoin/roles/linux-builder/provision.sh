@@ -9,19 +9,45 @@ sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
 sed -i '/deb-src http.*xenial.* main restricted$/s/^# //g' /etc/apt/sources.list
 
 # install dependencies for building and running Qt 5
-apt-get update
-apt-get -qq -y install build-essential python perl
-apt-get -qq -y build-dep qt5-default
-apt-get -qq -y install '^libxcb.*-dev' libx11-xcb-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
-apt-get -qq -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-apt-get -qq -y install libssl-dev libpcre2-dev
-apt-get -qq -y install bison flex gperf ninja-build
+export DEBIAN_FRONTEND=noninteractive
+apt-get update > /dev/null
+
+packages=( "build-essential"
+           "python"
+           "perl"
+           "build-dep"
+           "bison"
+           "flex"
+           "gperf"
+           "ninja-build"
+           "qt5-default"
+           "^libxcb.*-dev"
+           "libx11-xcb-dev"
+           "libxrender-dev"
+           "libxi-dev"
+           "libxkbcommon-dev"
+           "libxkbcommon-x11-dev"
+           "libglu1-mesa-dev" "freeglut3-dev" "mesa-common-dev"
+           "libssl-dev"
+           "libpcre2-dev"
+           "pkg-config"
+# install dependencies for running tests
+           "avahi-daemon"
+           "docker"
+)
+
+for package in ${packages[@]}
+do
+    echo "Installing $package"
+    apt-get -qq -y install $package > /dev/null
+done
 
 mkdir -p /tmp
 cd /tmp
 
 # install latest cmake
 cmake_version=3.17
+echo "Installing cmake $cmake_version"
 apt-get -qq -y install cmake=$cmake_version
 if [ $? -gt 0 ]
 then
@@ -38,7 +64,3 @@ then
 fi
 
 cd -
-
-# install dependencies for running tests
-apt-get -y install avahi-daemon
-apt-get -y install docker

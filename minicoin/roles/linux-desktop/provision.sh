@@ -15,9 +15,9 @@ case $distro in
     export DEBIAN_FRONTEND=noninteractive
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
     echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
-    apt-get -qq update
+    apt-get -qq update > /dev/null
 
-    command="apt-get -qq -y install"
+    command="apt-get -qq -y -o APT::Install-Recommends=0 -o APT:Install-Suggests=0 install"
     case $desktop in
       kde)
         desktop="kde-plasma-desktop"
@@ -38,6 +38,7 @@ case $distro in
     ;;
 
   centos*)
+    yum install -y epel-release > /dev/null
     command="yum -y groupinstall"
     case $desktop in
       gnome)
@@ -46,6 +47,8 @@ case $distro in
       kde)
         desktop="KDE Plasma Workspaces"
         ;;
+      xfce)
+        desktop="xfce"
     esac
     ;;
 esac
@@ -56,7 +59,7 @@ if [[ -z $command ]] || [[ -z $desktop ]]; then
 fi
 
 echo "Installing '$desktop' using '$command'"
-$command $desktop
+$command $desktop > /dev/null
 error=$?
 
 if [[ $error -gt 0 ]]; then
