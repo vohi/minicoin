@@ -13,6 +13,7 @@ echo "Building project in '$sources'"
 project=$(basename $sources)
 mkdir $project > /dev/null 2>&1
 
+export DISPLAY=:0.0
 if [[ -f "$HOME/make" ]]; then
   $HOME/make $sources $project $PARAM_make
 else
