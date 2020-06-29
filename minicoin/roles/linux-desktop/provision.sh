@@ -13,6 +13,7 @@ startdesktop="systemctl isolate graphical.target"
 case $distro in
   ubuntu*)
     export DEBIAN_FRONTEND=noninteractive
+    echo "Preparing installation of '$desktop' on '$distro'"
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
     echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
     apt-get -qq update > /dev/null
@@ -38,11 +39,13 @@ case $distro in
     ;;
 
   centos*)
+    echo "Preparing installation of '$desktop' on '$distro'"
+    yum update -y > /dev/null
     yum install -y epel-release > /dev/null
-    command="yum -y groupinstall"
+    command="dnf --enablerepo=epel,PowerTools group -y install"
     case $desktop in
       gnome)
-        desktop="GNOME Desktop"
+        desktop="GNOME"
         ;;
       kde)
         desktop="KDE Plasma Workspaces"
