@@ -499,6 +499,9 @@ def virtualbox_setup(box, machine)
     modifyvm["--nictype1"] = machine["nictype1"] unless machine["nictype1"].nil?
     modifyvm["--vrde"] = "on" unless machine["rdp_port"].nil?
     modifyvm["--vrdeport"] = machine["rdp_port"] unless machine["rdp_port"].nil?
+    modifyvm["--graphicscontroller"] = "vmsvga" unless box.vm.guest == :windows
+    modifyvm["--graphicscontroller"] = "vboxsvga" if box.vm.guest == :windows
+    modifyvm["--monitorcount"] = machine["monitorcount"] unless machine["monitorcount"].nil?
 
     extradata = {}
 
