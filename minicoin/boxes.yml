@@ -51,6 +51,8 @@ machines:
   - name: centos8
     box: generic/centos8
     roles:
+      - role: script
+        script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
       - role: linux-desktop
         desktop: gnome
       - role: linux-builder
