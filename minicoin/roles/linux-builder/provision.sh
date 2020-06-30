@@ -2,7 +2,7 @@
 echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.bashrc
 . /etc/os-release
 
-distro=$(echo $NAME | awk '{print tolower($1)}')
+distro=${ID}${VERSION_ID}
 
 case $distro in
   ubuntu*)
@@ -37,6 +37,7 @@ case $distro in
             "libssl-dev"
             "libpcre2-dev"
             "pkg-config"
+            "libwayland-.*"
     # install dependencies for running tests
             "avahi-daemon"
             "docker"
@@ -47,7 +48,7 @@ case $distro in
     yum install -y epel-release > /dev/null
     dnf -y install dnf-plugins-core > /dev/null
     dnf config-manager --set-enabled PowerTools > /dev/null
-    yum group install -y 'Development Tools'
+    yum group install -y 'Development Tools' > /dev/null
     command="yum install -y"
 
     packages=( "perl-core"
@@ -62,6 +63,8 @@ case $distro in
             "libxkbcommon-devel libxkbcommon-x11-devel.*"
             "libssl.* openssl-devel"
             "ninja-build"
+            "libwayland-*"
+            "mesa-libwayland-egl*"
     )
   ;;
 esac
