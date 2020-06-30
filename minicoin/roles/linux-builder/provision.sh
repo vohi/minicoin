@@ -1,5 +1,5 @@
 # fix for locale not being set correctly
-echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.bashrc
 . /etc/os-release
 
 distro=$(echo $NAME | awk '{print tolower($1)}')
@@ -52,14 +52,15 @@ case $distro in
 
     packages=( "perl-core"
             "zlib-devel"
-            "libxcb.*"
-            "libxcb-devel"
-            "xcb-util.*"
+            "libxcb.* libxcb-devel"
+            "libX11.*"
+            "libX11-xcb.*"
+            "libXrender.* libXrender-devel.*"
+            "libXi.* libXi-devel.*"
+            "xcb-util-*"
             "mesa-libGL-devel"
-            "libxkbcommon-devel"
-            "libxkbcommon-x11-devel.*"
-            "libssl.*"
-            "openssl-devel"
+            "libxkbcommon-devel libxkbcommon-x11-devel.*"
+            "libssl.* openssl-devel"
             "ninja-build"
     )
   ;;
