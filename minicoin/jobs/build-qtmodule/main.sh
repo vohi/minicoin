@@ -34,10 +34,10 @@ cd $module-build$build
 
 echo "Building '$module' from '$sources'"
 
-if [ -f build.ninja ]
+if [ -f build.ninja ] && [ -z $configure ]
 then
   echo "'$module' already configured with cmake"
-elif [ -f Makefile ]
+elif [ -f Makefile ] && [ -z $configure ]
 then
   echo "'$module' already configured with qmake"
 elif [[ $module == "qtbase" ]]
