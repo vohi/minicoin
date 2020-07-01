@@ -21,19 +21,14 @@ case $distro in
     packages=( "build-essential"
             "python"
             "perl"
-            "build-dep"
             "bison"
             "flex"
             "gperf"
             "ninja-build"
             "qt5-default"
-            "^libxcb.*-dev"
-            "libx11-xcb-dev"
-            "libxrender-dev"
-            "libxi-dev"
-            "libxkbcommon-dev"
-            "libxkbcommon-x11-dev"
-            "libglu1-mesa-dev" "freeglut3-dev" "mesa-common-dev"
+            "^libxcb.*-dev libx11-xcb-dev libxrender-dev libxi-dev"
+            "libxkbcommon-dev libxkbcommon-x11-dev"
+            "libglu1-mesa-dev freeglut3-dev mesa-common-dev"
             "libssl-dev"
             "libpcre2-dev"
             "pkg-config"
@@ -56,11 +51,8 @@ case $distro in
             "zlib-devel"
             "libxcb.* libxcb-devel"
             "libX11.*"
-            "libX11-xcb.*"
-            "libXrender.* libXrender-devel.*"
-            "libXi.* libXi-devel.*"
-            "xcb-util-*"
-            "mesa-libGL-devel"
+            "libX11-xcb.* libXrender.* libXrender-devel.* libXi.* libXi-devel.*"
+            "xcb-util-* mesa-libGL-devel"
             "libxkbcommon-devel libxkbcommon-x11-devel.*"
             "libssl.* openssl-devel"
             "ninja-build"
@@ -71,7 +63,7 @@ case $distro in
   ;;
 esac
 
-for package in ${packages[@]}
+for package in "${packages[@]}"
 do
     echo "Installing $package"
     $command $package > /dev/null
@@ -82,20 +74,23 @@ cd /tmp
 
 # install latest cmake
 cmake_version=3.17
-echo "Installing cmake $cmake_version"
-apt-get -qq -y install cmake=$cmake_version
-if [ $? -gt 0 ]
+cmake_build=3
+echo "Installing cmake $cmake_version.$cmake_build"
+if [[ -z $(cmake --version | grep "cmake version $cmake_version.$cmake_build") ]]
 then
-    echo "Downloading cmake $cmake_version"
-    build=3
-    wget -q https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$build.tar.gz  2>&1 > /dev/null
-    tar -xzvf cmake-$cmake_version.$build.tar.gz  2>&1 > /dev/null
-    cd cmake-$cmake_version.$build/
-    ./bootstrap > /dev/null
-    echo "... Building cmake"
-    make -j$(nproc)  > /dev/null
-    echo "... Installing cmake"
-    sudo make install  > /dev/null
+  $command cmake=$cmake_version
+  if [ $? -gt 0 ]
+  then
+      echo "... Downloading cmake $cmake_version"
+      wget -q https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$cmake_build.tar.gz  2>&1 > /dev/null
+      tar -xzvf cmake-$cmake_version.$cmake_build.tar.gz  2>&1 > /dev/null
+      cd cmake-$cmake_version.$cmake_build/
+      ./bootstrap > /dev/null
+      echo "... Building cmake"
+      make -j$(nproc)  > /dev/null
+      echo "... Installing cmake"
+      sudo make install  > /dev/null
+  fi
 fi
 
-cd -
+cd - > /dev/null
