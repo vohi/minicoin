@@ -38,6 +38,7 @@ case $distro in
             "libpcre2-dev"
             "pkg-config"
             "libwayland-.*"
+            "libxcomposite-dev"
     # install dependencies for running tests
             "avahi-daemon"
             "docker"
@@ -64,6 +65,7 @@ case $distro in
             "libssl.* openssl-devel"
             "ninja-build"
             "libwayland-*"
+            "libxcomposite-dev"
             "mesa-libwayland-egl*"
     )
   ;;
