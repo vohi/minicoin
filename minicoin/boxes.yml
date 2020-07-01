@@ -42,7 +42,7 @@ machines:
     box: generic/ubuntu2004
     roles:
       - role: linux-desktop
-        desktop: xfce
+        desktop: lxde
       - role: linux-builder
       # libiconv is missing on ubuntu20.04, so remove header as well
       - role: script
