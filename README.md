@@ -212,6 +212,7 @@ The following parameters are available:
     vram: optional # amount of MBs of video memory the machine should have
     resolution: optional # display resolution, e.g UXGA or WQXGA
     guiscale: optional # scale factor for the GUI
+    screens: optional # number of screens
 
 # Expert options for platform specific quirks
 
@@ -347,6 +348,52 @@ Scripted provisioning is always done for roles that provide a provision script,
 even if there is another provisioner type (such as ansible or disk) present for
 that role.
 
+As a special case, the `script` role can be used to execute an inline script
+on the guest, ie.
+
+```
+- name: hello
+  box: generic/ubuntu1804
+  roles:
+    - role: script
+      script: "echo Hello World"
+```
+
+#### Host-side scripting
+
+Roles can provide `pre-provision.sh` and `post-provision.sh` script files; those will
+be executed on the host before and after the guest is being provisioned, respectively.
+This functionality is not available when using minicoin on a Windows host.
+
+In addition, the `hostscript` role allows the definition of inline scripts that
+will be run as pre- and post-provisioning steps on the host:
+
+```
+- name: verbose
+  box: generic/ubuntu1804
+  roles:
+    - role: hostscript
+      preprovision: "wget latest_keys"
+      postprovision: "rm latest_keys"
+```
+
+### File provisioning
+
+To upload a file to the guest during provisiniong, use the `upload` role,
+and specify a list of local files and remote destinations, e.g:
+
+```
+- name: box
+  box: generic/ubuntu1804
+  roles:
+    - role: upload
+      files:
+        ~/.ssh/id_rsa: ~/.ssh/id_rsa
+```
+
+The local file needs to exist on the host. On the guest, the necessary
+directory structure will be created automatically.
+
 ### Docker
 
 minicoin can build a Dockerfile, or run a docker image.
@@ -417,6 +464,32 @@ parameters in the provisioner, e.g
       port: 1 # default to 1 for ISO, 2 for VDI
       mtype: standard # defaults to multiattach for VDI
 ```
+
+## Provider-specific provisioning
+
+The following roles can be used to make provider-specific changes to
+the box. Many of these changes will only have an effect when the box
+is created, and cannot be changed during later provisioning, or when
+the box is already running.
+
+### virtualbox
+
+Use the `virtualbox` role to provide a list of keys and values that
+should be passed on to the specified command of the `VBoxManage` tool.
+
+```
+- name: linux
+  box: generic/ubuntu1804
+  roles:
+    - role: virtualbox
+      modifyvm: # command of VBoxManage - see help for details
+        --description: "My test machine"
+```
+
+### vmware_desktop
+
+Use the `vmware_desktop` role to provide a list of keys and values that
+should be used as VMX settings.
 
 # Platform Notes and System Requirements
 
