@@ -248,6 +248,9 @@ end
 # and adjust any occurence of $HOME to the home on the guest
 def expand_env(value, box)
   guest_sub_indices = []
+  if !value.is_a?(String)
+    return value
+  end
   while (matches = value.match(/\$([A-Za-z0-9_]+)/))
     env_name = matches[1]
     match_index = matches.begin(1)
@@ -491,6 +494,8 @@ def virtualbox_setup(box, machine)
     vb.cpus = machine["cpus"] unless machine["cpus"].nil?
     vb.gui = machine["gui"] unless machine["gui"].nil?
     vb.customize ["modifyvm", :id, "--vram", machine["vram"]] unless machine["vram"].nil?
+    vb.customize ["modifyvm", :id, "--monitorcount", machine["screens"]] unless machine["screens"].nil?
+    
     vb.name = machine["name"]
 
     modifyvm = {}
@@ -501,7 +506,6 @@ def virtualbox_setup(box, machine)
     modifyvm["--vrdeport"] = machine["rdp_port"] unless machine["rdp_port"].nil?
     modifyvm["--graphicscontroller"] = "vmsvga" unless box.vm.guest == :windows
     modifyvm["--graphicscontroller"] = "vboxsvga" if box.vm.guest == :windows
-    modifyvm["--monitorcount"] = machine["monitorcount"] unless machine["monitorcount"].nil?
 
     extradata = {}
 
