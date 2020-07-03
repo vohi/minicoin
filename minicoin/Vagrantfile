@@ -293,6 +293,7 @@ end
 def add_role(box, role, name)
   role_params = role
   if role.is_a?(Hash) # parameterized role
+    role_params["boxname"] = name
     role, role_name = role.shift
     if role == "role"
       role = role_name
@@ -836,7 +837,7 @@ Vagrant.configure("2") do |config|
       end
 
       # Execution of provisioning script
-      if ["up", "provision", "reload", "validate"].include? ARGV[0]
+      if ["up", "provision", "reload", "validate", "destroy"].include? ARGV[0]
         roles = machine["roles"]
         unless roles.nil? or roles.empty?
           if roles.kind_of?(Array)
