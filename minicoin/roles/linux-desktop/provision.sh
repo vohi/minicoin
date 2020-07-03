@@ -28,7 +28,7 @@ case $distro in
       minimal-x11)
         packages=( "xserver-xorg" "fluxbox" "xinit" "xterm" "lxdm" )
         ;;
-      wayland)
+      weston)
         packages=( "weston" )
         ;;
       gnome)
