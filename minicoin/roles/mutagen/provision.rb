@@ -6,9 +6,28 @@ def mutagen_provision(box, role_params)
     role_params["mutagen_host_ip"] = ip_address
 
     name = role_params["boxname"]
-    files = role_params["files"]
-    if ["up", "provision", "reload", "validate"].include? ARGV[0]
-        box.vm.provision "file", source: "/tmp/mutagen", destination: "C:\\mutagen"
+    paths = role_params["paths"]
+    role_params.delete("paths")
+    alphas = []
+    betas = []
+    paths.each do |path|
+        if path.is_a?(String)
+            alphas << path
+            betas << path.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+        elsif path.is_a?(Hash)
+            path.each do |alpha, beta|
+                alphas << alpha
+                betas << beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+            end
+        else
+            throw "Argument error: expecting 'paths' to be a list of strings or hashes from source to desintation"
+        end
+    end
+    role_params["alpha"] = alphas
+    role_params["beta"] = betas
+    if ["up", "provision", "reload"].include? ARGV[0]
+        box.vm.provision "file", source: "/tmp/mutagen.tar.gz", destination: "C:\\tmp\\mutagen.tar.gz"
+        role_params["mutagen_install"] = "C:\\tmp\\mutagen.tar.gz"
     end
 
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
@@ -44,8 +63,7 @@ def mutagen_provision(box, role_params)
     end
 
     if ["up", "provision", "reload", "validate"].include? ARGV[0]
-        box.vm.provision "file",
-            source: key_file,
-            destination: "C:\\Users\\vagrant\\.ssh\\id_rsa" # can't be anything else
+        # needs to be id_rsa, mutagen doesn't allow specifying an ssh identity file
+        box.vm.provision "file", source: key_file, destination: "C:\\Users\\vagrant\\.ssh\\id_rsa"
     end
 end
