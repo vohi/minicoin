@@ -340,9 +340,11 @@ def add_role(box, role, name)
     end
     activity = true
   elsif File.file?("#{role_path}/disk.yml")
-    activity = true
-    if !insert_disk(box, "#{role_path}/disk.yml", role_params)
-      puts "==> #{name}: Attaching disk failed for role '#{role}'"
+    if ["up", "provision", "reload", "validate"].include? ARGV[0]
+      activity = true
+      if !insert_disk(box, "#{role_path}/disk.yml", role_params)
+        puts "==> #{name}: Attaching disk failed for role '#{role}'"
+      end
     end
   elsif File.file?("#{role_path}/Dockerfile")
     docker_args = "--rm"
@@ -836,17 +838,15 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      # Execution of provisioning script
-      if ["up", "provision", "reload", "validate", "destroy"].include? ARGV[0]
-        roles = machine["roles"]
-        unless roles.nil? or roles.empty?
-          if roles.kind_of?(Array)
-            roles.each do |role|
-              add_role(box, role, name)
-            end
-          else
-            add_role(box, roles, name)
+      # Definition of provisioning steps
+      roles = machine["roles"]
+      unless roles.nil? or roles.empty?
+        if roles.kind_of?(Array)
+          roles.each do |role|
+            add_role(box, role, name)
           end
+        else
+          add_role(box, roles, name)
         end
       end
     end
