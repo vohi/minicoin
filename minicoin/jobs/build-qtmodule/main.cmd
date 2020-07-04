@@ -33,27 +33,31 @@ if NOT "!PARAM_configure!" == "" (
   SET "config_opt=%USERPROFILE%\config.opt"
 )
 
-if exist %sources%\CMakeLists.txt (
-  set "QTCONFIGFLAGS=%QTCONFIGFLAGS% -cmake"
-)
-
 mkdir %module%-build!build!
 cd %module%-build!build!
 
 echo Building %module% from %sources%
 
 if "%module%" == "qtbase" (
-  if exist !config_opt! (
-    copy !config_opt! config.opt
-    SET configure=-redo
-    echo Using configure options from !config_opt!:
-    type config.opt
+  if exist %sources%\CMakeLists.txt (
+    if "%MAKETOOL%" == "ninja.exe" (
+      set "configure=-GNinja"
+    )
+    echo Calling 'cmake %sources% !configure!'
+    cmake %sources% !configure!
   ) else (
-    set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure! %QTCONFIGFLAGS%"
+    echo Using qmake
+    if exist !config_opt! (
+      copy !config_opt! config.opt
+      SET configure=-redo
+      echo Using configure options from !config_opt!:
+      type config.opt
+    ) else (
+      set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure! %QTCONFIGFLAGS%"
+    )
+    echo Calling '%sources%\configure !configure!'
+    call %sources\configure !configure!
   )
-  echo Configuring with options '!configure!'
-
-  call %sources%\configure !configure!
   set generate_qmake=true
 ) else (
   call %USERPROFILE%\qmake %sources%
@@ -66,9 +70,15 @@ if "%generate_qmake%" == "true" (
   if defined PARAM_build (
     set "qmake_name=qmake-!PARAM_build!"
   )
-  del %USERPROFILE%\!qmake_name!.bat
-  echo %CD%\bin\qmake.exe %%* > %USERPROFILE%\!qmake_name!.bat
+  if exist %USERPROFILE%\!qmake_name!.bat (
+    del %USERPROFILE%\!qmake_name!.bat
+  )
+  echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\!qmake_name!.bat
+  echo %CD%\bin\qmake.exe %%* >> %USERPROFILE%\!qmake_name!.bat
 
+  if exist %USERPROFILE%\qmake.bat (
+    del %USERPROFILE%\qmake.bat
+  )
   del %USERPROFILE%\qmake.bat
   mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
 )
