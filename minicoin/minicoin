@@ -56,17 +56,14 @@ if [ "$#" -lt $min_args ]; then
   echo "Usage: $(basename $0) <command> [options]"
   echo
   echo "Common commands:"
-  echo "  run [--parallel] [--verbose] machine1 machine2 ... job [-- [job-args]]"
+  echo "  run [options] machine1 machine2 ... job [-- [job-args]]"
   echo
-  echo "    'machine1..n' is a list of machines on which the job will be run."
-  echo "    'job' is the job to run on the machines."
-  echo "    '--parallel' triggers parallel execution of the job on several machines"
-  echo "    Arguments after '--' will be passed on to the job script. Job arguments that"
-  echo "    expand to paths on the host will be adjusted to the guest's file system."
-  echo "    '--continuous' runs the job in a loop (implies --parallel), waiting"
-  echo "    after each run for the next invocation, which will be executed without"
-  echo "    the overhead of setting the job up again."
-  echo "    '--abort' makes a current continuous run break out of the loop and exit."
+IFS='
+'
+  for line in $($minicoin_dir/run_on.sh --help)
+  do
+     printf "    %s\n" "$line"
+  done
   echo
   echo "  ls machine1 machine2 ... [-- [args]]"
   echo

@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 
 function print_help() {
-  echo "Runs a script on a machine using the appropriate remoting mechanism."
-  echo
-  echo "Usage: $(basename $0) [options] machine1 machine2 ... job [--] [args]"
-  echo
-  echo "  'machine1..n' is a list of machines on which the job will be run sequentially"
-  echo "  'job' is the job to run, with the main script in the jobs/job as the entry point"
-  echo "  The optional 'args' will be passed to the main script"
+  echo "Runs a job on one or more machines using the appropriate remoting mechanism."
+  echo "   "
+  echo "'machine1..n' is a list of machines on which the job will be run."
+  echo "'job' is the job to run on the machines."
+  echo "Arguments after '--' will be passed on to the job script. Job arguments that"
+  echo "expand to paths on the host will be mapped to the guest's file system."
+  echo "  "
+  echo "Options:"
+  echo "  "
+  echo "--no-mapping Job arguments will not be mapped to the guest file system"
+  echo "  "
+  echo "--parallel triggers parallel execution of the job on several machines."
+  echo "  By default, the job is executed on each machine sequentially."
+  echo "  "
+  echo "--continuous runs the job in a loop (implies --parallel), waiting"
+  echo "  after each run for the next invocation, which will be executed without"
+  echo "  the overhead of setting the job up again."
+  echo "--abort makes a current continuous run break out of the loop and exit."
   echo
 }
 
@@ -144,6 +155,11 @@ function run_on_machine() {
   if [[ $error -gt 0 ]]; then
     log_progress "==> $machine: Machine not running - bringing it up"
     vagrant up $machine
+    error=$?
+    if [[ $error -gt 0 ]]; then
+      echo "Can't bring up machine '$machine' - aborting"
+      exit $error
+    fi
   fi
   vagrant winrm $machine &> /dev/null
   error=$?
