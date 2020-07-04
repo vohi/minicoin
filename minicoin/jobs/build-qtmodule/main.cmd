@@ -15,15 +15,12 @@ if "!POSITIONAL[0]!" == "" (
 
 set "sources=!POSITIONAL[0]!"
 set module=
-for %%f in ("%sources%/*.pro") do (
-  if NOT "!module!" == "" (
-    echo %sources% needs to have exactly one .pro file!
-    exit /B 1
-  )
-  set module=%%~nf
+for %%F in ("%sources%") do (
+  set module=%%~nF
 )
 if %module% == "" (
-  echo %sources% needs to have exactly one .pro file!
+  echo Can't identify the module for %sources%!
+  exit /B 2
 )
 
 if NOT "!PARAM_build!" == "" set build=-!PARAM_build!
