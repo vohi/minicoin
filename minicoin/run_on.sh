@@ -30,7 +30,9 @@ parallel="false"
 verbose="false"
 continuous="false"
 abort="false"
+useGuestHome="false"
 redirect_output="false"
+path_separator="/"
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -55,6 +57,8 @@ for arg in "${@}"; do
       continuous="true"
     elif [[ "$arg" == "--abort" ]]; then
       abort="true"
+    elif [[ "$arg" == "--use-guest" ]]; then
+      useGuestHome="true"
     else
       machines+=("$arg")
     fi
@@ -164,7 +168,12 @@ function run_on_machine() {
   vagrant winrm $machine &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
-    guest_home="c:\\Users\\host"
+    path_separator="\\"
+    if [ "$useGuestHome" == "true" ]; then
+      guest_home="c:\\Users\\vagrant"
+    else
+      guest_home="c:\\Users\\host"
+    fi
     ext="cmd"
   else
     uname=$(vagrant ssh -c uname $machine &> /dev/null)
@@ -226,6 +235,7 @@ function run_on_machine() {
   whitespace=" |'|,"
   for arg in "${script_args[@]}"; do
     mapped="${arg/$host_home/$guest_home}"
+    mapped="${mapped//\//$path_separator}"
     if [[ $mapped =~ $whitespace ]]; then
       mapped=\"$mapped\"
     fi
