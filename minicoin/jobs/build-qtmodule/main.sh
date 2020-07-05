@@ -40,7 +40,7 @@ cd $module-build$build
 
 echo "Building '$module' from '$sources'"
 
-if [ -f build.ninja ] && [ -z $configure ]
+if [ -f CMakeCache.txt ] && [ -z $configure ]
 then
   echo "'$module' already configured with cmake"
 elif [ -f Makefile ] && [ -z $configure ]

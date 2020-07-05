@@ -9,6 +9,10 @@ IF(!(Test-Path $registryPath)) {
     New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
 }
 
+IF(!(Test-Path C:\Users\vagrant\bin)) {
+    New-Item -Type Directory -Path C:\Users\vagrant\bin | Out-Null
+}
+
 $ChocoInstallPath = "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 
 if (!(Test-Path $ChocoInstallPath)) {
@@ -37,7 +41,7 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
 
-$oldpath += ";c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
+$oldpath += ";c:\Users\vagrant\bin;c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
 [Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
 
 refreshenv

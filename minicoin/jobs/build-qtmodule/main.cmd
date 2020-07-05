@@ -44,12 +44,18 @@ cd %module%-build!build!
 
 echo Building %module% from %sources%
 
-if "%module%" == "qtbase" (
+if exist CMakeCache.txt (
+  echo '%module%' already configured with cmake
+) else if exist Makefile (
+  echo '%module%' already configured with qmake
+) else if "%module%" == "qtbase" (
+  set "generate_toollink=qmake"
   if exist %sources%\CMakeLists.txt (
     set "configure=-DFEATURE_developer_build=ON -DQT_NO_MAKE_EXAMPLES=ON -DQT_NO_MAKE_TESTS=ON !configure!"
     if "%MAKETOOL%" == "ninja.exe" (
       set "configure=!configure! -GNinja"
     )
+    set "generate_toollink=!generate_toollink! qt-cmake"
     echo Calling 'cmake %sources% !configure!'
     cmake %sources% !configure!
   ) else (
@@ -65,26 +71,36 @@ if "%module%" == "qtbase" (
     echo Calling '%sources%\configure !configure!'
     call %sources\configure !configure!
   )
-  set generate_qmake=true
+) else if exist %sources%\CMakeLists.txt (
+  echo Generating cmake build for '%module%' for '%MAKETOOL%'
+  set generator=
+  if "%MAKETOOL%" == "ninja.exe" (
+    set "generator=-GNinja"
+  )
+  call %USERPROFILE%\bin\qt-cmake %sources% !generator!
 ) else (
-  call %USERPROFILE%\qmake %sources%
+  echo Generating qmake build for '%module%'
+  call %USERPROFILE%\bin\qmake %sources%
+)
+
+for %%T in ( %generate_toollink% ) do (
+  set tool=%%T
+  echo Generating link to !tool!
+  set linkname=-latest
+  if defined PARAM_build (
+    set linkname=!build!
+  )
+  set toolname=!tool!!linkname!
+  if exist %USERPROFILE%\!toolname!.bat (
+    del %USERPROFILE%\!toolname!.bat
+  )
+  if exist %USERPROFILE%\!tool!.bat (
+    del %USERPROFILE%\!tool!.bat
+  )
+
+  echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\!toolname!.bat
+  echo %CD%\bin\!tool! %%* >> %USERPROFILE%\!toolname!.bat
+  mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\!toolname!.bat
 )
 
 call %MAKETOOL%
-
-if "%generate_qmake%" == "true" (
-  set "qmake_name=qmake-latest"
-  if defined PARAM_build (
-    set "qmake_name=qmake-!PARAM_build!"
-  )
-  if exist %USERPROFILE%\!qmake_name!.bat (
-    del %USERPROFILE%\!qmake_name!.bat
-  )
-  echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\!qmake_name!.bat
-  echo %CD%\bin\qmake.exe %%* >> %USERPROFILE%\!qmake_name!.bat
-
-  if exist %USERPROFILE%\qmake.bat (
-    del %USERPROFILE%\qmake.bat
-  )
-  mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
-)
