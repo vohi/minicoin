@@ -79,6 +79,5 @@ if "%generate_qmake%" == "true" (
   if exist %USERPROFILE%\qmake.bat (
     del %USERPROFILE%\qmake.bat
   )
-  del %USERPROFILE%\qmake.bat
   mklink %USERPROFILE%\qmake.bat %USERPROFILE%\!qmake_name!.bat
 )
