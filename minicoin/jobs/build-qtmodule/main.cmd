@@ -33,15 +33,22 @@ if NOT "!PARAM_configure!" == "" (
   SET "config_opt=%USERPROFILE%\config.opt"
 )
 
-mkdir %module%-build!build!
+if NOT "!FLAG_clean!" == "" if exist %module%-build!build! (
+  echo Cleaning existing build in %module%-build!build!
+  rmdir /S/Q %module%-build!build!
+)
+if not exist %module%-build!build! (
+  mkdir %module%-build!build!
+)
 cd %module%-build!build!
 
 echo Building %module% from %sources%
 
 if "%module%" == "qtbase" (
   if exist %sources%\CMakeLists.txt (
+    set "configure=-DFEATURE_developer_build=ON -DQT_NO_MAKE_EXAMPLES=ON -DQT_NO_MAKE_TESTS=ON !configure!"
     if "%MAKETOOL%" == "ninja.exe" (
-      set "configure=-GNinja"
+      set "configure=!configure! -GNinja"
     )
     echo Calling 'cmake %sources% !configure!'
     cmake %sources% !configure!

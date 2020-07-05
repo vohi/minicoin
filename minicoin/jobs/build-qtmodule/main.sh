@@ -29,6 +29,12 @@ else
   config_opt=$HOME/config.opt
 fi
 
+if [[ ! -z $FLAG_clean ]]
+then
+  echo "Cleaning existing build in '$module-build$build'"
+  rm -rf $module-build$build
+fi
+
 mkdir $module-build$build 2> /dev/null
 cd $module-build$build
 
