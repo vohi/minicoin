@@ -1,6 +1,7 @@
 $packages = ( "visualstudio2019buildtools",
               "visualstudio2019-workload-vctools")
 
+winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2147483647"}
 cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
