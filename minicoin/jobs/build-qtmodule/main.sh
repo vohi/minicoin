@@ -6,6 +6,7 @@
 build=
 configure=
 generate_toollink=()
+target=
 
 if [[ ${POSITIONAL[0]} == "" ]]; then
   echo "Error: path to host clone of Qt module is required!"
@@ -19,6 +20,7 @@ if [[ $(echo $module | wc -w) != 1 ]]; then
   exit 1
 fi
 
+[[ ! -z $PARAM_target ]] && target=$PARAM_target
 [[ ! -z $PARAM_build ]] && build=-$PARAM_build
 if [[ $PARAM_configure != "" ]]; then
   configure=$PARAM_configure
@@ -56,10 +58,8 @@ then
     echo "Using configure options from $config_opt:"
     cat $config_opt
   else
-    targets="sub-src"
     if [ -f $sources/CMakeLists.txt ]
     then
-      targets="qmake src/all"
       configure="$configure -cmake"
       generate_toollink=( $generate_toollink "qt-cmake" )
     fi
@@ -98,11 +98,11 @@ done
 
 if [ -f build.ninja ]
 then
-  ninja $targets
+  ninja $target
   error=$?
 elif [ -f Makefile ]
 then
-  make $targets -j$(nproc)
+  make $target -j$(nproc)
   error=$?
 else
   2> echo "No build system generated, aborting"

@@ -235,7 +235,7 @@ function run_on_machine() {
   whitespace=" |'|,"
   for arg in "${script_args[@]}"; do
     mapped="${arg/$host_home/$guest_home}"
-    mapped="${mapped//\//$path_separator}"
+    [[ $mapped = /* ]] && mapped="${mapped//\//$path_separator}"
     if [[ $mapped =~ $whitespace ]]; then
       mapped=\"$mapped\"
     fi

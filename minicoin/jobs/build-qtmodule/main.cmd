@@ -7,6 +7,7 @@ call c:\minicoin\util\discover-make.cmd
 set build=
 set generate_qmake=false
 set configure=
+set target=
 
 if "!POSITIONAL[0]!" == "" (
   echo Error: path to host clone of Qt module is required!
@@ -23,6 +24,7 @@ if %module% == "" (
   exit /B 2
 )
 
+if defined PARAM_target set target=!PARAM_target!
 if NOT "!PARAM_build!" == "" set build=-!PARAM_build!
 if NOT "!PARAM_configure!" == "" (
   SET "configure=!PARAM_configure!"
@@ -103,4 +105,4 @@ for %%T in ( %generate_toollink% ) do (
   mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\!toolname!.bat
 )
 
-call %MAKETOOL%
+call %MAKETOOL% !target!
