@@ -106,3 +106,4 @@ for %%T in ( %generate_toollink% ) do (
 )
 
 call %MAKETOOL% !target!
+EXIT /B %ERRORLEVEL%

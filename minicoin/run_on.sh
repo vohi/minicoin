@@ -103,22 +103,25 @@ function test_continue() {
   machine=$3
   local run="true"
 
-  if [ $continuous == "true" ]; then
-    log_progress "==> $machine: Continuous process, waiting to wake up..."
-    run="wait"
+  if [ $continuous == "true" ] || [ $continuous == "wakeup" ]
+  then
+    if [ $continuous == "true" ]
+    then
+      log_progress "==> $machine: Continuous process, waiting to wake up..."
+    fi
+    run="true"
 
-    continuous_last=$(stat -f "%m" $continuous_file 2> /dev/null)
-    while [[ $run == "wait" ]]; do
-      continuous_now=$(stat -f "%m" $continuous_file 2> /dev/null)
+    timestamp_old=$(stat -f "%m" $continuous_file 2> /dev/null)
+    error=$?
+    timestamp_new=$timestamp_old
+    while [[ $timestamp_new -eq $timestamp_old ]]; do
+      sleep 1
+      timestamp_new=$(stat -f "%m" $continuous_file 2> /dev/null)
       error=$?
-      if [[ "$error" != 0 ]]; then
+      if [[ $error != 0 ]]
+      then
         log_progress "==> $machine: Aborted, exiting"
         run="false"
-      elif [[ "$continuous_now" != "$continuous_last" ]]; then
-        log_progress "==> $machine: Woken up, starting next run!"
-        run="true"
-      else
-        sleep 1
       fi
     done
   else
@@ -138,23 +141,27 @@ function run_on_machine() {
     fi
     return 0
   elif [[ -f $continuous_file ]]; then
-    pid=$(cat $continuous_file)
+    pid=$(head -n 1 $continuous_file)
+    log_progress "==> $machine: Probing process $pid"
     pid=$(ps $pid)
     if [ $? -eq 0 ]
     then
       echo "==> $machine: Waking up current job!"
-      touch $continuous_file
-      run=$(test_continue $continuous_file "true" $machine)
-      error=$(tail -n 1 $continuous_file)
-      log_progress "Last job existed with $error"
+      echo $log_stamp >> $continuous_file
+      run=$(test_continue $continuous_file "wakeup" $machine)
+      error=$(tail -n 1 $continuous_file | awk '{print $1}')
+      log_progress "==> $machine: Last job existed with '$error'"
       return $error
     else
-      echo "Aborted job discovered, deleting"
+      echo "==> $machine: Aborted job '$job' discovered, deleting"
       rm $continuous_file
     fi
   fi
 
-  vagrant ssh-config $machine &> /dev/null
+  exec 0<&- # closing stdin
+
+  log_progress "==> $machine: Setting up machine"
+  vagrant ssh-config $machine < /dev/null &> /dev/null
   error=$?
   if [[ $error -gt 0 ]]; then
     log_progress "==> $machine: Machine not running - bringing it up"
@@ -165,7 +172,7 @@ function run_on_machine() {
       exit $error
     fi
   fi
-  vagrant winrm $machine &> /dev/null
+  vagrant winrm $machine < /dev/null &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
     path_separator="\\"
@@ -176,7 +183,7 @@ function run_on_machine() {
     fi
     ext="cmd"
   else
-    uname=$(vagrant ssh -c uname $machine &> /dev/null)
+    uname=$(vagrant ssh -c uname $machine < /dev/null &> /dev/null)
     if [[ "$uname" =~ "Darwin" ]]; then
       guest_home="/Users/host"
     else
@@ -193,7 +200,7 @@ function run_on_machine() {
     return
   fi
 
-  echo "==> $machine: running '$job' with args '${script_args[@]}'!"
+  echo "==> $machine: running '$job' with arguments '${script_args[@]}'"
   if [ -f "jobs/$job/pre-run.sh" ]; then
     log_progress "==> $machine: Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
@@ -259,17 +266,25 @@ function run_on_machine() {
 
     while [ "$run" == "true" ]; do
       error=0
+      log_progress "==> $machine: running $job through winrm"
+      errorfile=".logs/$job-error-$machine-$log_stamp.errorcode"
       vagrant winrm -s cmd -c \
-        "($command) || \
-          echo \"Error %ERRORLEVEL%\" > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
+        "cmd /C $command || echo 1 > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
         $machine
-      if [[ -f ".logs/$job-error-$machine-$log_stamp.errorcode" ]]; then
-        error=1
+      if [[ -f "$errorfile" ]]; then
+        error=$(tail -n 1 $errorfile | awk '{print $1}')
+        rm "$errorfile"
       fi
+      log_progress "==> $machine: Job '$job' exited with error code '$error'"
 
       echo $error >> $continuous_file
+      if [ "$continuous" == "true" ]
+      then
+        echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
+      fi
       run=$(test_continue $continuous_file $continuous $machine)
     done
+    log_progress "==> $machine: Job '$job' finished, cleaning up."
     vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
   else
     command="$scriptfile ${job_args[@]}"
@@ -281,17 +296,23 @@ function run_on_machine() {
     fi
     while [ "$run" == "true" ]; do
       error=0
-      vagrant ssh -c "$command" $machine 2> /dev/null
+      log_progress "==> $machine: running $job through ssh"
+      vagrant ssh -c "$command" $machine < /dev/null 2> /dev/null
       error=$?
+      log_progress "==> $machine: Job '$job' exited with error code '$error'"
 
       echo $error >> $continuous_file
+      if [ "$continuous" == "true" ]
+      then
+        echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
+      fi
       run=$(test_continue $continuous_file $continuous $machine)
     done
-
-    vagrant ssh -c "rm -rf $job" $machine 2> /dev/null
+    log_progress "==> $machine: Job '$job' finished, cleaning up."
+    vagrant ssh -c "rm -rf $job" $machine < /dev/null 2> /dev/null
   fi
-  if [ $error != 0 ]; then
-    >&2 echo "==> $machine: Job $job started at $log_stamp ended with error"
+  if [ "$error" != "0" ]; then
+    >&2 echo "==> $machine: Job '$job' started at $log_stamp ended with error"
     if [[ $redirect_output == "true" ]]; then
       >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
       >&2 echo "    $machine: See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
