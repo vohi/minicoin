@@ -13,11 +13,21 @@ echo "Building project in '$sources'"
 project=$(basename $sources)
 mkdir $project > /dev/null 2>&1
 
-export DISPLAY=:0.0
-if [[ -f "$HOME/make" ]]; then
-  $HOME/make $sources $project $PARAM_make
+cd $project
+if [ -f "$source/CMakeLists.txt" ]
+then
+  qt-cmake $source
 else
-  cd $project
-  $HOME/qmake $sources
-  make $PARAM_make
+  qmake $sources
+fi
+
+export DISPLAY=:0.0
+if [ -f build.ninja ]
+then
+  ninja $PARAM_target
+elif [ -f Makefile ]
+  make $PARAM_target -j$(nproc)
+else
+  echo "Error generating build system"
+  exit 1
 fi

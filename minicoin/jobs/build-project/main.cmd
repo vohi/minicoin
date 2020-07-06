@@ -19,20 +19,40 @@ FOR %%P in ("%projectpath%") DO (
 )
 echo Building '%projectpath%' into '%projectname%'
 
-mkdir %projectname%
-
-if exist %USERPROFILE%\make.bat (
-  call %USERPROFILE%\make.bat %projectpath% %projectname% !PARAM_make!
-) else (
-  cd %projectname%
-  call %USERPROFILE%\qmake.bat "%projectpath%"
-  echo Using %MAKETOOL%
-  %MAKETOOL% !PARAM_make!
+if not exist %projectname (
+  mkdir %projectname%
 )
 
-echo Project '%projectname%' built successfully
+cd %projectname%
 
-exit 0
+if exist "%projectpath%\CMakeLists.txt" (
+  set generator=
+  if %MAKETOOL% == ninja.exe set generator=-GNinja
+  call qt-cmake.bat "%projectpath%" !generator!
+) else (
+  call qmake.bat "%projectpath%"
+)
+
+set error=0
+if exist build.ninja (
+  ninja !PARAM_target!
+  set error=%errorlevel%
+) else if exist Makefile (
+  %MAKETOOL% !PARAM_target!
+  set error=%errorlevel%
+) else (
+  echo Error generating build system
+  dir
+  exit /B 2
+)
+
+if %error% EQU 0 (
+  echo Project '%projectname%' built successfully
+) else (
+  echo Error building '%projectname'
+)
+
+exit /B %errorlevel%
 
 :errorargs
-exit 1
+exit /B 1
