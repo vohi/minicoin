@@ -87,9 +87,14 @@ fi
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
 
+GREEN="\033[0;32m"
+RED="\033[0;31m"
+YELLOW="\e[0;33m"
+NOCOL="\033[0m"
+
 function log_progress() {
   if [[ "$verbose" == "true" ]]; then
-    >&2 echo $1
+    >&2 printf "${YELLOW}%s${NOCOL}\n" "$1"
   fi
 }
 
@@ -147,35 +152,38 @@ function run_on_machine() {
     then
       if [[ $abort == "true" ]]
       then
-        echo "==> $machine: Attempting to exiting current job '$job'"
+        printf "==> $machine: Waiting for current job '%s' to finish" "$job"
+        mv $continuous_file $continuous_file.exiting 2> /dev/null
         count=0
         while [[ $process_error -eq 0 ]]
         do
-          log_progress "==> $machine: waiting for process '$pid'"
+          printf "."
           sleep 1
           process_info=$(ps -o pid,pgid $pid)
           process_error=$?
           count=$(( $count+1 ))
-          if [[ $count -gt 5 ]]
+          if [[ $count -gt 15 ]]
           then
             break
           fi
         done
+        printf "\n"
         process_info=$(ps $pid)
         if [[ $? -eq 0 ]]
         then
-          echo "==> $machine: terminating job '$job'"
-          log_progress "==> $machine: killing processes in group $pid"
+          echo "${YELLOW}==> $machine: $Timeout - terminating job '$job'${NOCOL}"
+          log_progress "==> $machine: sending SIGTERM to processes in group $pid"
           kill -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
         fi
         process_info=$(ps $pid)
-        if [[ $? -gt 0 ]]
+        if [[ $? -eq 0 ]]
         then
-          log_progress "==> $machine: job exited, cleaning up"
-          rm $continuous_file 2> /dev/null
-        else
-          echo "==> $machine: Failed to abort job '$job' with process id $pid"
+          echo "${RED}==> $machine: Failed to terminate job '$job' with process id $pid - killing${NOCOL}"
+          log_progress "==> $machine: sending SIGKILL to processes in group $pid"
+          kill -9 -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
         fi
+        log_progress "==> $machine: job terminated, cleaning up"
+        rm $continuous_file.exiting 2> /dev/null
         return 0
       fi
       echo "==> $machine: Waking up current job!"
@@ -201,7 +209,7 @@ function run_on_machine() {
     vagrant up $machine
     error=$?
     if [[ $error -gt 0 ]]; then
-      echo "Can't bring up machine '$machine' - aborting"
+      echo "${RED}Can't bring up machine '$machine' - aborting${NOCOL}"
       exit $error
     fi
   fi
@@ -229,7 +237,7 @@ function run_on_machine() {
   scriptfile=$job/main.$ext
 
   if [ ! -f "jobs/$scriptfile" ]; then
-    >&2 echo "'$scriptfile' does not exist - skipping '$machine'"
+    >&2 echo "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}"
     return
   fi
 
@@ -251,7 +259,7 @@ function run_on_machine() {
   out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
-    >&2 echo "==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine"
+    >&2 echo "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}"
     return
   fi
 
