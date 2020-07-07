@@ -10,7 +10,10 @@ function print_help() {
   echo "  "
   echo "Options:"
   echo "  "
-  echo "--no-mapping Job arguments will not be mapped to the guest file system"
+  echo "--use-guest job arguments with paths to the host file system will not be"
+  echo "  mapped to the corresponding shared folder, but will be mapped directly"
+  echo "  to the guest file system, ie a local ~/workdir will also be ~/workdir"
+  echo "  on the guest".
   echo "  "
   echo "--parallel triggers parallel execution of the job on several machines."
   echo "  By default, the job is executed on each machine sequentially."
@@ -242,10 +245,11 @@ function run_on_machine() {
   whitespace=" |'|,"
   for arg in "${script_args[@]}"; do
     mapped="${arg/$host_home/$guest_home}"
-    [[ $mapped = /* ]] && mapped="${mapped//\//$path_separator}"
+    [[ $arg = /* ]] && mapped="${mapped//\//$path_separator}"
     if [[ $mapped =~ $whitespace ]]; then
       mapped=\"$mapped\"
     fi
+    log_progress "==> $machine: Argument '$arg' mapped to '$mapped'"
 
     job_args+=($mapped)
   done
