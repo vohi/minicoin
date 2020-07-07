@@ -137,18 +137,47 @@ function test_continue() {
 function run_on_machine() {
   machine="$1"
   continuous_file="/tmp/minicoin-$machine-run-$job.pid"
-  if [[ $abort == "true" ]]; then
-    if [[ -f $continuous_file ]]; then
-      echo "==> $machine: Exiting current job!"
-      rm $continuous_file 2> /dev/null
-    fi
-    return 0
-  elif [[ -f $continuous_file ]]; then
+  if [[ -f $continuous_file ]]; then
     pid=$(head -n 1 $continuous_file)
     log_progress "==> $machine: Probing process $pid"
-    pid=$(ps $pid)
-    if [ $? -eq 0 ]
+    process_info=$(ps -o pid,pgid $pid)
+    process_error=$?
+
+    if [ $process_error -eq 0 ]
     then
+      if [[ $abort == "true" ]]
+      then
+        echo "==> $machine: Attempting to exiting current job '$job'"
+        count=0
+        while [[ $process_error -eq 0 ]]
+        do
+          log_progress "==> $machine: waiting for process '$pid'"
+          sleep 1
+          process_info=$(ps -o pid,pgid $pid)
+          process_error=$?
+          count=$(( $count+1 ))
+          if [[ $count -gt 5 ]]
+          then
+            break
+          fi
+        done
+        process_info=$(ps $pid)
+        if [[ $? -eq 0 ]]
+        then
+          echo "==> $machine: terminating job '$job'"
+          log_progress "==> $machine: killing processes in group $pid"
+          kill -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
+        fi
+        process_info=$(ps $pid)
+        if [[ $? -gt 0 ]]
+        then
+          log_progress "==> $machine: job exited, cleaning up"
+          rm $continuous_file 2> /dev/null
+        else
+          echo "==> $machine: Failed to abort job '$job' with process id $pid"
+        fi
+        return 0
+      fi
       echo "==> $machine: Waking up current job!"
       echo $log_stamp >> $continuous_file
       run=$(test_continue $continuous_file "wakeup" $machine)
@@ -160,6 +189,7 @@ function run_on_machine() {
       rm $continuous_file
     fi
   fi
+  [[ $abort == "true" ]] && return 0
 
   exec 0<&- # closing stdin
 
