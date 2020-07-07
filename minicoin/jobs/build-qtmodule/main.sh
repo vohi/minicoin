@@ -51,19 +51,11 @@ then
 elif [[ $module == "qtbase" ]]
 then
   generate_toollink=( "qmake" )
-  if [[ -f $config_opt ]]
+  configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
+  if [ -f $sources/CMakeLists.txt ]
   then
-    cp $config_opt ./config.opt
-    configure="-redo"
-    echo "Using configure options from $config_opt:"
-    cat $config_opt
-  else
-    if [ -f $sources/CMakeLists.txt ]
-    then
-      configure="$configure -cmake"
-      generate_toollink=( $generate_toollink "qt-cmake" )
-    fi
-    configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests -pcre system -xcb $configure"
+    generate_toollink=( $generate_toollink "qt-cmake" )
+    configure="$configure -cmake -cmake-generator Ninja"
   fi
   echo "Configuring '$module' with options '$configure'"
 

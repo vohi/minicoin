@@ -52,27 +52,15 @@ if exist CMakeCache.txt (
   echo '%module%' already configured with qmake
 ) else if "%module%" == "qtbase" (
   set "generate_toollink=qmake"
+  set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure!"
   if exist %sources%\CMakeLists.txt (
-    set "configure=-DFEATURE_developer_build=ON -DQT_NO_MAKE_EXAMPLES=ON -DQT_NO_MAKE_TESTS=ON !configure!"
-    if "%MAKETOOL%" == "ninja.exe" (
-      set "configure=!configure! -GNinja"
-    )
     set "generate_toollink=!generate_toollink! qt-cmake"
-    echo Calling 'cmake %sources% !configure!'
-    cmake %sources% !configure!
+    set "configure=!configure! -cmake -cmake-generator Ninja"
   ) else (
-    echo Using qmake
-    if exist !config_opt! (
-      copy !config_opt! config.opt
-      SET configure=-redo
-      echo Using configure options from !config_opt!:
-      type config.opt
-    ) else (
-      set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure! %QTCONFIGFLAGS%"
-    )
-    echo Calling '%sources%\configure !configure!'
-    call %sources\configure !configure!
+    set "configure=!configure! %QTCONFIGFLAGS%"
   )
+  echo Calling '%sources%\configure !configure!'
+  call %sources%\configure.bat !configure!
 ) else if exist %sources%\CMakeLists.txt (
   echo Generating cmake build for '%module%' for '%MAKETOOL%'
   set generator=
@@ -102,6 +90,7 @@ for %%T in ( %generate_toollink% ) do (
 
   echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\!toolname!.bat
   echo %CD%\bin\!tool! %%* >> %USERPROFILE%\!toolname!.bat
+  del %USERPROFILE%\bin\!tool!.bat
   mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\!toolname!.bat
 )
 
