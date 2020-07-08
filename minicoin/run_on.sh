@@ -36,6 +36,7 @@ abort="false"
 useGuestHome="false"
 redirect_output="false"
 path_separator="/"
+runwithgui="false"
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -62,6 +63,8 @@ for arg in "${@}"; do
       abort="true"
     elif [[ "$arg" == "--use-guest" ]]; then
       useGuestHome="true"
+    elif [[ "$arg" == "--gui" ]]; then
+      runwithgui="true"
     else
       machines+=("$arg")
     fi
@@ -171,14 +174,14 @@ function run_on_machine() {
         process_info=$(ps $pid)
         if [[ $? -eq 0 ]]
         then
-          echo "${YELLOW}==> $machine: $Timeout - terminating job '$job'${NOCOL}"
+          printf "${YELLOW}==> $machine: $Timeout - terminating job '$job'${NOCOL}\n"
           log_progress "==> $machine: sending SIGTERM to processes in group $pid"
           kill -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
         fi
         process_info=$(ps $pid)
         if [[ $? -eq 0 ]]
         then
-          echo "${RED}==> $machine: Failed to terminate job '$job' with process id $pid - killing${NOCOL}"
+          printf "${RED}==> $machine: Failed to terminate job '$job' with process id $pid - killing${NOCOL}\n"
           log_progress "==> $machine: sending SIGKILL to processes in group $pid"
           kill -9 -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
         fi
@@ -209,7 +212,7 @@ function run_on_machine() {
     vagrant up $machine
     error=$?
     if [[ $error -gt 0 ]]; then
-      echo "${RED}Can't bring up machine '$machine' - aborting${NOCOL}"
+      printf "${RED}Can't bring up machine '$machine' - aborting${NOCOL}\n"
       exit $error
     fi
   fi
@@ -237,7 +240,7 @@ function run_on_machine() {
   scriptfile=$job/main.$ext
 
   if [ ! -f "jobs/$scriptfile" ]; then
-    >&2 echo "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}"
+    >&2 printf "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}\n"
     return
   fi
 
@@ -259,7 +262,7 @@ function run_on_machine() {
   out=$(vagrant upload $upload_source $job $machine)
   error=$?
   if [ ! $error == 0 ]; then
-    >&2 echo "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}"
+    >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
     return
   fi
 
@@ -297,27 +300,44 @@ function run_on_machine() {
   echo $$ > $continuous_file
   if [[ $ext == "cmd" ]]; then
     scriptfile=${scriptfile//\//\\}
+    command="Documents\\$scriptfile"
 
-    command="Documents\\$scriptfile ${job_args[@]}"
-    log_progress "$machine ==> Executing '$command' at $log_stamp"
-
-    if [[ $redirect_output == "true" ]]; then
-      redirect=" > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log 2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log"
-      command=$command$redirect
+    if [[ "$runwithgui" == "true" ]]
+    then
+      runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c $command ${job_args[@]}"
+    else
+      command="$command ${job_args[@]}"
+      errorfile=".logs/$job-error-$machine-$log_stamp.errorcode"
+      if [[ $redirect_output == "true" ]]; then
+        redirect=" > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log 2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log"
+        command=$command$redirect
+      fi
+      runner="cmd /C $command || echo 1 > c:\\minicoin\\$errorfile"
     fi
+
+    log_progress "$machine ==> Executing '$runner' at $log_stamp"
 
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through winrm"
-      errorfile=".logs/$job-error-$machine-$log_stamp.errorcode"
-      vagrant winrm -s cmd -c \
-        "cmd /C $command || echo 1 > c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.errorcode" \
-        $machine
-      if [[ -f "$errorfile" ]]; then
+      vagrant winrm -s cmd -c "$runner" $machine
+      error=$?
+
+      if [[ "$runwithgui" == "true" ]]
+      then
+        log_progress "==> $machine: Capturing $error from winrm return value"
+      elif [[ -f "$errorfile" ]]; then
         error=$(tail -n 1 $errorfile | awk '{print $1}')
+        log_progress "==> $machine: Reading $error from '$errorfile'"
         rm "$errorfile"
       fi
-      log_progress "==> $machine: Job '$job' exited with error code '$error'"
+      if [[ $error -gt 0 ]]
+      then
+        printf "${RED}"
+      else
+        printf "${GREEN}"
+      fi
+      printf "==> $machine: Job '%s' exited with error code '$error'${NOCOL}\n" "$job"
 
       echo $error >> $continuous_file
       if [ "$continuous" == "true" ]
@@ -353,8 +373,8 @@ function run_on_machine() {
     log_progress "==> $machine: Job '$job' finished, cleaning up."
     vagrant ssh -c "rm -rf $job" $machine < /dev/null 2> /dev/null
   fi
-  if [ "$error" != "0" ]; then
-    >&2 echo "==> $machine: Job '$job' started at $log_stamp ended with error"
+  if [ $error -gt 0 ]; then
+    >&2 printf "${RED}==> $machine: Job '%s' started at $log_stamp ended with error${NOCOL}\n" "$job"
     if [[ $redirect_output == "true" ]]; then
       >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
       >&2 echo "    $machine: See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
