@@ -359,7 +359,7 @@ function run_on_machine() {
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through ssh"
-      vagrant ssh -c "$command" $machine < /dev/null 2> /dev/null
+      vagrant ssh -c "$command" $machine < /dev/null
       error=$?
       log_progress "==> $machine: Job '$job' exited with error code '$error'"
 
