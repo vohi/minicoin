@@ -8,24 +8,28 @@ if [[ $sources == "" ]]; then
   exit 1
 fi
 
-echo "Building project in '$sources'"
-
 project=$(basename $sources)
 mkdir $project > /dev/null 2>&1
-
 cd $project
-if [ -f "$source/CMakeLists.txt" ]
+
+printf "Building project in '$sources' into '$PWD' "
+
+if [ -f "$sources/CMakeLists.txt" ]
 then
-  qt-cmake $source
+  printf "using cmake\n"
+  qt-cmake $sources
 else
+  pringf "using qmake\n"
   qmake $sources
 fi
 
 export DISPLAY=:0.0
+
 if [ -f build.ninja ]
 then
   ninja $PARAM_target
 elif [ -f Makefile ]
+then
   make $PARAM_target -j$(nproc)
 else
   echo "Error generating build system"
