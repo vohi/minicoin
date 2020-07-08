@@ -32,7 +32,7 @@ $oldpath = [Environment]::GetEnvironmentVariable("PATH",[System.EnvironmentVaria
 
 cd $ChocoInstallPath
 
-$packages = ( "notepadplusplus", "git",
+$packages = ( "notepadplusplus", "git", "pstools",
               "strawberryperl", "python2",
               "cmake", "ninja" )
 
@@ -40,6 +40,7 @@ $packages = ( "notepadplusplus", "git",
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
+psexec -accepteula
 
 $oldpath += ";c:\Users\vagrant\bin;c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
 [Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
