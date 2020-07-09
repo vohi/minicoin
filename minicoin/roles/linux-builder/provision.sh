@@ -29,11 +29,13 @@ case $distro in
             "^libxcb.*-dev libx11-xcb-dev libxrender-dev libxi-dev"
             "libxkbcommon-dev libxkbcommon-x11-dev"
             "libglu1-mesa-dev freeglut3-dev mesa-common-dev"
+            "fontconfig libfontconfig-dev libfreetype6-dev"
             "libssl-dev"
             "libpcre2-dev"
             "pkg-config"
             "libwayland-.*"
             "libxcomposite-dev"
+            "hunspell libhunspell-dev"
     # install dependencies for running tests
             "avahi-daemon"
             "docker"
