@@ -19,7 +19,7 @@ then
   printf "using cmake\n"
   qt-cmake $sources
 else
-  pringf "using qmake\n"
+  printf "using qmake\n"
   qmake $sources
 fi
 
