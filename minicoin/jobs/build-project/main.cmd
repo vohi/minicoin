@@ -53,8 +53,6 @@ if !error! EQU 0 (
   echo Error building '%projectname'
 )
 
-timeout /t 5
-
 exit /B !error!
 
 :errorargs

@@ -304,7 +304,8 @@ function run_on_machine() {
 
     if [[ "$runwithgui" == "true" ]]
     then
-      runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c $command ${job_args[@]}"
+      runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
+      runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2>&1\""
     else
       command="$command ${job_args[@]}"
       errorfile=".logs/$job-error-$machine-$log_stamp.errorcode"
@@ -320,8 +321,32 @@ function run_on_machine() {
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through winrm"
-      vagrant winrm -s cmd -c "$runner" $machine
+      if [[ "$runwithgui" == "true" ]]
+      then
+        sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
+      else
+        vagrant winrm -s cmd -c "$runner" $machine &
+      fi
+      run_pid=$!
       error=$?
+      while ps $run_pid > /dev/null
+      do
+        if [ -f ".logs/$job-$machine-$log_stamp.out" ]
+        then
+          log_progress "==> $machine: waiting for EOF"
+          sh -i -c "tail -n +0 -f .logs/$job-$machine-$log_stamp.out | { sed '/^cmd exited.*/ q' && kill 0 ;}"
+          rm .logs/$job-$machine-$log_stamp.out
+        else
+          sleep 1
+        fi
+      done
+      log_progress "==> $machine: reading error code from $run_pid"
+      wait $run_pid
+      error=$?
+      if [ -f ".logs/$job-$machine-$log_stamp.out" ]
+      then
+        rm .logs/$job-$machine-$log_stamp.out2
+      fi
 
       if [[ "$runwithgui" == "true" ]]
       then
