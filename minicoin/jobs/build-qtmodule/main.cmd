@@ -64,8 +64,9 @@ if exist CMakeCache.txt (
 ) else if exist %sources%\CMakeLists.txt (
   echo Generating cmake build for '%module%' for '%MAKETOOL%'
   set generator=
-  if "%MAKETOOL%" == "ninja.exe" (
+  if not "%NINJA%" == "" (
     set "generator=-GNinja"
+    set MAKETOOL=%NINJA%
   )
   call %USERPROFILE%\bin\qt-cmake %sources% !generator!
 ) else (
@@ -94,5 +95,9 @@ for %%T in ( %generate_toollink% ) do (
   mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\!toolname!.bat
 )
 
-call %MAKETOOL% !target!
+if exist build.ninja (
+  call !ninja! !target!
+) else if exist Makefile (
+  call !MAKETOOL! !target!
+)
 EXIT /B %ERRORLEVEL%

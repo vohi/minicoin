@@ -1,5 +1,4 @@
 @echo off
-SETLOCAL
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 call C:\minicoin\util\parse-opts.cmd %*
@@ -19,7 +18,7 @@ FOR %%P in ("%projectpath%") DO (
 )
 echo Building '%projectpath%' into '%projectname%'
 
-if not exist %projectname (
+if not exist %projectname% (
   mkdir %projectname%
 )
 
@@ -27,7 +26,10 @@ cd %projectname%
 
 if exist "%projectpath%\CMakeLists.txt" (
   set generator=
-  if %MAKETOOL% == ninja.exe set generator=-GNinja
+  if NOT "%NINJA%" == "" (
+    set generator=-GNinja
+    set MAKETOOL=%NINJA%
+  )
   call qt-cmake.bat "%projectpath%" !generator!
 ) else (
   call qmake.bat "%projectpath%"
@@ -35,24 +37,25 @@ if exist "%projectpath%\CMakeLists.txt" (
 
 set error=0
 if exist build.ninja (
-  ninja !PARAM_target!
-  set error=%errorlevel%
+  %NINJA% !PARAM_target!
+  echo %errorlevel%
 ) else if exist Makefile (
   %MAKETOOL% !PARAM_target!
   set error=%errorlevel%
 ) else (
   echo Error generating build system
-  dir
   exit /B 2
 )
 
-if %error% EQU 0 (
+if !error! EQU 0 (
   echo Project '%projectname%' built successfully
 ) else (
   echo Error building '%projectname'
 )
 
-exit /B %errorlevel%
+timeout /t 5
+
+exit /B !error!
 
 :errorargs
 exit /B 1

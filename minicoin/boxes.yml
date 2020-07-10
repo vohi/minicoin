@@ -72,7 +72,13 @@ machines:
     roles:
       - windows-tools
       - msvc2019
+      - role: mutagen
+        paths:
+          - "~/qt/dev/qtbase"
+          - "~/qt/dev/qtdeclarative"
     memory: 3072
+    cpus: 4
+    screens: 2
     gui: false
 
 ### Mac - nothing provisioned yet
