@@ -36,7 +36,6 @@ abort="false"
 useGuestHome="false"
 redirect_output="false"
 path_separator="/"
-runwithgui="false"
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -63,8 +62,6 @@ for arg in "${@}"; do
       abort="true"
     elif [[ "$arg" == "--use-guest" ]]; then
       useGuestHome="true"
-    elif [[ "$arg" == "--gui" ]]; then
-      runwithgui="true"
     else
       machines+=("$arg")
     fi
@@ -302,33 +299,19 @@ function run_on_machine() {
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile"
 
-    if [[ "$runwithgui" == "true" ]]
-    then
       runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
       runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2>&1\""
-    else
-      command="$command ${job_args[@]}"
-      errorfile=".logs/$job-error-$machine-$log_stamp.errorcode"
-      if [[ $redirect_output == "true" ]]; then
-        redirect=" > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.log 2> c:\\minicoin\\.logs\\$job-error-$machine-$log_stamp.log"
-        command=$command$redirect
-      fi
-      runner="cmd /C $command || echo 1 > c:\\minicoin\\$errorfile"
-    fi
 
     log_progress "$machine ==> Executing '$runner' at $log_stamp"
 
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through winrm"
-      if [[ "$runwithgui" == "true" ]]
-      then
         sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
-      else
-        vagrant winrm -s cmd -c "$runner" $machine &
-      fi
       run_pid=$!
       error=$?
+      if [[ $redirect_output == "false" ]]
+      then
       while ps $run_pid > /dev/null
       do
         if [ -f ".logs/$job-$machine-$log_stamp.out" ]
@@ -341,21 +324,15 @@ function run_on_machine() {
         fi
       done
       log_progress "==> $machine: reading error code from $run_pid"
+      fi
       wait $run_pid
       error=$?
       if [ -f ".logs/$job-$machine-$log_stamp.out" ]
       then
-        rm .logs/$job-$machine-$log_stamp.out2
+        rm .logs/$job-$machine-$log_stamp.out
       fi
 
-      if [[ "$runwithgui" == "true" ]]
-      then
         log_progress "==> $machine: Capturing $error from winrm return value"
-      elif [[ -f "$errorfile" ]]; then
-        error=$(tail -n 1 $errorfile | awk '{print $1}')
-        log_progress "==> $machine: Reading $error from '$errorfile'"
-        rm "$errorfile"
-      fi
       if [[ $error -gt 0 ]]
       then
         printf "${RED}"
