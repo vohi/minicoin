@@ -5,19 +5,12 @@ function print_help() {
   echo "   "
   echo "'machine1..n' is a list of machines on which the job will be run."
   echo "'job' is the job to run on the machines."
-  echo "Arguments after '--' will be passed on to the job script. Job arguments that"
-  echo "expand to paths on the host will be mapped to the guest's file system."
+  echo "Arguments after '--' will be passed on to the job script."
   echo "  "
   echo "Options:"
   echo "  "
-  echo "--use-guest job arguments with paths to the host file system will not be"
-  echo "  mapped to the corresponding shared folder, but will be mapped directly"
-  echo "  to the guest file system, ie a local ~/workdir will also be ~/workdir"
-  echo "  on the guest".
-  echo "  "
   echo "--parallel triggers parallel execution of the job on several machines."
   echo "  By default, the job is executed on each machine sequentially."
-  echo "  "
   echo "--continuous runs the job in a loop (implies --parallel), waiting"
   echo "  after each run for the next invocation, which will be executed without"
   echo "  the overhead of setting the job up again."
@@ -33,9 +26,7 @@ parallel="false"
 verbose="false"
 continuous="false"
 abort="false"
-useGuestHome="false"
 redirect_output="false"
-path_separator="/"
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -60,8 +51,6 @@ for arg in "${@}"; do
       continuous="true"
     elif [[ "$arg" == "--abort" ]]; then
       abort="true"
-    elif [[ "$arg" == "--use-guest" ]]; then
-      useGuestHome="true"
     else
       machines+=("$arg")
     fi
@@ -216,20 +205,8 @@ function run_on_machine() {
   vagrant winrm $machine < /dev/null &> /dev/null
   error=$?
   if [[ $error == 0 ]]; then
-    path_separator="\\"
-    if [ "$useGuestHome" == "true" ]; then
-      guest_home="c:\\Users\\vagrant"
-    else
-      guest_home="c:\\Users\\host"
-    fi
     ext="cmd"
   else
-    uname=$(vagrant ssh -c uname $machine < /dev/null &> /dev/null)
-    if [[ "$uname" =~ "Darwin" ]]; then
-      guest_home="/Users/host"
-    else
-      guest_home="/home/host"
-    fi
     ext="sh"
   fi
 
@@ -276,20 +253,18 @@ function run_on_machine() {
   host_home=${home_share/\~/$HOME}
   host_home=${home_share/\$HOME/$HOME}
 
-  job_args=()
+  # job scripts can expect P0 to be home on host, and P1 PWD on host
+  job_args=( "$host_home" )
 
-  # replace host home with guest home in all arguments
-  # and quote to make guests behave identically
+  # quote arguments with spaces to make guests behave identically
   whitespace=" |'|,"
   for arg in "${script_args[@]}"; do
-    mapped="${arg/$host_home/$guest_home}"
-    [[ $arg = /* ]] && mapped="${mapped//\//$path_separator}"
-    if [[ $mapped =~ $whitespace ]]; then
-      mapped=\"$mapped\"
+    if [[ $arg =~ $whitespace ]]; then
+      arg=\"$arg\"
     fi
-    log_progress "==> $machine: Argument '$arg' mapped to '$mapped'"
+    log_progress "==> $machine: Argument '$arg' added"
 
-    job_args+=($mapped)
+    job_args+=($arg)
   done
 
   error=0
@@ -299,31 +274,31 @@ function run_on_machine() {
     scriptfile=${scriptfile//\//\\}
     command="Documents\\$scriptfile"
 
-      runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
-      runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2>&1\""
+    runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
+    runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2>&1\""
 
     log_progress "$machine ==> Executing '$runner' at $log_stamp"
 
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through winrm"
-        sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
+      sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
       run_pid=$!
       error=$?
       if [[ $redirect_output == "false" ]]
       then
-      while ps $run_pid > /dev/null
-      do
-        if [ -f ".logs/$job-$machine-$log_stamp.out" ]
-        then
-          log_progress "==> $machine: waiting for EOF"
-          sh -i -c "tail -n +0 -f .logs/$job-$machine-$log_stamp.out | { sed '/^cmd exited.*/ q' && kill 0 ;}"
-          rm .logs/$job-$machine-$log_stamp.out
-        else
-          sleep 1
-        fi
-      done
-      log_progress "==> $machine: reading error code from $run_pid"
+        while ps $run_pid > /dev/null
+        do
+          if [ -f ".logs/$job-$machine-$log_stamp.out" ]
+          then
+            log_progress "==> $machine: waiting for EOF"
+            sh -i -c "tail -n +0 -f .logs/$job-$machine-$log_stamp.out | { sed '/^cmd exited.*/ q' && kill 0 ;}"
+            rm .logs/$job-$machine-$log_stamp.out
+          else
+            sleep 1
+          fi
+        done
+        log_progress "==> $machine: reading error code from $run_pid"
       fi
       wait $run_pid
       error=$?
@@ -332,7 +307,7 @@ function run_on_machine() {
         rm .logs/$job-$machine-$log_stamp.out
       fi
 
-        log_progress "==> $machine: Capturing $error from winrm return value"
+      log_progress "==> $machine: Capturing $error from winrm return value"
       if [[ $error -gt 0 ]]
       then
         printf "${RED}"

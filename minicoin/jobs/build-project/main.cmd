@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 call C:\minicoin\util\parse-opts.cmd %*
 call C:\minicoin\util\discover-make.cmd
 
-SET sources=!POSITIONAL[0]!
+SET sources=%JOBDIR%
 
 IF "!sources!" == "" (
   echo No project specified!

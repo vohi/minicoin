@@ -52,3 +52,21 @@ for i in ${count[@]}; do
     fi
   fi
 done
+
+unset index
+unset names
+unset args
+unset count
+
+_JOBDIR="${POSITIONAL[1]}"
+HOST_HOME="${POSITIONAL[0]}"
+MOUNTED_HOME="/home/host"
+JOBDIR="${_JOBDIR/$HOST_HOME/$HOME}"
+if [ ! -d "$JOBDIR" ]
+then
+  JOBDIR="${_JOBDIR/$HOST_HOME/$MOUNTED_HOME}"
+fi
+
+unset _HOST_HOME
+unset HOST_HOME
+unset MOUNTED_HOME

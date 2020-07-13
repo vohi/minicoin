@@ -116,3 +116,16 @@ set argCount=
 set posCount=
 set flagCount=
 set short=
+
+REM Interpret P0 and P1, set JOBDIR
+set "_JOBDIR=!POSITIONAL[1]!"
+set "HOST_HOME=!POSITIONAL[0]!"
+set "MOUNTED_HOME=C:\Users\host"
+set JOBDIR=!_JOBDIR:%HOST_HOME%=%USERPROFILE%!
+if not exist %JOBDIR% (
+    set JOBDIR=!_JOBDIR:%HOST_HOME%=%MOUNTED_HOME%!
+)
+set _JOBDIR=
+set MOUNTED_HOME=
+set HOST_HOME=
+set JOBDIR=!JOBDIR:/=\!

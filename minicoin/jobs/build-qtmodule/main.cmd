@@ -9,12 +9,12 @@ set generate_qmake=false
 set configure=
 set target=
 
-if "!POSITIONAL[0]!" == "" (
+if "!JOBDIR!" == "" (
   echo Error: path to host clone of Qt module is required!
   exit /B 1
 )
 
-set "sources=!POSITIONAL[0]!"
+set "sources=!JOBDIR!"
 set module=
 for %%F in ("%sources%") do (
   set module=%%~nF

@@ -15,8 +15,8 @@ error=0
 if [[ $PARAM_branch != "" ]]; then
   # branch implies cloning from upstream, a local clone can't be init'ed from
   branch=$PARAM_branch
-elif [[ ${POSITIONAL[0]} != "" ]]; then
-  origin=${POSITIONAL[0]}
+elif [[ $JOBDIR != "" ]]; then
+  origin=$JOBDIR
   if [[ -f $origin/qt.pro ]]; then
     repo=
     sources=$origin

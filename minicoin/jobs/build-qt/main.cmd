@@ -1,5 +1,4 @@
 @echo off
-setlocal
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 call \minicoin\util\parse-opts.cmd %*
@@ -17,8 +16,8 @@ SET error=0
 if NOT "%PARAM_branch%" == "" (
   SET branch=%PARAM_branch%
 ) else (
-  if NOT "!POSITIONAL[0]!" == "" (
-    SET origin=!POSITIONAL[0]!
+  if NOT "!JOBDIR!" == "" (
+    SET origin=!JOBDIR!
     if exist !origin! (
         SET repo=
         SET sources=!origin!

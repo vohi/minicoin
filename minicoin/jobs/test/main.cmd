@@ -3,6 +3,8 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 
 call c:\minicoin\util\parse-opts.cmd %*
 
+echo Job works on '%JOBDIR%'
+
 if defined FLAG_echo (
     echo All arguments: %*
     echo Named:

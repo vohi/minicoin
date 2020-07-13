@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . /minicoin/util/parse-opts.sh "$@"
 
-sources=${POSITIONAL[0]}
+sources=$JOBDIR
 
 if [[ $sources == "" ]]; then
   echo "No project specified"

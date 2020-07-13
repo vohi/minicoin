@@ -8,12 +8,12 @@ configure=
 generate_toollink=()
 target=
 
-if [[ ${POSITIONAL[0]} == "" ]]; then
+if [[ $JOBDIR == "" ]]; then
   echo "Error: path to host clone of Qt module is required!"
   exit 1
 fi
 
-sources=${POSITIONAL[0]}
+sources=$JOBDIR
 module=$(basename -s .pro $(ls $sources/*.pro))
 if [[ $(echo $module | wc -w) != 1 ]]; then
   echo "$sources needs to have exactly one .pro file!"

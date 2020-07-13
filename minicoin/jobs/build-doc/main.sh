@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . /minicoin/util/parse-opts.sh "$@"
 
-sources=${POSITIONAL[0]}
+sources=$JOBDIR
 build_dir=~/qt-build
 modules=
 

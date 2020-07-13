@@ -1,5 +1,7 @@
 . /minicoin/util/parse-opts.sh "$@"
 
+echo "Job works on '$JOBDIR'"
+
 if [ ! -z "$FLAG_echo" ]; then
   echo "All arguments: $@"
   echo "Named:"
