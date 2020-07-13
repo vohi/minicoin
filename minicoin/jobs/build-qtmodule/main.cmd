@@ -52,7 +52,7 @@ if exist CMakeCache.txt (
   echo '%module%' already configured with qmake
 ) else if "%module%" == "qtbase" (
   set "generate_toollink=qmake"
-  set "configure=-confirm-license -developer-build -opensource -nomake examples -nomake tests -debug !configure!"
+  set "configure=-confirm-license -developer-build -opensource -nomake examples -debug !configure!"
   if exist %sources%\CMakeLists.txt (
     set "generate_toollink=!generate_toollink! qt-cmake"
     set "configure=!configure! -cmake -cmake-generator Ninja"
@@ -96,8 +96,15 @@ for %%T in ( %generate_toollink% ) do (
 )
 
 if exist build.ninja (
+  if "%target%" == "" (
+    set "target=src/all"
+    if "%module%" == "qtbase" set "target=%target% qmake"
+  )
+  echo Building '!target!' using '!ninja!'
   call !ninja! !target!
 ) else if exist Makefile (
-  call !MAKETOOL! !target!
+  if "%target%" == "" set target="sub-src"
+  echo Building '!target!' using '!MAKETOOL!'
+  call !MAKETOOL! "!target!"
 )
 EXIT /B %ERRORLEVEL%
