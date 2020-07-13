@@ -26,7 +26,6 @@ parallel="false"
 verbose="false"
 continuous="false"
 abort="false"
-redirect_output="false"
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -44,7 +43,6 @@ for arg in "${@}"; do
       exit 0
     elif [[ "$arg" == "--parallel" ]]; then
       parallel="true"
-      redirect_output="true"
     elif [[ "$arg" == "--verbose" ]]; then
       verbose="true"
     elif [[ "$arg" == "--continuous" ]]; then
@@ -91,7 +89,6 @@ function log_progress() {
 if [[ $continuous == "true" && $(( ${#machines[@]} - 1 )) -gt 0 ]]; then
   log_progress "More than one machine running continuously - running parallel"
   parallel="true"
-  redirect_output="true"
 fi
 
 function test_continue() {
@@ -224,7 +221,7 @@ function run_on_machine() {
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
   fi
 
-  if [[ $redirect_output == "true" ]]; then
+  if [[ $parallel == "true" ]]; then
     mkdir .logs &> /dev/null
     touch $PWD/.logs/$job-$machine-$log_stamp.log
     touch $PWD/.logs/$job-error-$machine-$log_stamp.log
@@ -285,7 +282,7 @@ function run_on_machine() {
       sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
       run_pid=$!
       error=$?
-      if [[ $redirect_output == "false" ]]
+      if [[ $parallel == "false" ]]
       then
         while ps $run_pid > /dev/null
         do
@@ -329,7 +326,7 @@ function run_on_machine() {
     command="$scriptfile ${job_args[@]}"
     log_progress "==> $machine: Executing '$command' at $log_stamp"
 
-    if [[ $redirect_output == "true" ]]; then
+    if [[ $parallel == "true" ]]; then
       redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
       command="$command$redirect"
     fi
@@ -352,7 +349,7 @@ function run_on_machine() {
   fi
   if [ $error -gt 0 ]; then
     >&2 printf "${RED}==> $machine: Job '%s' started at $log_stamp ended with error${NOCOL}\n" "$job"
-    if [[ $redirect_output == "true" ]]; then
+    if [[ $parallel == "true" ]]; then
       >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
       >&2 echo "    $machine: See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
     fi
