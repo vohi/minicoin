@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -o pipefail
 
 function print_help() {
   echo "Runs a job on one or more machines using the appropriate remoting mechanism."
@@ -26,6 +27,7 @@ parallel="false"
 verbose="false"
 continuous="false"
 abort="false"
+declare -i error=0
 
 function list_jobs() {
   ls jobs | awk {'printf (" - %s\n", $1)'}  
@@ -106,13 +108,12 @@ function test_continue() {
     run="true"
 
     timestamp_old=$(stat -f "%m" $continuous_file 2> /dev/null)
-    error=$?
     timestamp_new=$timestamp_old
     while [[ $timestamp_new -eq $timestamp_old ]]; do
       sleep 1
       timestamp_new=$(stat -f "%m" $continuous_file 2> /dev/null)
-      error=$?
-      if [[ $error != 0 ]]
+      staterror=$?
+      if [[ $staterror != 0 ]]
       then
         log_progress "==> $machine: Aborted, exiting"
         run="false"
@@ -123,6 +124,17 @@ function test_continue() {
   fi
 
   echo $run
+}
+
+function trap_handler() {
+  [[ -n $out_pid ]] && kill $out_pid 2>/dev/null
+  [[ -n $err_pid ]] && kill $err_pid 2>/dev/null
+}
+
+function clean_log() {
+  rm .logs/$job-$machine-$log_stamp.out 2>/dev/null
+  rm .logs/$job-$machine-$log_stamp.err 2>/dev/null
+  rm .logs/$job-$machine-$log_stamp.status 2>/dev/null
 }
 
 function run_on_machine() {
@@ -219,14 +231,16 @@ function run_on_machine() {
   if [ -f "jobs/$job/pre-run.sh" ]; then
     log_progress "==> $machine: Initializing $job"
     source jobs/$job/pre-run.sh $machine "${script_args[@]}"
+    error=$?
+    [ $error -gt 0 ] && return $error
   fi
 
   if [[ $parallel == "true" ]]; then
-    mkdir .logs &> /dev/null
-    touch $PWD/.logs/$job-$machine-$log_stamp.log
-    touch $PWD/.logs/$job-error-$machine-$log_stamp.log
-    ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.log
-    ln -sf $PWD/.logs/$job-error-$machine-$log_stamp.log .logs/$job-error-$machine-latest.log
+    mkdir .logs 2> /dev/null
+    touch $PWD/.logs/$job-$machine-$log_stamp.out
+    touch $PWD/.logs/$job-$machine-$log_stamp.err
+    ln -sf $PWD/.logs/$job-$machine-$log_stamp.log .logs/$job-$machine-latest.out
+    ln -sf $PWD/.logs/$job-$machine-$log_stamp.err .logs/$job-$machine-latest.err
   fi
 
   log_progress "==> $machine: Uploading '$upload_source'..."
@@ -234,7 +248,7 @@ function run_on_machine() {
   error=$?
   if [ ! $error == 0 ]; then
     >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
-    return
+    return $error
   fi
 
   # poorest-man yaml parser
@@ -272,25 +286,37 @@ function run_on_machine() {
     command="Documents\\$scriptfile"
 
     runner="psexec -i 1 -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
-    runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2>&1\""
+    runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\.logs\\$job-$machine-$log_stamp.out 2> c:\\minicoin\\.logs\\$job-$machine-$log_stamp.err\""
 
     log_progress "$machine ==> Executing '$runner' at $log_stamp"
 
     while [ "$run" == "true" ]; do
       error=0
       log_progress "==> $machine: running $job through winrm"
-      sh -c "vagrant winrm -s cmd -c '$runner' $machine >> .logs/$job-$machine-$log_stamp.out 2>&1" &
+      clean_log
+
+      sh -c "vagrant winrm -s cmd -c '$runner' $machine > /dev/null 2> .logs/$job-$machine-$log_stamp.status" &
       run_pid=$!
-      error=$?
       if [[ $parallel == "false" ]]
       then
-        while ps $run_pid > /dev/null
+        while $(kill -0 $run_pid 2> /dev/null)
         do
           if [ -f ".logs/$job-$machine-$log_stamp.out" ]
           then
             log_progress "==> $machine: waiting for EOF"
-            sh -i -c "tail -n +0 -f .logs/$job-$machine-$log_stamp.out | { sed '/^cmd exited.*/ q' && kill 0 ;}"
-            rm .logs/$job-$machine-$log_stamp.out
+            >&1 tail -n +0 -f .logs/$job-$machine-$log_stamp.out & out_pid=$!
+            >&2 tail -n +0 -f .logs/$job-$machine-$log_stamp.err & err_pid=$!
+            trap trap_handler EXIT
+            while [[ ! $(tail -n 1 .logs/$job-$machine-$log_stamp.status | grep -e '^cmd exited.*') ]]
+            do
+              sleep 1
+              kill -0 $out_pid 2>/dev/null || { out_pid=; break; }
+              kill -0 $err_pid 2>/dev/null || { err_pid=; break; }
+            done
+            log_progress "==> $machine: EOF encountered"
+            { kill $out_pid && wait $out_pid; } 2>/dev/null
+            { kill $err_pid && wait $err_pid; } 2>/dev/null
+            clean_log
           else
             sleep 1
           fi
@@ -299,19 +325,11 @@ function run_on_machine() {
       fi
       wait $run_pid
       error=$?
-      if [ -f ".logs/$job-$machine-$log_stamp.out" ]
-      then
-        rm .logs/$job-$machine-$log_stamp.out
-      fi
-
       log_progress "==> $machine: Capturing $error from winrm return value"
-      if [[ $error -gt 0 ]]
-      then
-        printf "${RED}"
-      else
-        printf "${GREEN}"
-      fi
-      printf "==> $machine: Job '%s' exited with error code '$error'${NOCOL}\n" "$job"
+
+      [ $parallel == "false" ] && clean_log
+
+      log_progress "==> $machine: Job '$job' exited with error code '$error'"
 
       echo $error >> $continuous_file
       if [ "$continuous" == "true" ]
@@ -327,7 +345,7 @@ function run_on_machine() {
     log_progress "==> $machine: Executing '$command' at $log_stamp"
 
     if [[ $parallel == "true" ]]; then
-      redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.log 2> /minicoin/.logs/$job-error-$machine-$log_stamp.log"
+      redirect=" > /minicoin/.logs/$job-$machine-$log_stamp.out 2> /minicoin/.logs/$job-$machine-$log_stamp.err"
       command="$command$redirect"
     fi
     while [ "$run" == "true" ]; do
@@ -350,8 +368,8 @@ function run_on_machine() {
   if [ $error -gt 0 ]; then
     >&2 printf "${RED}==> $machine: Job '%s' started at $log_stamp ended with error${NOCOL}\n" "$job"
     if [[ $parallel == "true" ]]; then
-      >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.log' for stdout"
-      >&2 echo "    $machine: See 'tail .logs/$job-error-$machine-$log_stamp.log' for stderr"
+      >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.out' for stdout"
+      >&2 echo "    $machine: See 'tail .logs/$job-$machine-$log_stamp.err' for stderr"
     fi
   fi
   rm $continuous_file 2> /dev/null
@@ -359,7 +377,10 @@ function run_on_machine() {
   if [ -f "jobs/$job/post-run.sh" ]; then
     log_progress "==> $machine: Cleaning up after '$job'"
     source jobs/$job/post-run.sh $machine "${script_args[@]}"
+    post_error=$?
+    [ $error -eq 0 ] && error=$post_error
   fi
+  return $error
 }
 
 error=0
@@ -370,13 +391,13 @@ for machine in "${machines[@]}"; do
     pids[${machine}]=$!
   else
     run_on_machine $machine
-    error=$(( $error+$? ))
+    error=$?
   fi
 done
 
 for pid in ${pids[*]}; do
   wait $pid
-  error=$(( $error+$? ))
+  error=$(( error+$? ))
 done
 
 exit $error

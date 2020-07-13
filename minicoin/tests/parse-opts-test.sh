@@ -7,7 +7,7 @@ function assert()
 {
     if [[ "$1" != "$2" ]]; then
       echo "FAIL '$1' vs '$2'"
-      errors+=1
+      errors=$(( errors + 1 ))
 #    else
       # echo "PASS $1 equals $2"
     fi

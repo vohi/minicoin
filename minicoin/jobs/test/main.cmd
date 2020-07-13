@@ -32,7 +32,7 @@ if defined FLAG_debug (
     exit /B %errorcode%
 )
 
-echo Hello runner!
+echo Hello runner^^!
 systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
 echo Args received:
 set errorcode=0
