@@ -110,7 +110,9 @@ for /L %%i in (0,1,%nameCount%) do (
 REM cleanup "namespace"
 set names=
 set nameCount=
+set arg=
 set args=
 set argCount=
 set posCount=
 set flagCount=
+set short=
