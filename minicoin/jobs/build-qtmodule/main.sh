@@ -96,7 +96,7 @@ then
     [ $module == "qtbase" ] && target="$target qmake"
   fi
   echo "Building '$target' using ninja!"
-  ninja "$target"
+  ninja $target
   error=$?
 elif [ -f Makefile ]
 then
