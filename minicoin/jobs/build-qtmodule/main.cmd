@@ -24,7 +24,7 @@ if %module% == "" (
   exit /B 2
 )
 
-if defined PARAM_target set target=!PARAM_target!
+if defined PARAM_target set "target=!PARAM_target!"
 if NOT "!PARAM_build!" == "" set build=-!PARAM_build!
 if NOT "!PARAM_configure!" == "" (
   SET "configure=!PARAM_configure!"
@@ -98,12 +98,12 @@ for %%T in ( %generate_toollink% ) do (
 if exist build.ninja (
   if "%target%" == "" (
     set "target=src/all"
-    if "%module%" == "qtbase" set "target=%target% qmake"
+    if "%module%" == "qtbase" set "target=!target! qmake"
   )
   echo Building '!target!' using '!ninja!'
   call !ninja! !target!
 ) else if exist Makefile (
-  if "%target%" == "" set target="sub-src"
+  if "%target%" == "" set "target=sub-src"
   echo Building '!target!' using '!MAKETOOL!'
   call !MAKETOOL! "!target!"
 )

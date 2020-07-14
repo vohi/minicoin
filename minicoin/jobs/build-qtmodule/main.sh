@@ -51,7 +51,7 @@ then
 elif [[ $module == "qtbase" ]]
 then
   generate_toollink=( "qmake" )
-  configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
+  configure="-confirm-license -developer-build -opensource -nomake examples $configure"
   if [ -f $sources/CMakeLists.txt ]
   then
     generate_toollink=( $generate_toollink "qt-cmake" )
@@ -90,10 +90,18 @@ done
 
 if [ -f build.ninja ]
 then
-  ninja $target
+  if [ -z $target ]
+  then
+    target="src/all"
+    [ $module == "qtbase" ] && target="$target qmake"
+  fi
+  echo "Building '$target' using ninja!"
+  ninja "$target"
   error=$?
 elif [ -f Makefile ]
 then
+  [ -z $target ] && target="sub-all"
+  echo "Building '$target' using make!"
   make $target -j$(nproc)
   error=$?
 else
