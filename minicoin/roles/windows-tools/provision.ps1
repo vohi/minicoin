@@ -1,13 +1,29 @@
-$registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
-$Name = "NoAutoUpdate"
-$value = "1"
+function UpdateRegistry {
+    param (
+        [parameter(Mandatory=$true)]
+        [String]$Path,
+        [parameter(Mandatory=$true)]
+        [String]$Name,
+        [String]$Text,
+        [String]$Number
+    )
 
-IF(!(Test-Path $registryPath)) {
-    New-Item -Path $registryPath -Force | Out-Null
-    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
-} ELSE {
-    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType DWORD -Force | Out-Null
+    if (!(Test-Path $Path)) {
+        New-Item -Path $Path -Force | Out-Null
+    }
+    if ($Text) {
+        New-ItemProperty -Path $Path -Name $Name -Value $Text -PropertyType String -FORCE | Out-Null
+    } elseif ($Number) {
+        New-ItemProperty -Path $Path -Name $Name -Value $Number -PropertyType DWORD -FORCE | Out-Null
+    } else {
+        New-ItemProperty -Path $Path -Name $Name | Out-Null
+    }
 }
+
+UpdateRegistry -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Number 1
+UpdateRegistry -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" -Name "DefaultUserName" -Text "vagrant"
+UpdateRegistry -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" -Name "DefaultPassword" -Text "vagrant"
+UpdateRegistry -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" -Name "AutoAdminLogon" -Text "1"
 
 IF(!(Test-Path C:\Users\vagrant\bin)) {
     New-Item -Type Directory -Path C:\Users\vagrant\bin | Out-Null
@@ -40,7 +56,7 @@ $packages = ( "notepadplusplus", "git", "pstools",
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
-psexec -accepteula
+psexec -nobanner -accepteula | Out-Null
 
 $oldpath += ";c:\Users\vagrant\bin;c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
 [Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
