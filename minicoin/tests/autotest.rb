@@ -132,6 +132,8 @@ class Tester
         {"name" => "override", "gui" => true},
         {"name" => "environment1", "box" => "$USER"},
         {"name" => "environment2", "box" => "private/$minicoin_key/box"},
+        {"name" => "base", "box" => "generic",
+                           "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}]},
         {"name" => "submachine", "box" => "subgeneric"},
         {"name" => "machine1", "box" => "duplicate", "gui" => true }
       ]

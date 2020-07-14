@@ -76,7 +76,11 @@ def load_boxes(yaml, user_yaml)
     if !idx.nil?
       machines[idx].each do |key, value|
         if !user_machine[key].nil?
-          machines[idx][key] = user_machine[key]
+          if machines[idx][key].is_a?(Array)
+            machines[idx][key] += user_machine[key]
+          else
+            machines[idx][key] = user_machine[key]
+          end
         end
       end
     else

@@ -12,3 +12,7 @@ machines:
     box: generic2
   - name: override
     gui: true
+  - name: base
+    roles:
+      - role: script
+        script: "hello"
