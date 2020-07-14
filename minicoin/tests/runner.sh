@@ -44,13 +44,13 @@ do
     [ $errors -gt 0 ] && printf "${RED}Finished on $machine with $errors errors!${NOCOL}\n"
 done
 
-echo "Running test on $count machines sequentially"
-minicoin run ${machines[@]} test -- error 2> /dev/null > /dev/null
-return=$?
-assert $return $count
-
 if [ $count -gt 1 ]
 then
+    echo "Running test on $count machines sequentially"
+    minicoin run ${machines[@]} test -- error 2> /dev/null > /dev/null
+    return=$?
+    assert $return $count
+
     echo "Running test on $count machines in parallel"
     minicoin run --parallel "${machines[@]}" test 2> /dev/null > /dev/null
     return=$?
