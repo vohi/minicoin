@@ -20,7 +20,6 @@ function print_help() {
 }
 
 machines=()
-pids=()
 job="-1"
 script_args=()
 parallel="false"
@@ -407,24 +406,31 @@ function run_on_machine() {
   return $error
 }
 
-declare -i error=0
+total_error=0
+pids=()
+
 for machine in "${machines[@]}"
 do
   if [[ "$parallel" == "true" ]]
   then
     log_progress "Starting job on '$machine'..."
     run_on_machine $machine &
-    pids[${machine}]=$!
+    pid=$!
+    pids+=($pid)
+    log_progress "==> $machine: process ID $pid"
   else
     run_on_machine $machine
-    error=$(( error+$? ))
+    total_error=$(( total_error+$? ))
   fi
 done
 
-for pid in ${pids[*]}
+index=0
+for pid in "${pids[@]}"
 do
+  log_progress "==> ${machines[$index]}: Waiting for $pid"
   wait $pid
-  error=$(( error+$? ))
+  total_error=$(( total_error+$? ))
+  index=$(( index + 1 ))
 done
 
-exit $error
+exit $total_error

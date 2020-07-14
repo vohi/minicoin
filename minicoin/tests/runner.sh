@@ -26,7 +26,7 @@ function assert()
 }
 
 count=${#machines[@]}
-echo "Running test on $count machines sequentially"
+echo "Running test on $count machines independently"
 
 for machine in "${machines[@]}"
 do
@@ -44,16 +44,21 @@ do
     [ $errors -gt 0 ] && printf "${RED}Finished on $machine with $errors errors!${NOCOL}\n"
 done
 
+echo "Running test on $count machines sequentially"
+minicoin run ${machines[@]} test -- error 2> /dev/null > /dev/null
+return=$?
+assert $return $count
+
 if [ $count -gt 1 ]
 then
     echo "Running test on $count machines in parallel"
-    minicoin run --parallel "${machines[@]}" test
+    minicoin run --parallel "${machines[@]}" test 2> /dev/null > /dev/null
     return=$?
     assert $return 0
 
-    minicoin run --parallel "${machines[@]}" test -- error
+    minicoin run --parallel "${machines[@]}" test -- error 2> /dev/null > /dev/null
     return=$?
-    assert $return 2
+    assert $return $count
 fi
 
 [ $errors -gt 0 ] && printf "${RED}" || printf "${GREEN}"
