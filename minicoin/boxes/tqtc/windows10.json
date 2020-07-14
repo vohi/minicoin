@@ -1,0 +1,16 @@
+{
+    "name": "tqtc/windows10",
+    "description": "Windows 10 64bit",
+    "versions": [
+        {
+            "version": "0.0.2",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "https://$server/$minicoin_key/virtualbox/windows10-0.0.2.box"
+                }
+            ]
+        }
+    ]
+}
