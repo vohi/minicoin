@@ -232,7 +232,6 @@ function run_on_machine() {
   then
     ext="cmd"
     local session_info=$(vagrant winrm -c "query user vagrant 2> \$null" $machine | grep Active | awk '{print $3}') > /dev/null
-    echo $session_info
     if [ -z $session_info ]
     then
       log_progress "==> $machine: User 'vagrant' not logged in, can't run UI programs"
