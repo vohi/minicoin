@@ -710,14 +710,13 @@ Vagrant.configure("2") do |config|
       is_windows = (name.include? "windows") || (machine_box.include? "windows")
       is_mac = (name.include? "mac") || (machine_box.include? "mac")
 
-      maker = machine_box.split(/\//).first
-      sources = $urls[maker]
+      sources = $urls[machine_box.split(/\//).first]
       unless sources.nil?
         box.vm.box_url = []
         if sources.is_a?(String)
           sources = [sources];
         end
-        if File.file?("boxes/#{maker}/#{name}.json")
+        if File.file?("boxes/#{machine_box}.json")
           box.vm.box_url = ["#{sources[0]}/#{machine_url}.json"]
         else
           sources.each do |source|
