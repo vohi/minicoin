@@ -45,7 +45,7 @@ The intended use case is to build and test Qt on VMs managed with minicoin,
 and to run test cases (such as from bug reports or during package testing),
 on a wide range of platforms.
 
-Basic machine operations are identical to regular [Vagrant](vagrantup.com)
+Basic machine operations are identical to regular [Vagrant](https://vagrantup.com)
 workflows for multi-machine environments:
 
 To see which machines are declared and to check their status, run
@@ -187,7 +187,7 @@ using the Qt that was built last via the build-qt script.
 
 # Machines
 
-minicoin is based on [Vagrant](vagrantup.com), but tries to provide a clearer
+minicoin is based on [Vagrant](https://vagrantup.com), but tries to provide a clearer
 separation of the data defining machines, and the code implementing the logic.
 
 ## Machine definition
@@ -442,7 +442,7 @@ This will call `docker build --rm --tag builder/wasm:513`.
 ### Ansible
 
 If minicoin finds a `playbook.yml` file, then the machine will be provisioned
-using [ansible](ansible.com).
+using [ansible](https://ansible.com).
 
 ### Disks
 
@@ -505,9 +505,9 @@ should be used as VMX settings.
 
 # Platform Notes and System Requirements
 
-Things are mostly tested with [VirtualBox](virtualbox.org), and to some
+Things are mostly tested with [VirtualBox](https://virtualbox.org), and to some
 degree with VMware Fusion.
-The machines are managed using [vagrant](vagrantup.com); vagrant 2.2.4
+The machines are managed using [vagrant](https://vagrantup.com); vagrant 2.2.4
 is required.
 
 Scripts are developed and tested on macOS and Windows 10 as hosts, using
