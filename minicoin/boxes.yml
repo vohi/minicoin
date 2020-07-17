@@ -41,14 +41,14 @@ machines:
   - name: ubuntu2004
     box: generic/ubuntu2004
     roles:
-      - role: linux-desktop
-        desktop: lxde
-      - role: linux-desktop
-        desktop: weston
-      - role: linux-builder
+#      - role: linux-desktop
+#        desktop: lxde
+#      - role: linux-desktop
+#        desktop: weston
+#      - role: linux-builder
       # libiconv is missing on ubuntu20.04, so remove header as well
-      - role: script
-        script: "rm -f /usr/include/iconv.h"
+#      - role: script
+#        script: "rm -f /usr/include/iconv.h"
 
   - name: centos8
     box: generic/centos8

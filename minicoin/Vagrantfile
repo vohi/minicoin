@@ -3,8 +3,8 @@
 
 Vagrant.require_version ">= 2.2.4"
 
-# Import YAML
 require 'yaml'
+require 'json'
 require 'net/http'
 
 $is_windows_host = !(ENV["windir"].nil?)
@@ -411,6 +411,9 @@ def add_role(box, role, name)
         end
         array.each do |value|
           script_args += ["#{arg_marker}#{key}"]
+          if value.is_a?(Hash)
+            value = value.to_json;
+          end
           script_args += ["#{value}"] unless value.nil?
         end
       end

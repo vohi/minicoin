@@ -19,8 +19,8 @@ using the qtbase that was just built before.
 
 # Setup
 
-You need to install [Vagrant](vagrantup.com), and a virtual machine provider
-that vagrant supports, like [VirtualBox](virtualbox.org).
+You need to install [Vagrant](https://vagrantup.com), and a virtual machine provider
+that vagrant supports, like [VirtualBox](https://virtualbox.org).
 
 Clone this repository, and create a symbolic link to the `minicoin` script in
 a PATH directory, for example:
