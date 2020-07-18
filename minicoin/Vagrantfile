@@ -457,30 +457,35 @@ def sshfs_share_folder(box, host_path, guest_path)
     host_path = "/#{host_path}".gsub("\\", "/")
   end
 
+  mount_point = "/tmp/vagrant-#{guest_base}"
+  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
+
   sshfs_options = \
     "reconnect,allow_other,defer_permissions,cache=no," \
     "IdentityFile=~/.ssh/#{$USER},StrictHostKeyChecking=no," \
     "volname=#{guest_base}"
-  ssh_cmd = \
-    "HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ') && " \
-    "sshfs -o #{sshfs_options} #{$USER}@$HOST_IP"
 
-  mount_point = "/tmp/vagrant-#{guest_base}"
-  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
   mount_command = {
     privileged: false,
     name: "sshfs_mount",
     upload_path: "#{upload_path}.sh",
-    inline: \
-    "if [[ ! -d #{mount_point} ]]; then " \
-    "  mkdir #{mount_point}; " \
-    "fi && "\
-    "if ! (mount | grep #{mount_point} > /dev/null); then " \
-    "  #{ssh_cmd}:#{host_path} #{mount_point}; " \
-    "fi && " \
-    "if [[ ! -d #{guest_path} ]]; then " \
-    "  sudo ln -fs #{mount_point} #{guest_path}; " \
-    "fi || true"
+    inline: "
+if ! (which sshfs > /dev/null)
+then
+  exit 0
+fi
+export HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ')
+if [[ ! -d #{mount_point} ]]; then
+  mkdir #{mount_point}
+fi
+if ! (mount | grep #{mount_point} > /dev/null); then
+  echo \"Mounting from '$HOST_IP:#{host_path}' to '#{mount_point}'\"
+  sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{mount_point}
+fi
+if [[ ! -d #{guest_path} ]]; then
+  sudo ln -fs #{mount_point} #{guest_path}
+fi || true
+"
   }
   box.vm.provision "shell", mount_command
   box.trigger.after [:up, :reload] do |trigger|
@@ -611,6 +616,13 @@ end
 
 def mac_share_folders(mac, machine, guest_home)
   name = machine["name"]
+  key_filename = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
+  begin
+    File.open(key_filename, "a+") do |f|
+    end
+  rescue
+  end
+
   mac.vm.provider :virtualbox do |vb, box|
     # on VirtualBox, folder sharing is not supported on BSD/Mac systems
     # instead, mount shared folders via sshfs
@@ -618,16 +630,18 @@ def mac_share_folders(mac, machine, guest_home)
     box.vm.synced_folder ".", "/minicoin", disabled: true 
 
     # ensure users private key is on the guest for authenticating back to host
-    key_file = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
     authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
     # generate keys and authorize the guest to access the host
     box.trigger.before [:up] do |trigger|
       trigger.name = "Generating key pair and authorizing guest"
       trigger.ruby do |e,m|
-        if !File.file?(key_file)
-          `ssh-keygen -f #{key_file} -C minicoin@#{name} -q -N \"\"`
-          public_key = File.read("#{key_file}.pub")
+        if File.zero?(key_filename)
+          File.delete(key_filename)
+        end
+        if !File.file?(key_filename)
+          `ssh-keygen -f #{key_filename} -C minicoin@#{name} -q -N \"\"`
+          public_key = File.read("#{key_filename}.pub")
           open(authorized_keys, 'a') do |file|
             file.puts "#{public_key}"
           end
@@ -647,28 +661,33 @@ def mac_share_folders(mac, machine, guest_home)
           end
         end
         File.rename("#{authorized_keys}.new", authorized_keys)
-        File.delete(key_file) if File.exist?(key_file)
-        File.delete("#{key_file}.pub") if File.exist?("#{key_file}.pub")
+        File.delete(key_filename) if File.exist?(key_filename)
+        File.delete("#{key_filename}.pub") if File.exist?("#{key_filename}.pub")
       end
     end
+  end
 
     # upload the private key to the guest
-    if !["validate"].include? ARGV[0]
-      box.vm.provision "file",
-        source: key_file,
-        destination: ".ssh/#{$USER}"
-      box.vm.provision "shell",
-        inline: "chmod 0600 .ssh/#{$USER}",
-        upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
-    end
-
-    host_home = $settings["home_share"]
-    if host_home != "disabled"
-      sshfs_share_folder(box, host_home, guest_home)
-    end
-
-    sshfs_share_folder(box, $PWD, "/minicoin")
+  if File.exist?(key_filename)
+    puts "Yes key file #{key_filename}"
+    puts File.size?(key_filename)
+    mac.vm.provision "file",
+      source: key_filename,
+      destination: ".ssh/#{$USER}"
+    mac.vm.provision "shell",
+      inline: "chmod 0600 .ssh/#{$USER}",
+      upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+  else
+    puts "No key file #{key_filename}"
   end
+
+  # need to run this ASAP
+  host_home = $settings["home_share"]
+  if host_home != "disabled"
+    sshfs_share_folder(mac, host_home, guest_home)
+  end
+
+  sshfs_share_folder(mac, $PWD, "/minicoin")
 
   # on VMware, everything works normal
   mac.vm.provider :vmware_desktop do |vmware, box|
