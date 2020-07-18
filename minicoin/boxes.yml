@@ -84,6 +84,10 @@ machines:
     memory: 1024
   - name: macos1014
     box: tqtc/$minicoin_key/macos1014
+  - name: macos1015
+    box: tqtc/$minicoin_key/macos1015
+    roles:
+      - role: hello-world
 
 ## Specialized machines
 
