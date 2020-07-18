@@ -669,7 +669,6 @@ def mac_share_folders(mac, machine, guest_home)
 
     # upload the private key to the guest
   if File.exist?(key_filename)
-    puts "Yes key file #{key_filename}"
     puts File.size?(key_filename)
     mac.vm.provision "file",
       source: key_filename,
@@ -677,8 +676,6 @@ def mac_share_folders(mac, machine, guest_home)
     mac.vm.provision "shell",
       inline: "chmod 0600 .ssh/#{$USER}",
       upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
-  else
-    puts "No key file #{key_filename}"
   end
 
   # need to run this ASAP
