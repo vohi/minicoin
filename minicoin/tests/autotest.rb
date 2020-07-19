@@ -120,7 +120,8 @@ class Tester
         "global" => "user",
         "list" => ["user1", "user2"],
         "newvalue" => "local_option",
-        "home_share" => ENV['HOME']
+        "home_share" => ENV['HOME'],
+        "defaults" => {}
         },
       "urls" => {
         "domain" => ["domain1", "domain2", "subdomain1", "subdomain2", "leaf1", "leaf2", "userserver"],

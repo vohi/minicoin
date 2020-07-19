@@ -1,7 +1,12 @@
 ---
-# global values
+# global values and machine defaults
 settings:
   home_share: $HOME
+  defaults:
+    roles:
+      - role: upload
+        files:
+          $HOME/.gitconfig: ~/.gitconfig
 
 ## locations from which we can download tqtc boxes and disk archives
 

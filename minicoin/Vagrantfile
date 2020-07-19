@@ -61,21 +61,21 @@ def load_settings(yaml, user_yaml)
   # a hash
   $settings = yaml["settings"]
   $settings = {} if $settings.nil?
-  $settings["home_share"] = $HOME if $settings["home_share"].nil?
 
   user_settings = user_yaml["settings"] unless user_yaml.nil?
-  $settings = merge_yaml($settings, user_settings)
+  $settings = merge_yaml($settings, user_settings) unless user_settings.nil?
 
+  $settings["home_share"] = $HOME if $settings["home_share"].nil?
   $settings["home_share"] = $settings["home_share"].gsub("$HOME", $HOME)
   $settings["home_share"] = $settings["home_share"].gsub("~", $HOME)
+  $settings["defaults"] = {} if $settings["defaults"].nil?
 end
 
 def load_urls(yaml, user_yaml)
   # a hash of arrays
   $urls = yaml["urls"]
   user_urls = user_yaml["urls"] unless user_yaml.nil?
-
-  $urls = merge_yaml($urls, user_urls)
+  $urls = merge_yaml($urls, user_urls) unless user_urls.nil?
 end
 
 def load_boxes(yaml, user_yaml)
@@ -272,7 +272,7 @@ def expand_env(value, box)
   while (matches = value.match(/\$([A-Za-z0-9_]+)/))
     env_name = matches[1]
     match_index = matches.begin(1)
-    # guest substituation
+    # guest substitution
     if value[match_index-2] == '$'
       value[match_index-2] = '?'
       value[match_index-1] = ''
@@ -285,21 +285,21 @@ def expand_env(value, box)
     env_val = ENV[env_name]
     if env_val.nil?
       return nil
-    else
-      host_home = $settings["home_share"]
-      if env_val.start_with?(host_home)
-        if box.vm.guest == :windows
-          env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
-        elsif box.vm.guest == :darwin
-          env_val = env_val.sub(host_home, "/Users/host")
-        else
-          env_val = env_val.sub(host_home, "/home/host")
-        end
+    end
+
+    host_home = $settings["home_share"]
+    if !box.nil? && env_val.start_with?(host_home)
+      if box.vm.guest == :windows
+        env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
+      elsif box.vm.guest == :darwin
+        env_val = env_val.sub(host_home, "/Users/host")
+      else
+        env_val = env_val.sub(host_home, "/home/host")
       end
-      value = value.sub("$#{env_name}", env_val)
-      if !box.nil? && box.vm.guest == :windows
-        value = value.gsub("/", "\\\\")
-      end
+    end
+    value = value.sub("$#{env_name}", env_val)
+    if !box.nil? && box.vm.guest == :windows
+      value = value.gsub("/", "\\\\")
     end
   end
   guest_sub_indices.each do |i|
@@ -341,6 +341,15 @@ def add_role(box, role, name)
           array << new_entry
         end
         role_params[key] = array
+      elsif value.is_a?(Hash)
+        new_hash = {}
+        value.each do |k, v|
+          # left side of key/value pair refers to the host
+          new_key = expand_env(k, nil)
+          new_value = expand_env(v, box)
+          new_hash[new_key] = new_value
+        end
+        role_params[key] = new_hash
       end
     end
   end
@@ -803,12 +812,9 @@ Vagrant.configure("2") do |config|
 
       # Platform specific configurations
       guest_home = "/home/host"
-      guest_filedir = ""
-
       if is_windows
         box.vm.guest = :windows
         guest_home = "/host"
-        guest_filedir = "c:\\Users\\vagrant\\"
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
         machine["nictype1"] = "82540EM"
@@ -866,23 +872,18 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      # Copying files to guest
-      if !is_windows || (box.vm.communicator == :winrm) # file provisioning via winssh is broken
-	      if File.file?("#{$HOME}/.gitconfig")
-          box.vm.provision "file", source: "#{$HOME}/.gitconfig", destination: "#{guest_filedir}.gitconfig"
-        end
-      end
-
       # Definition of provisioning steps
-      roles = machine["roles"]
-      unless roles.nil? or roles.empty?
-        if roles.kind_of?(Array)
-          roles.each do |role|
-            add_role(box, role, name)
-          end
-        else
-          add_role(box, roles, name)
-        end
+      default_roles = $settings["defaults"]["roles"]
+      default_roles = [default_roles] unless default_roles.kind_of?(Array)
+
+      machine_roles = machine["roles"]
+      machine_roles = [machine_roles] unless machine_roles.kind_of?(Array)
+
+      # add_role modifies, so make a deep copy of default_roles
+      roles = Marshal.load(Marshal.dump(default_roles))
+      roles.concat(machine_roles)
+      roles.each do |role|
+        add_role(box, role, name) unless role.nil?
       end
     end
   end
