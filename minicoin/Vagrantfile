@@ -115,7 +115,9 @@ end
 def load_minicoin()
   begin # see tests/autotest.rb
     return load_testmachines()["machines"]
-  rescue
+  rescue NoMethodError => error # Not running autotest, continue
+  rescue => error
+    raise
   end
   global_file = File.join($PWD, 'boxes.yml')
   yaml = YAML.load_file(global_file)

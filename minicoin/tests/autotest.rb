@@ -103,8 +103,6 @@ def load_testmachines()
   return test_output
 end
 
-load '../Vagrantfile'
-
 class Tester
   @error_count
   @data_count
@@ -228,10 +226,17 @@ class Tester
   end
 end
 
-tester = Tester.new
-tester.run()
-if tester.errors != 0
-  puts "Test failed: #{tester.errors} encountered!"
-else
-  puts "Success after #{tester.tested} tests!"
+begin
+  load '../Vagrantfile'
+
+  tester = Tester.new
+  tester.run()
+  if tester.errors != 0
+    puts "Test failed: #{tester.errors} encountered!"
+  else
+    puts "Success after #{tester.tested} tests!"
+  end
+rescue => error
+  puts "Test failed while loading:"
+  puts error
 end
