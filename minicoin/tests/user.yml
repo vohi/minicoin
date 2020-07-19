@@ -1,4 +1,8 @@
 ---
+settings:
+  default: ~
+  global: [~, user]
+  list: [~, user1, user2]
 
 urls:
   domain:

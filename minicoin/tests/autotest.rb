@@ -116,6 +116,9 @@ class Tester
     test_data = {
       "settings" => {
         "value" => ["sub", "subsub", "test"],
+        "default" => nil,
+        "global" => "user",
+        "list" => ["user1", "user2"],
         "newvalue" => "local_option",
         "home_share" => ENV['HOME']
         },

@@ -1,6 +1,9 @@
 ---
 settings:
   value: test
+  default: value
+  global: global1
+  list: [global2, global3]
 
 urls:
   domain:

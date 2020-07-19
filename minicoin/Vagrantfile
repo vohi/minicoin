@@ -21,25 +21,37 @@ $PWD = File.dirname(__FILE__)
 def merge_yaml(first, second)
   if first.nil? && second.nil?
     nil
-  elsif first.nil?
+  elsif first.nil? || second.nil? # user can nil defaults
     second
-  elsif second.nil?
-    first
   elsif first.is_a?(Hash) && second.is_a?(Hash)
     first.merge!(second) do |key, one, two|
       merge_yaml(one, two)
     end
   elsif first.is_a?(Array)
     if second.is_a?(Array)
-      second.each do |s|
-        first << s
+      if second[0].nil?
+        second.shift
+        first = second
+      else
+        second.each do |s|
+          first << s
+        end
+        first
       end
-      first
     else
       first << second
     end
   elsif second.is_a?(Array)
-    second << first
+    if second[0].nil?
+      second.shift
+      if second.length == 1
+        second[0]
+      else
+        second
+      end
+    else
+      second << first
+    end
   else # two values - make an array
     [first, second]
   end
