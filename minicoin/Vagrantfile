@@ -308,6 +308,7 @@ def expand_env(value, box)
   return value
 end
 
+## Add role as provisioning step for box
 def add_role(box, role, name)
   role_params = role
   if role.is_a?(Hash) # parameterized role
@@ -473,58 +474,6 @@ def add_role(box, role, name)
   end
 end
 
-def sshfs_share_folder(box, host_path, guest_path)
-  guest_base = guest_path.split('/').last
-
-  if $is_windows_host
-    host_path = "/#{host_path}".gsub("\\", "/")
-  end
-
-  mount_point = "/tmp/vagrant-#{guest_base}"
-  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
-
-  sshfs_options = \
-    "reconnect,allow_other,defer_permissions,cache=no," \
-    "IdentityFile=~/.ssh/#{$USER},StrictHostKeyChecking=no," \
-    "volname=#{guest_base}"
-
-  mount_command = {
-    privileged: false,
-    name: "sshfs_mount",
-    upload_path: "#{upload_path}.sh",
-    inline: "
-if ! (which sshfs > /dev/null)
-then
-  exit 0
-fi
-export HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ')
-if [[ ! -d #{mount_point} ]]; then
-  mkdir #{mount_point}
-fi
-if ! (mount | grep #{mount_point} > /dev/null); then
-  echo \"Mounting from '$HOST_IP:#{host_path}' to '#{mount_point}'\"
-  sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{mount_point}
-fi
-if [[ ! -d #{guest_path} ]]; then
-  sudo ln -fs #{mount_point} #{guest_path}
-fi || true
-"
-  }
-  box.vm.provision "shell", mount_command
-  box.trigger.after [:up, :reload] do |trigger|
-    trigger.name = "Mounting shared folder #{host_path}"
-    trigger.run_remote = mount_command
-  end
-end
-
-def share_folders(box, guest_home)
-  host_home = $settings["home_share"]
-  if host_home != "disabled"
-    box.vm.synced_folder host_home, guest_home
-  end
-  box.vm.synced_folder ".", "/minicoin"
-end
-
   # VirtualBox specific settings
 def virtualbox_setup(box, machine)
   box.vm.provider :virtualbox do |vb|
@@ -618,18 +567,33 @@ def vmware_setup(box, machine)
   end
 end
 
-def win_link_folders(box)
+## Folder sharing helpers
+def win_link_folders(box, links)
+  symlink_lines = []
+  links.each do |link|
+    link.each do |net, local|
+      local_symlink = local
+      local_segments = local.split("\\")
+      local_symlink = "#{local_segments[0]}\\#{local_segments[-1]}"
+      symlink_lines << "if (Test-Path -Path \"$($Hostname)#{net}\") {"
+      symlink_lines << "  New-Item -ItemType SymbolicLink -Path #{local_symlink} -Target \"$($Hostname)#{net}\" -Force"
+      if local_segments.length > 2
+        symlink_lines << "  (Get-Item -Path #{local_symlink}).Attributes += 'Hidden'"
+        # we create a junction because qmake would otherwise follow the symlink to a \\HOSTNAME\share
+        symlink_lines << "  if (Test-Path -Path \"#{local}\") { cmd /c \"rd #{local}\" }"
+        symlink_lines << "  New-Item -ItemType Junction -Path \"#{local}\" -Target \"#{local_symlink}\" -Force | Out-Null"
+      end
+      symlink_lines << "}"
+    end
+  end
+
   link_cmd = <<-SCRIPT
   function Link-Host {
     Param($Hostname)
-    if (!(Test-Path -Path "$($Hostname)minicoin")) { return }
-    New-Item -ItemType SymbolicLink -Path c:\\minicoin -Target "$($Hostname)minicoin" -Force
-    New-Item -ItemType SymbolicLink -Path c:\\host -Target "$($Hostname)host" -Force
+    #{symlink_lines.join("\n    ")}
   }
-  Link-Host -Hostname \\\\VBOXSVR\\
-  Link-Host -Hostname "\\\\vmware-host\\Shared Folders\\-"
-  cmd /c "rd c:\\Users\\host"
-  New-Item -ItemType Junction -Path c:\\Users\\host -Target c:\\host -Force
+  Link-Host -Hostname "\\\\VBOXSVR\\" | Out-Null
+  Link-Host -Hostname "\\\\vmware-host\\Shared Folders\\-" | Out-Null
   SCRIPT
 
   box.vm.provision "shell",
@@ -637,7 +601,7 @@ def win_link_folders(box)
     inline: link_cmd
 end
 
-def mac_share_folders(mac, machine, guest_home)
+def mac_setup_sshfs(mac, machine)
   name = machine["name"]
   key_filename = "#{$PWD}/.vagrant/machines/#{name}/minicoin"
   begin
@@ -690,7 +654,7 @@ def mac_share_folders(mac, machine, guest_home)
     end
   end
 
-    # upload the private key to the guest
+  # upload the private key to the guest
   if File.exist?(key_filename)
     mac.vm.provision "file",
       source: key_filename,
@@ -699,18 +663,100 @@ def mac_share_folders(mac, machine, guest_home)
       inline: "chmod 0600 .ssh/#{$USER}",
       upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
   end
+end
 
-  # need to run this ASAP
-  host_home = $settings["home_share"]
-  if host_home != "disabled"
-    sshfs_share_folder(mac, host_home, guest_home)
+def sshfs_share_folder(box, host_path, guest_path)
+  guest_base = guest_path.split('/').last
+
+  if $is_windows_host
+    host_path = "/#{host_path}".gsub("\\", "/")
   end
 
-  sshfs_share_folder(mac, $PWD, "/minicoin")
+  mount_point = "/tmp/vagrant-#{guest_base}"
+  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
 
-  # on VMware, everything works normal
-  mac.vm.provider :vmware_desktop do |vmware, box|
-    share_folders(box, guest_home)
+  sshfs_options = \
+    "reconnect,allow_other,defer_permissions,cache=no," \
+    "IdentityFile=~/.ssh/#{$USER},StrictHostKeyChecking=no," \
+    "volname=#{guest_base}"
+
+  mount_command = {
+    privileged: false,
+    name: "sshfs_mount",
+    upload_path: "#{upload_path}.sh",
+    inline: "
+if ! (which sshfs > /dev/null)
+then
+  exit 0
+fi
+export HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ')
+if [[ ! -d #{mount_point} ]]; then
+  mkdir #{mount_point}
+fi
+if ! (mount | grep #{mount_point} > /dev/null); then
+  echo \"Mounting from '$HOST_IP:#{host_path}' to '#{mount_point}'\"
+  sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{mount_point}
+fi
+if [[ ! -d #{guest_path} ]]; then
+  sudo ln -fs #{mount_point} #{guest_path}
+fi || true
+"
+  }
+  box.vm.provision "shell", mount_command
+  box.trigger.after [:up, :reload] do |trigger|
+    trigger.name = "Mounting shared folder #{host_path}"
+    trigger.run_remote = mount_command
+  end
+end
+
+def share_folder(box, machine, host, guest)
+  if box.vm.guest == :darwin
+    # need to run this ASAP
+    sshfs_share_folder(box, host, guest)
+
+    # on VMware, everything works normal
+    box.vm.provider :vmware_desktop do |vmware, box|
+      box.vm.synced_folder host, guest
+    end
+  else
+    box.vm.synced_folder host, guest
+  end
+end
+
+def share_folders(box, machine, shares)
+  shares = Marshal.load(Marshal.dump(shares))
+  if box.vm.guest == :darwin
+    mac_setup_sshfs(box, machine)
+  end
+  win_links = []
+  shares.each do |share|
+    if !share.nil?
+      share.each do |host, guest|
+        host = expand_env(host, nil)
+        if (host == $PWD)
+          host = "." # this prevents duplicate PWD sharing from vagrant
+        end
+        guest = expand_env(guest, box)
+        if guest.nil? || host.nil?
+          puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
+        else
+          if box.vm.guest == :windows
+            guest = guest.gsub("/", "\\")
+            # on windows, shares become network locations; win_links contains the link
+            # we create to the network location
+            win_guest = guest.gsub(/^\\/, "C:\\")
+            # for the sharing itself, we only care about the basename. We assume they are unique
+            guest = "#{guest.split('\\')[-1]}"
+            win_links << { guest => win_guest }
+            guest = "/#{guest}"
+          end
+          share_folder(box, machine, host, guest)
+        end
+      end
+    end
+  end
+  if box.vm.guest == :windows
+    win_link_folders(box, win_links)
   end
 end
 
@@ -811,10 +857,9 @@ Vagrant.configure("2") do |config|
       end
 
       # Platform specific configurations
-      guest_home = "/home/host"
       if is_windows
         box.vm.guest = :windows
-        guest_home = "/host"
+        ENV["GUEST_HOMES"] = "Users"
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
         machine["nictype1"] = "82540EM"
@@ -836,12 +881,13 @@ Vagrant.configure("2") do |config|
         end
       elsif is_mac
         box.vm.guest = :darwin
-        guest_home = "/Users/host"
+        ENV["GUEST_HOMES"] = "Users"
 
         # "Intel Pro/1000 MT Server" must be used on Mac
         machine["nictype1"] = "82545EM"
       else
         box.vm.guest = machine["guest"] unless machine["guest"].nil?
+        ENV["GUEST_HOMES"] = "home"
         # rely on defaults and vagrant autodetection for nix'es
       end
 
@@ -861,15 +907,16 @@ Vagrant.configure("2") do |config|
       vmware_setup(box, machine)
 
       # folder sharing, taking guest OS and provider specific quirks into account
-      if machine["shared_folders"] == "disabled"
+      default_shares = $settings["defaults"]["shared_folders"]
+      default_shares = [default_shares] unless default_shares.kind_of?(Array)
+      machine_shares = machine["shared_folders"]
+      machine_shares = [machine_shares]  unless machine_shares.kind_of?(Array)
+      shares = default_shares + machine_shares
+
+      if shares.include?("disabled")
         box.vm.synced_folder ".", "/minicoin", disabled: true
-      elsif is_mac
-        mac_share_folders(box, machine, guest_home)
       else
-        share_folders(box, guest_home)
-        if is_windows
-          win_link_folders(box)
-        end
+        share_folders(box, machine, shares)
       end
 
       # Definition of provisioning steps

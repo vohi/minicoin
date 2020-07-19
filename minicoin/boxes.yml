@@ -7,6 +7,9 @@ settings:
       - role: upload
         files:
           $HOME/.gitconfig: ~/.gitconfig
+    shared_folders:
+      - $PWD: /minicoin # required by provisioning scripts
+      - $HOME: $HOME # will be home of "host" user on guest
 
 ## locations from which we can download tqtc boxes and disk archives
 
@@ -24,15 +27,12 @@ machines:
 
 ## Test machines
 
-##  - name: test-linux
-##    box: generic/ubuntu1804
-##    roles: hello-world
-##  - name: test-windows
-##    box: tqtc/$minicoin_key/windows81
-##    roles: hello-world
-##  - name: test-mac
-##    box: tqtc/$minicoin_key/macos1013
-##    roles: hello-world
+#  - name: test-linux
+#    box: generic/ubuntu1804
+#  - name: test-windows
+#    box: tqtc/$minicoin_key/windows10
+#  - name: test-mac
+#    box: tqtc/$minicoin_key/macos1015
 
 ## Simple Linux machine
 
