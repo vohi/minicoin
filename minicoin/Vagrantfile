@@ -348,6 +348,10 @@ def add_role(box, role, name)
           # left side of key/value pair refers to the host
           new_key = expand_env(k, nil)
           new_value = expand_env(v, box)
+          if new_key.nil? || new_value.nil?
+            puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+            return
+          end
           new_hash[new_key] = new_value
         end
         role_params[key] = new_hash
