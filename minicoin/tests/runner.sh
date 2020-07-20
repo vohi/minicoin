@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -o pipefail
 
+ruby autotest.rb
+
 machines=( "${@}" )
 if [ $# -eq 0 ]
 then
-    machines=( "windows10" "ubuntu2004" )
+    echo "For additional tests, provide names of running machines!"
+    exit
 fi
 
 GREEN="\033[0;32m"
