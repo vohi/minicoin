@@ -1,7 +1,8 @@
 ---
 
 settings:
-  value: sub
+  single: sub
+  array: [sub]
 
 urls:
   domain:

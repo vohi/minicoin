@@ -115,7 +115,8 @@ class Tester
     test_output = load_testmachines()
     test_data = {
       "settings" => {
-        "value" => ["sub", "subsub", "test"],
+        "single" => "subsub",
+        "array" => ["test", "sub", "subsub"],
         "default" => nil,
         "global" => "user",
         "list" => ["user1", "user2"],
@@ -188,9 +189,9 @@ class Tester
     user = ENV["USER"]
     test_data = {
       "plain" => [:windows, "foo", "foo"],
-      "$home_win" => [:windows, "$HOME", "C:\\Users\\host"],
-      "$home_nix" => [:linux, "$HOME", "/home/host"],
-      "$home_mac" => [:darwin, "$HOME", "/Users/host"],
+      "$home_win" => [:windows, "$HOME", "\\windows\\host"],
+      "$home_nix" => [:linux, "$HOME", "/linux/host"],
+      "$home_mac" => [:darwin, "$HOME", "/darwin/host"],
       "$user" => [nil, "$USER", user],
       "$user$user" => [nil, "$USER$USER", "#{user}#{user}"],
       "$$PWD" => [nil, "$$PWD", "$PWD"],
@@ -205,6 +206,8 @@ class Tester
       output = data[2]
 
       box = MockVm.new(guest)
+      old_env = ENV["GUEST_HOMES"]
+      ENV["GUEST_HOMES"] = "#{guest}"
       result = expand_env(input, box)
       if result != output
         puts "Fail! for '#{name}'!"
@@ -212,6 +215,7 @@ class Tester
         puts "=> expected: '#{output}'"
         @error_count += 1
       end
+      ENV["GUEST_HOMES"] = old_env
     end
   end
 

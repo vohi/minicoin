@@ -1,6 +1,7 @@
 ---
 settings:
-  value: test
+  single: test
+  array: [test]
   default: value
   global: global1
   list: [global2, global3]

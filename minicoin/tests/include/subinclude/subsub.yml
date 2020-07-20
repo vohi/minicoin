@@ -1,7 +1,8 @@
 ---
 
 settings:
-  value: subsub
+  single: subsub
+  array: [subsub]
   newvalue: local_option
 
 urls:

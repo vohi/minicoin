@@ -52,8 +52,8 @@ def merge_yaml(first, second)
     else
       second << first
     end
-  else # two values - make an array
-    [first, second]
+  else # single value, second overrides first
+    second
   end
 end
 
@@ -289,13 +289,7 @@ def expand_env(value, box)
 
     host_home = $settings["home_share"]
     if !box.nil? && env_val.start_with?(host_home)
-      if box.vm.guest == :windows
-        env_val = env_val.sub(host_home, "C:\\\\Users\\\\host")
-      elsif box.vm.guest == :darwin
-        env_val = env_val.sub(host_home, "/Users/host")
-      else
-        env_val = env_val.sub(host_home, "/home/host")
-      end
+      env_val = env_val.sub(host_home, "/#{ENV['GUEST_HOMES']}/host")
     end
     value = value.sub("$#{env_name}", env_val)
     if !box.nil? && box.vm.guest == :windows
