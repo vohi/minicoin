@@ -37,7 +37,7 @@ detailed requirements. In general
   platform specific services, such as WinRM
 * turn off any automatic update services
 * remove anything not needed to keep the size of the package small
-* overwrite empty space on the disk with 0-bits
+* defrag, and overwrite empty space on the disk with 0-bits
 
 ## Modifying an existing box
 
@@ -46,13 +46,12 @@ or VMware versions, to install new OS patches, or also to make a new OS version
 available by upgrading an existing box.
 
 For ongoing maintenance, use the special `Vagrantfile` to bring up a virtual
-machine from an installed box-file - see `vagrant box list` for available boxes,
-only the boxes in the `tqtc` namespace are relevant for maintenance.
+machine from an installed box-file - see `vagrant status` for available boxes.
 
 Bring up a machine from an installed box, e.g:
 
 ```
-$ vagrant up windows10
+$ vagrant up windows10-basebox
 ```
 
 This will launch a machine `windows10-basebox` in VirtualBox.
@@ -74,7 +73,7 @@ the size of the machine and make it more compressible:
 When finished, shut the machine down:
 
 ```
-$ vagrant halt windows10
+$ vagrant halt windows10-basebox
 ```
 
 If you are using VirtualBox, then you might now want to compact the disk
@@ -84,9 +83,9 @@ image, which however only works for VDI images. Use the following script:
 $ ./compact_vdi.sh "~/VirtualBox VMs/windows10-basebox/box-disk001.vmdk"
 ```
 
-You might however have to detach the disk first, but otherwise the script
-takes care of all the necessary steps, which take a long time and use
-up a lot of disk space. You can now attach the compacted VDI image back
+You might have to detach the disk first, but otherwise the script
+takes care of all the necessary steps, which take a long time and uses
+up a lot of disk space. When done, attach the compacted VDI image back
 to the VM.
 
 To export the machine, use the packaging scripts, e.g
