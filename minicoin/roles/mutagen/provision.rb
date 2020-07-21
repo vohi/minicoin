@@ -13,11 +13,18 @@ def mutagen_provision(box, role_params)
     paths.each do |path|
         if path.is_a?(String)
             alphas << path
-            betas << path.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+            beta = path
+            if box.vm.guest == :windows
+                beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+            end
+            betas << beta
         elsif path.is_a?(Hash)
             path.each do |alpha, beta|
                 alphas << alpha
-                betas << beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                if box.vm.guest == :windows
+                    beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                end
+                betas << beta
             end
         else
             throw "Argument error: expecting 'paths' to be a list of strings or hashes from source to desintation"
@@ -25,9 +32,11 @@ def mutagen_provision(box, role_params)
     end
     role_params["alpha"] = alphas
     role_params["beta"] = betas
-    if ["up", "provision", "reload"].include? ARGV[0]
-        box.vm.provision "file", source: "/tmp/mutagen.tar.gz", destination: "C:\\tmp\\mutagen.tar.gz"
-        role_params["mutagen_install"] = "C:\\tmp\\mutagen.tar.gz"
+    if box.vm.guest == :windows
+        if ["up", "provision", "reload"].include? ARGV[0]
+            box.vm.provision "file", source: "/tmp/mutagen.tar.gz", destination: "C:\\tmp\\mutagen.tar.gz"
+            role_params["mutagen_install"] = "C:\\tmp\\mutagen.tar.gz"
+        end
     end
 
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
@@ -64,6 +73,11 @@ def mutagen_provision(box, role_params)
 
     if ["up", "provision", "reload", "validate"].include? ARGV[0]
         # needs to be id_rsa, mutagen doesn't allow specifying an ssh identity file
-        box.vm.provision "file", source: key_file, destination: "C:\\Users\\vagrant\\.ssh\\id_rsa"
+        if box.vm.guest == :windows
+            dest = "C:\\Users\\vagrant\\.ssh\\id_rsa"
+        else
+            dest = "~/.ssh/id_rsa"
+        end
+        box.vm.provision "file", source: key_file, destination: dest
     end
 end
