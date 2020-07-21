@@ -666,6 +666,9 @@ end
 def sshfs_share_folder(box, host_path, guest_path)
   guest_base = guest_path.split('/').last
 
+  if host_path == "."
+    host_path = $PWD
+  end
   if $is_windows_host
     host_path = "/#{host_path}".gsub("\\", "/")
   end
