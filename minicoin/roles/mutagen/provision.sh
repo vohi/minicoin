@@ -3,7 +3,7 @@
 platform=$(uname)
 if [[ $(uname) =~ "Darwin" ]]
 then
-    brew install mutagen-io/mutagen/mutagen
+    sudo -H -u vagrant brew install mutagen-io/mutagen/mutagen
 else
     echo "Mutagen not implemented"
     exit 1
