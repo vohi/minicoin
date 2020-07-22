@@ -57,7 +57,7 @@ def mutagen_provision(box, role_params)
     end
 
     box.trigger.before [:destroy] do |trigger|
-        trigger.name = "Removing mutagen key-pair and de-authorising guest"
+        trigger.name = "Removing mutagen key pair and de-authorising guest"
         trigger.ruby do |e,m|
             File.open("#{authorized_keys}.new", 'w') do |out|
                 out.chmod(File.stat(authorized_keys).mode)
@@ -71,7 +71,7 @@ def mutagen_provision(box, role_params)
         end
     end
 
-    if ["up", "provision", "reload", "validate"].include? ARGV[0]
+    if ["up", "provision", "reload"].include? ARGV[0]
         # needs to be id_rsa, mutagen doesn't allow specifying an ssh identity file
         if box.vm.guest == :windows
             dest = "C:\\Users\\vagrant\\.ssh\\id_rsa"
