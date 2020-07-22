@@ -65,9 +65,10 @@ def load_settings(yaml, user_yaml)
   user_settings = user_yaml["settings"] unless user_yaml.nil?
   $settings = merge_yaml($settings, user_settings) unless user_settings.nil?
 
-  $settings["home_share"] = $HOME if $settings["home_share"].nil?
-  $settings["home_share"] = $settings["home_share"].gsub("$HOME", $HOME)
-  $settings["home_share"] = $settings["home_share"].gsub("~", $HOME)
+  home_share = $settings["home_share"] || $HOME
+  home_share = home_share.gsub("~", "$HOME")
+  home_share = expand_env(home_share, nil)
+  ENV["HOME_SHARE"] = home_share
   $settings["defaults"] = {} if $settings["defaults"].nil?
 end
 
@@ -287,10 +288,6 @@ def expand_env(value, box)
       return nil
     end
 
-    host_home = $settings["home_share"]
-    if !box.nil? && env_val.start_with?(host_home)
-      env_val = env_val.sub(host_home, "/#{ENV['GUEST_HOMES']}/host")
-    end
     value = value.sub("$#{env_name}", env_val)
     if !box.nil? && box.vm.guest == :windows
       value = value.gsub("/", "\\\\")
