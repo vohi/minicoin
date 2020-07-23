@@ -20,3 +20,4 @@ machines:
     roles:
       - role: script
         script: "hello"
+    private_net: 1.1.1.1

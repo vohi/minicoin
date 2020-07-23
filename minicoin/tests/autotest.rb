@@ -105,10 +105,67 @@ end
 
 class Tester
   @error_count
-  @data_count
+
   def initialize()
     @error_count = 0
     @data_count = 0
+  end
+
+  def test_merge_yaml()
+    test_base = [
+      {"key" => "value"},
+      {"array" => ["array"]},
+      {"hash" => { "key" => "value", "key2" => "value2"}}
+    ]
+    test_user = [
+      {},
+      {"key" => "value2"},
+      {"array" => ["array2"]},
+      {"hash" => { "key" => "value0", "key2" =>nil, "key3" => "value3"}},
+      {"key" => nil},
+      {"array" => [nil, "array2"]},
+    ]
+    test_result = [
+      # 0
+      {"key"=>"value"},
+      {"key" => "value2"},
+      {"key" => "value", "array"=>["array2"]},
+      {"key"=>"value", "hash"=>{"key"=>"value0", "key2" => nil, "key3"=>"value3"}},
+      {},
+      {"key"=>"value", "array"=>[nil, "array2"]},
+      # 6
+      {"array"=>["array"]},
+      {"array"=>["array"], "key"=>"value2"},
+      {"array"=>["array", "array2"]},
+      {"array"=>["array"], "hash"=>{"key"=>"value0", "key2" => nil, "key3"=>"value3"}},
+      {"array"=>["array"], "key"=>nil},
+      {"array"=>["array2"]},
+
+      # 12
+      {"hash"=>{"key"=>"value", "key2"=>"value2"}},
+      {"hash"=>{"key"=>"value", "key2"=>"value2"}, "key"=>"value2"},
+      {"hash"=>{"key"=>"value", "key2"=>"value2"}, "array"=>["array2"]},
+      {"hash"=>{"key"=>"value0", "key3"=>"value3"}},
+      {"hash"=>{"key"=>"value", "key2"=>"value2"}, "key"=>nil},
+      {"hash"=>{"key"=>"value", "key2"=>"value2"}, "array"=>[nil, "array2"]}
+    ]
+
+    @data_count = 0
+    result_index = 0
+    test_base.each do |base|
+      test_user.each do |user|
+        @data_count += 1
+        base_copy = base.clone
+        result = merge_yaml(base_copy, user)
+        if result != test_result[result_index]
+          puts "Failure for index #{result_index}:"
+          puts "=> input: #{base_copy} + #{user}"
+          puts "=> produced: #{result}"
+          puts "=> expected: #{test_result[result_index]}"
+        end
+        result_index += 1
+      end
+    end
   end
 
   def test_loading()
@@ -117,7 +174,6 @@ class Tester
       "settings" => {
         "single" => "subsub",
         "array" => ["test", "sub", "subsub"],
-        "default" => nil,
         "global" => "user",
         "list" => ["user1", "user2"],
         "home_share" => "$HOME",
@@ -131,12 +187,14 @@ class Tester
       "includes" => ["include/sub.yml"],
       "machines" => [
         {"name" => "machine1", "box" => "generic", "gui" => false },
-        {"name" => "machine2"},
+        {"name" => "machine2", "box" => "generic2"},
         {"name" => "override", "gui" => true},
         {"name" => "environment1", "box" => "$USER"},
         {"name" => "environment2", "box" => "private/$minicoin_key/box"},
         {"name" => "base", "box" => "generic",
-                           "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}]},
+                           "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
+                           "private_net" => "1.1.1.1"
+        },
         {"name" => "submachine", "box" => "subgeneric"},
         {"name" => "machine1", "box" => "duplicate", "gui" => true }
       ]
@@ -176,6 +234,7 @@ class Tester
       box_data[name]["box"] = box.box
     end
     test_data.each do |name, expected|
+      @data_count += 1
       if expected != box_data[name]
         puts "Fail for '#{name}'!"
         puts "=> produced: #{box_data[name]}"
@@ -228,6 +287,7 @@ class Tester
   end
 
   def run()
+    test_merge_yaml()
     test_loading()
     test_vagrantfile()
     test_expand_env()
