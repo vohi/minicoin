@@ -608,7 +608,6 @@ def mac_setup_sshfs(mac, machine)
   mac.vm.provider :virtualbox do |vb, box|
     # on VirtualBox, folder sharing is not supported on BSD/Mac systems
     # instead, mount shared folders via sshfs
-
     box.vm.synced_folder ".", "/minicoin", disabled: true 
 
     # ensure users private key is on the guest for authenticating back to host
@@ -616,7 +615,7 @@ def mac_setup_sshfs(mac, machine)
 
     # generate keys and authorize the guest to access the host
     box.trigger.before [:up] do |trigger|
-      trigger.name = "Generating key pair and authorizing guest"
+      trigger.name = "Generating sshfs key pair and authorizing guest"
       trigger.ruby do |e,m|
         if File.zero?(key_filename)
           File.delete(key_filename)
@@ -634,7 +633,7 @@ def mac_setup_sshfs(mac, machine)
 
     # delete the keys, and de-authorize the guest
     box.trigger.after [:destroy] do |trigger|
-      trigger.name = "Removing key-pair and de-authorising guest"
+      trigger.name = "Removing sshfs key pair and de-authorising guest"
       trigger.ruby do |e,m|
         File.open("#{authorized_keys}.new", 'w') do |out|
           out.chmod(File.stat(authorized_keys).mode)
@@ -656,101 +655,113 @@ def mac_setup_sshfs(mac, machine)
       destination: ".ssh/#{$USER}"
     mac.vm.provision "shell",
       inline: "chmod 0600 .ssh/#{$USER}",
-      upload_path: "/tmp/vagrant-shell/fix_permissions.sh"
+      upload_path: "/tmp/vagrant-shell/start_sshfs.sh"
   end
+  mac.vm.provision "file",
+    source: "lib/local.sshfs.plist",
+    destination: "/tmp/local.sshfs.plist"
 end
 
-def sshfs_share_folder(box, host_path, guest_path)
-  guest_base = guest_path.split('/').last
+def sshfs_share_folders(box, shares)
+  mount_lines = []
+  shares.each do |share|
+    share.each do |host_path, guest_path|
+      # on VMware, everything works normal
+      box.vm.provider :vmware_desktop do |vmware, box|
+        box.vm.synced_folder host_path, guest_path
+      end
 
-  if host_path == "."
-    host_path = $PWD
+      guest_base = guest_path.split('/').last
+
+      if host_path == "."
+        host_path = $PWD
+      end
+      if $is_windows_host
+        host_path = "/#{host_path}".gsub("\\", "/")
+      end
+
+      sshfs_options = \
+        "reconnect,allow_other,defer_permissions,cache=no," \
+        "IdentityFile=/Users/vagrant/.ssh/#{$USER},StrictHostKeyChecking=no," \
+        "volname=#{guest_base}"
+      mount_lines << "if ! (df #{guest_path} 2>&1 > /dev/null); then"
+      mount_lines << "  /usr/local/bin/sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{guest_path}"
+      mount_lines << "fi"
+    end
   end
-  if $is_windows_host
-    host_path = "/#{host_path}".gsub("\\", "/")
-  end
 
-  mount_point = "/tmp/vagrant-#{guest_base}"
-  upload_path = "/tmp/vagrant-shell/#{guest_base}_mount"
-
-  sshfs_options = \
-    "reconnect,allow_other,defer_permissions,cache=no," \
-    "IdentityFile=~/.ssh/#{$USER},StrictHostKeyChecking=no," \
-    "volname=#{guest_base}"
+  upload_path = "/Users/vagrant/sshfs_mount.sh"
 
   mount_command = {
-    privileged: false,
     name: "sshfs_mount",
-    upload_path: "#{upload_path}.sh",
+    upload_path: "#{upload_path}",
     inline: "
-if ! (which sshfs > /dev/null)
-then
+if [ ! -f /usr/local/bin/sshfs ]; then
+  >&2 echo \"No sshfs, nothing to do\"
   exit 0
 fi
 export HOST_IP=$(echo $SSH_CONNECTION | cut -f 1 -d ' ')
-if [[ ! -d #{mount_point} ]]; then
-  mkdir #{mount_point}
+#{mount_lines.join("\n")}
+if ! (launchctl list | grep \"local.sshfs.plist\" > /dev/null); then
+  echo \"Installing launch agent\"
+  sed -i.bak \"s/\\$SSH_CONNECTION/$SSH_CONNECTION/g\" /tmp/local.sshfs.plist
+  mkdir -p /Library/LaunchAgents > /dev/null
+  mv /tmp/local.sshfs.plist /Library/LaunchAgents/local.sshfs.plist
+  chown root:wheel /Library/LaunchAgents/local.sshfs.plist
+  chmod 644 /Library/LaunchAgents/local.sshfs.plist
+  launchctl load -w /Library/LaunchAgents/local.sshfs.plist
+  if [ $? -gt 0 ]; then
+    >&2 echo \"Error installing launch agent\"
+    cat /tmp/sshfs_mount.err
+  fi
 fi
-if ! (mount | grep #{mount_point} > /dev/null); then
-  echo \"Mounting from '$HOST_IP:#{host_path}' to '#{mount_point}'\"
-  sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{mount_point}
-fi
-if [[ ! -d #{guest_path} ]]; then
-  sudo ln -fs #{mount_point} #{guest_path}
-fi || true
 "
   }
+
   box.vm.provision "shell", mount_command
-  box.trigger.after [:up, :reload] do |trigger|
-    trigger.name = "Mounting shared folder #{host_path}"
-    trigger.run_remote = mount_command
-  end
-end
-
-def share_folder(box, machine, host, guest)
-  if box.vm.guest == :darwin
-    # need to run this ASAP
-    sshfs_share_folder(box, host, guest)
-
-    # on VMware, everything works normal
-    box.vm.provider :vmware_desktop do |vmware, box|
-      box.vm.synced_folder host, guest
-    end
-  else
-    box.vm.synced_folder host, guest
-  end
 end
 
 def share_folders(box, machine, shares)
   shares = Marshal.load(Marshal.dump(shares))
+  exp_shares = []
+  shares.each do |share|
+    if share.nil?
+      next
+    end
+    share.each do |host, guest|
+      host = expand_env(host, nil)
+      if (host == $PWD)
+        host = "." # this prevents duplicate PWD sharing from vagrant
+      end
+      guest = expand_env(guest, box)
+      if guest.nil? || host.nil?
+        puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
+        next
+      end
+      exp_shares << { host => guest }
+    end
+  end
+
   if box.vm.guest == :darwin
     mac_setup_sshfs(box, machine)
+    sshfs_share_folders(box, exp_shares)
+    return
   end
+
   win_links = []
-  shares.each do |share|
-    if !share.nil?
-      share.each do |host, guest|
-        host = expand_env(host, nil)
-        if (host == $PWD)
-          host = "." # this prevents duplicate PWD sharing from vagrant
-        end
-        guest = expand_env(guest, box)
-        if guest.nil? || host.nil?
-          puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
-        else
-          if box.vm.guest == :windows
-            guest = guest.gsub("/", "\\")
-            # on windows, shares become network locations; win_links contains the link
-            # we create to the network location
-            win_guest = guest.gsub(/^\\/, "C:\\")
-            # for the sharing itself, we only care about the basename. We assume they are unique
-            guest = "#{guest.split('\\')[-1]}"
-            win_links << { guest => win_guest }
-            guest = "/#{guest}"
-          end
-          share_folder(box, machine, host, guest)
-        end
+  exp_shares.each do |share|
+    share.each do |host, guest|
+      if box.vm.guest == :windows
+        guest = guest.gsub("/", "\\")
+        # on windows, shares become network locations; win_links contains the link
+        # we create to the network location
+        win_guest = guest.gsub(/^\\/, "C:\\")
+        # for the sharing itself, we only care about the basename. We assume they are unique
+        guest = "#{guest.split('\\')[-1]}"
+        win_links << { guest => win_guest }
+        guest = "/#{guest}"
       end
+      box.vm.synced_folder host, guest
     end
   end
   if box.vm.guest == :windows

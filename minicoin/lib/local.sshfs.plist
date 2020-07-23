@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>AbandonProcessGroup</key>
+		<true/>
+		<key>Label</key>
+		<string>local.sshfs.plist</string>
+		<key>EnvironmentVariables</key>
+    	<dict>
+      		<key>SSH_CONNECTION</key>
+      		<string><![CDATA[$SSH_CONNECTION]]></string>
+    	</dict>
+		<key>ProgramArguments</key>
+		<array>
+			<string>/bin/sh</string>
+			<string>/Users/vagrant/sshfs_mount.sh</string>
+		</array>
+		<key>RunAtLoad</key>
+		<true/>
+		<key>LaunchOnlyOnce</key>
+		<true/>
+		<key>StandardErrorPath</key>
+		<string>/tmp/sshfs_mount.err</string>
+		<key>StandardOutPath</key>
+		<string>/tmp/sshfs_mount.out</string>
+	</dict>
+</plist>
