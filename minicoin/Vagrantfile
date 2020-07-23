@@ -494,6 +494,7 @@ def virtualbox_setup(box, machine)
     modifyvm["--clipboard"] = "bidirectional"
     modifyvm["--vram"] = machine["vram"] unless machine["vram"].nil?
     modifyvm["--nictype1"] = machine["nictype1"] unless machine["nictype1"].nil?
+    modifyvm["--nictype2"] = machine["nictype2"] unless machine["nictype2"].nil?
     modifyvm["--vrde"] = "on" unless machine["rdp_port"].nil?
     modifyvm["--vrdeport"] = machine["rdp_port"] unless machine["rdp_port"].nil?
     modifyvm["--graphicscontroller"] = "vmsvga" unless box.vm.guest == :windows
@@ -833,15 +834,6 @@ Vagrant.configure("2") do |config|
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
 
-      # network setup
-      box.vm.hostname = name
-      private_net = machine["private_net"]
-      if private_net.nil?
-        box.vm.network "private_network", type: "dhcp"
-      elsif private_net != "disabled"
-        box.vm.network "private_network", ip: "#{private_net}"
-      end
-
       ports = machine["ports"]
       if !ports.nil?
         struct_error = true
@@ -918,6 +910,17 @@ Vagrant.configure("2") do |config|
         box.ssh.insert_key = false
       end
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
+
+      # private network setup
+      box.vm.hostname = name
+      private_net = machine["private_net"]
+      if private_net.nil?
+        box.vm.network "private_network", type: "dhcp"
+        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil?
+      elsif private_net != "disabled"
+        box.vm.network "private_network", ip: "#{private_net}"
+        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil?
+      end
 
       # map virtual machine configurations to provider specific settings
       virtualbox_setup(box, machine)
