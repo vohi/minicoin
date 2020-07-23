@@ -79,7 +79,6 @@ machines:
       - msvc2019
     memory: 3072
     cpus: 4
-    screens: 2
     gui: false
 
 ### Mac - nothing provisioned yet
