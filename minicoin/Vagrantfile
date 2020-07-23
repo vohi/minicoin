@@ -19,42 +19,56 @@ end
 $PWD = File.dirname(__FILE__)
 
 def merge_yaml(first, second)
-  if first.nil? && second.nil?
-    nil
-  elsif first.nil? || second.nil? # user can nil defaults
-    second
-  elsif first.is_a?(Hash) && second.is_a?(Hash)
-    first.merge!(second) do |key, one, two|
-      merge_yaml(one, two)
-    end
-  elsif first.is_a?(Array)
-    if second.is_a?(Array)
-      if second[0].nil?
-        second.shift
-        first = second
-      else
-        second.each do |s|
-          first << s
-        end
-        first
-      end
-    else
-      first << second
-    end
-  elsif second.is_a?(Array)
-    if second[0].nil?
-      second.shift
-      if second.length == 1
-        second[0]
-      else
-        second
-      end
-    else
-      second << first
-    end
-  else # single value, second overrides first
-    second
+  if first.nil?
+    return second
   end
+
+  # user can overwrite defaults
+  if second.nil?
+    return nil
+  end
+  if second.is_a?(Array) && second[0].nil?
+    if !first.is_a?(Array) && second.length == 2
+      return second[1]
+    end
+    return second[1..-1]
+  end
+
+  if first.is_a?(Array)
+    if second.is_a?(Array)
+      return first + second
+    end
+    result = first.clone
+    result << second
+    return result
+  end
+
+  if first.is_a?(Hash)
+    if second.is_a?(Array)
+      puts "Can't insert array #{second} into hash #{first}"
+      return first
+    end
+    if second.is_a?(Hash)
+      result = first.clone
+      second.each do |key, value|
+        if result.has_key?(key)
+          if value.nil?
+            result.delete(key)
+          else
+            new_value = merge_yaml(result[key], value)
+            result[key] = new_value
+          end
+        else
+          result[key] = value
+        end
+      end
+      return result;
+    end
+    puts "Can't insert value #{second} into hash #{first}"
+    return first
+  end
+
+  return second
 end
 
 def load_settings(yaml, user_yaml)
@@ -70,6 +84,7 @@ def load_settings(yaml, user_yaml)
   home_share = expand_env(home_share, nil)
   ENV["HOME_SHARE"] = home_share
   $settings["defaults"] = {} if $settings["defaults"].nil?
+  yaml["settings"] = $settings
 end
 
 def load_urls(yaml, user_yaml)
@@ -77,6 +92,7 @@ def load_urls(yaml, user_yaml)
   $urls = yaml["urls"]
   user_urls = user_yaml["urls"] unless user_yaml.nil?
   $urls = merge_yaml($urls, user_urls) unless user_urls.nil?
+  yaml["urls"] = $urls
 end
 
 def load_boxes(yaml, user_yaml)
@@ -86,21 +102,15 @@ def load_boxes(yaml, user_yaml)
   user_machines = [] if user_machines.nil?
   user_machines.each do |user_machine|
     idx = machines.find_index {|m| m["name"] == user_machine["name"] }
-    if !idx.nil?
-      machines[idx].each do |key, value|
-        if !user_machine[key].nil?
-          if machines[idx][key].is_a?(Array)
-            machines[idx][key] += user_machine[key]
-          else
-            machines[idx][key] = user_machine[key]
-          end
-        end
-      end
+    unless idx.nil?
+      new_machine = merge_yaml(machines[idx], user_machine)
+      machines[idx] = new_machine
     else
       machines << user_machine
     end
   end
 
+  yaml["machines"] = machines
   return machines
 end
 
