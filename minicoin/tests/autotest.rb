@@ -120,8 +120,8 @@ class Tester
         "default" => nil,
         "global" => "user",
         "list" => ["user1", "user2"],
+        "home_share" => "$HOME",
         "newvalue" => "local_option",
-        "home_share" => ENV['HOME'],
         "defaults" => {}
         },
       "urls" => {
@@ -189,9 +189,9 @@ class Tester
     user = ENV["USER"]
     test_data = {
       "plain" => [:windows, "foo", "foo"],
-      "$home_win" => [:windows, "$HOME", "\\windows\\host"],
-      "$home_nix" => [:linux, "$HOME", "/linux/host"],
-      "$home_mac" => [:darwin, "$HOME", "/darwin/host"],
+      "$home_win" => [:windows, "$HOME", ENV["HOME"].gsub("/", "\\")],
+      "$home_nix" => [:linux, "$HOME", ENV["HOME"]],
+      "$home_mac" => [:darwin, "$HOME", ENV["HOME"]],
       "$user" => [nil, "$USER", user],
       "$user$user" => [nil, "$USER$USER", "#{user}#{user}"],
       "$$PWD" => [nil, "$$PWD", "$PWD"],
