@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -o pipefail
 
+echo "============================> Testing parse-opts  <============================"
+./parse-opts-test.sh
+
+echo "============================> Testing Vagrantfile <============================"
 ruby autotest.rb
 
+echo "============================> Testing job running <============================"
 machines=( "${@}" )
 if [ $# -eq 0 ]
 then
