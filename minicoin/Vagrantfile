@@ -311,52 +311,53 @@ end
 
 ## Add role as provisioning step for box
 def add_role(box, role, name)
+  if !role.is_a?(Hash)
+    role = { "role" => role }
+  end
   role_params = role
-  if role.is_a?(Hash) # parameterized role
-    role_params["boxname"] = name
-    role, role_name = role.shift
-    if role == "role"
-      role = role_name
-    elsif role_name != nil
-      role_params[role] = role_name
-    end
+  role, role_name = role.shift
+  if role == "role"
+    role = role_name
+  elsif role_name != nil
+    role_params[role] = role_name
+  end
 
-    role_params.each do |key, value|
-      if value.nil?
-        next
+  role_params["boxname"] = name
+  role_params.each do |key, value|
+    if value.nil?
+      next
+    end
+    if value.is_a?(String)
+      new_value = expand_env(value, box)
+      if new_value.nil?
+        puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+        return
       end
-      if value.is_a?(String)
-        new_value = expand_env(value, box)
-        if new_value.nil?
+      role_params[key] = new_value
+    elsif value.is_a?(Array)
+      array = []
+      value.each do |entry|
+        new_entry = expand_env(entry, box)
+        if new_entry.nil?
+          puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
+          return
+        end
+        array << new_entry
+      end
+      role_params[key] = array
+    elsif value.is_a?(Hash)
+      new_hash = {}
+      value.each do |k, v|
+        # left side of key/value pair refers to the host
+        new_key = expand_env(k, nil)
+        new_value = expand_env(v, box)
+        if new_key.nil? || new_value.nil?
           puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
           return
         end
-        role_params[key] = new_value
-      elsif value.is_a?(Array)
-        array = []
-        value.each do |entry|
-          new_entry = expand_env(entry, box)
-          if new_entry.nil?
-            puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
-            return
-          end
-          array << new_entry
-        end
-        role_params[key] = array
-      elsif value.is_a?(Hash)
-        new_hash = {}
-        value.each do |k, v|
-          # left side of key/value pair refers to the host
-          new_key = expand_env(k, nil)
-          new_value = expand_env(v, box)
-          if new_key.nil? || new_value.nil?
-            puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
-            return
-          end
-          new_hash[new_key] = new_value
-        end
-        role_params[key] = new_hash
+        new_hash[new_key] = new_value
       end
+      role_params[key] = new_hash
     end
   end
 
@@ -417,7 +418,7 @@ def add_role(box, role, name)
   script_ext = ".sh"
   arg_marker = "--"
   combine_array = false
-  script_args = [role, $USER]
+  script_args = [role, name, $USER]
   upload_path = "/tmp/vagrant-shell/"
   if box.vm.guest == :windows
     script_ext = ".cmd"
