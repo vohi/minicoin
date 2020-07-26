@@ -32,17 +32,11 @@ def mutagen_provision(box, role_params)
     end
     role_params["alpha"] = alphas
     role_params["beta"] = betas
-    if box.vm.guest == :windows
-        if ["up", "provision", "reload"].include? ARGV[0]
-            box.vm.provision "file", source: "/tmp/mutagen.tar.gz", destination: "C:\\tmp\\mutagen.tar.gz"
-            role_params["mutagen_install"] = "C:\\tmp\\mutagen.tar.gz"
-        end
-    end
 
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
     authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
-    box.trigger.before [:up] do |trigger|
+    box.trigger.before [:up, :provision] do |trigger|
         trigger.name = "Generating mutagen key pair and authorizing guest"
         trigger.ruby do |e,m|
             if !File.file?(key_file)
