@@ -314,27 +314,24 @@ function run_on_machine() {
       run_pid=$!
       if [[ $parallel == "false" ]]
       then
+        [ -f "${run_file}.out" ] || touch "${run_file}.out"
+        [ -f "${run_file}.err" ] || touch "${run_file}.err"
         while kill -0 $run_pid 2> /dev/null
         do
-          if [ -f "${run_file}.out" ]
-          then
-            log_progress "==> $machine: waiting for process to finish"
-            >&1 tail -n +0 -f ${run_file}.out & out_pid=$!
-            >&2 tail -n +0 -f ${run_file}.err & err_pid=$!
-            trap trap_handler EXIT
-            while kill -0 $run_pid 2> /dev/null
-            do
-              sleep 1
-              kill -0 $out_pid 2>/dev/null || { out_pid=; break; }
-              kill -0 $err_pid 2>/dev/null || { err_pid=; break; }
-            done
-            log_progress "==> $machine: process finished"
-            { kill $out_pid && wait $out_pid; } 2>/dev/null
-            { kill $err_pid && wait $err_pid; } 2>/dev/null
-            clean_log out err status
-          else
+          log_progress "==> $machine: waiting for process to finish"
+          >&1 tail -n +0 -f ${run_file}.out & out_pid=$!
+          >&2 tail -n +0 -f ${run_file}.err & err_pid=$!
+          trap trap_handler EXIT
+          while kill -0 $run_pid 2> /dev/null
+          do
             sleep 1
-          fi
+            kill -0 $out_pid 2>/dev/null || { out_pid=; break; }
+            kill -0 $err_pid 2>/dev/null || { err_pid=; break; }
+          done
+          log_progress "==> $machine: process finished"
+          { kill $out_pid && wait $out_pid; } 2>/dev/null
+          { kill $err_pid && wait $err_pid; } 2>/dev/null
+          clean_log out err status
         done
       fi
       wait $run_pid
