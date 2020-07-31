@@ -118,9 +118,8 @@ def sshfs_share_folders(box, shares)
             "reconnect,allow_other,defer_permissions,cache=no," \
             "IdentityFile=/Users/vagrant/.ssh/#{$USER},StrictHostKeyChecking=no," \
             "volname=#{guest_base}"
-            mount_lines << "if ! (df #{guest_path} 2>&1 > /dev/null); then"
-            mount_lines << "  /usr/local/bin/sshfs -o #{sshfs_options} #{$USER}@$HOST_IP:#{host_path} #{guest_path}"
-            mount_lines << "fi"
+            mount_lines << "[ -d #{guest_path} ] || mkdir -p '#{guest_path}'"
+            mount_lines << "df #{guest_path} 2> /dev/null | grep $HOST_IP > /dev/null || /usr/local/bin/sshfs -o #{sshfs_options} #{$USER}@${HOST_IP}:#{host_path} #{guest_path}"
         end
     end
     
