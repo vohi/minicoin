@@ -82,17 +82,18 @@ for %%T in ( %generate_toollink% ) do (
     set linkname=!build!
   )
   set toolname=!tool!!linkname!
-  if exist %USERPROFILE%\!toolname!.bat (
-    del %USERPROFILE%\!toolname!.bat
+  if exist %USERPROFILE%\bin\!toolname!.bat (
+    del %USERPROFILE%\bin\!toolname!.bat
   )
-  if exist %USERPROFILE%\!tool!.bat (
-    del %USERPROFILE%\!tool!.bat
+  if exist %USERPROFILE%\bin\!tool!.bat (
+    del %USERPROFILE%\bin\!tool!.bat
   )
 
-  echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\!toolname!.bat
-  echo %CD%\bin\!tool! %%* >> %USERPROFILE%\!toolname!.bat
+  echo @echo off >> %USERPOFILE%\bin\!toolname!.bat
+  echo SET PATH=%CD%\bin;%%PATH%% >> %USERPROFILE%\bin\!toolname!.bat
+  echo %CD%\bin\!tool! %%* >> %USERPROFILE%\bin\!toolname!.bat
   del %USERPROFILE%\bin\!tool!.bat
-  mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\!toolname!.bat
+  mklink %USERPROFILE%\bin\!tool!.bat %USERPROFILE%\bin\!toolname!.bat
 )
 
 if exist build.ninja (
