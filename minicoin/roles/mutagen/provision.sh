@@ -1,5 +1,16 @@
 . /minicoin/util/parse-opts.sh "$@"
 
+if [ "$PARAM_reverse" == "true" ]
+then
+    for ((i=0;i<${#PARAM_alpha[@]};++i))
+    do
+        beta=${PARAM_beta[i]}
+        beta=${beta/\~/\/home/vagrant}
+        sudo -H -u vagrant mkdir -p $beta
+    done
+    exit 0
+fi
+
 platform=$(uname)
 if [[ $(uname) =~ "Darwin" ]]
 then

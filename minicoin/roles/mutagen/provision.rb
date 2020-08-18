@@ -33,6 +33,17 @@ def mutagen_provision(box, role_params)
     role_params["alpha"] = alphas
     role_params["beta"] = betas
 
+    if role_params["reverse"] == true
+        sync = 0
+        alphas.each do |alpha|
+            beta = betas[sync]
+            box.vm.provision "mutagen_#{sync}", type: :local_command,
+                commands: [ "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{box.vm.hostname}:#{beta}" ]
+            sync += 1
+        end
+        return
+    end
+
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
     authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
