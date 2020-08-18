@@ -251,7 +251,7 @@ def add_role(box, role, name)
                         if value.is_a?(Hash)
                             value = value.to_json;
                         end
-                        script_args << value unless value.nil?
+                        script_args << "#{value}" unless value.nil?
                     end
                 end
             end
