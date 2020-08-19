@@ -14,6 +14,7 @@ require_relative "lib/roles.rb"
 require_relative "lib/sharing.rb"
 require_relative "lib/virtualbox.rb"
 require_relative "lib/vmware_desktop.rb"
+require_relative "lib/azure.rb"
 
 $is_windows_host = !(ENV["windir"].nil?)
 $has_winrm = false
@@ -171,6 +172,7 @@ Vagrant.configure("2") do |config|
       # map virtual machine configurations to provider specific settings
       virtualbox_setup(box, machine)
       vmware_setup(box, machine)
+      azure_setup(box, machine)
 
       # folder sharing, taking guest OS and provider specific quirks into account
       default_shares = $settings["defaults"]["shared_folders"]
