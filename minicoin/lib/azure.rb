@@ -48,7 +48,10 @@ def azure_setup(box, machine)
     # enable mutagen syncing
     box.vm.provision "azure",
         type: "shell",
-        inline: "[ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin",
+        inline: "
+            echo \"127.0.0.1 #{name}\" >> /etc/hosts
+            [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
+        ",
         upload_path: "/tmp/vagrant-shell/azure.sh"
 
     box.vm.provision "mutagen_init", type: :local_command,
