@@ -85,15 +85,15 @@ def mac_setup_sshfs(mac, machine)
     # upload the private key to the guest
     if File.exist?(key_filename)
         mac.vm.provision "file",
-        source: key_filename,
-        destination: ".ssh/#{$USER}"
+            source: key_filename,
+            destination: ".ssh/#{$USER}"
         mac.vm.provision "shell",
-        inline: "chmod 0600 .ssh/#{$USER}",
-        upload_path: "/tmp/vagrant-shell/start_sshfs.sh"
+            inline: "chmod 0600 .ssh/#{$USER}",
+            upload_path: "/tmp/vagrant-shell/start_sshfs.sh"
     end
     mac.vm.provision "file",
-    source: "lib/local.sshfs.plist",
-    destination: "/tmp/local.sshfs.plist"
+        source: "lib/local.sshfs.plist",
+        destination: "/tmp/local.sshfs.plist"
 end
 
 def sshfs_share_folders(box, shares)

@@ -195,8 +195,8 @@ def add_role(box, role, name)
             end
         end
         box.vm.provision "file",
-        source: "#{role_path}/Dockerfile",
-        destination: "#{role}/Dockerfile"
+            source: "#{role_path}/Dockerfile",
+            destination: "#{role}/Dockerfile"
         box.vm.provision "docker" do |docker|
             docker.build_image "#{role}", args: docker_args
         end
@@ -257,9 +257,9 @@ def add_role(box, role, name)
             end
         end
         box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
-        args: script_args,
-        upload_path: upload_path,
-        privileged: true
+            args: script_args,
+            upload_path: upload_path,
+            privileged: true
     end
     
     if ! activity
