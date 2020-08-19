@@ -75,8 +75,8 @@ mkdir -p /tmp
 cd /tmp
 
 # install latest cmake
-cmake_version=3.17
-cmake_build=3
+cmake_version=3.18
+cmake_build=1
 echo "Installing cmake $cmake_version.$cmake_build"
 if [[ -z $(cmake --version | grep "cmake version $cmake_version.$cmake_build") ]]
 then
@@ -84,14 +84,9 @@ then
   if [ $? -gt 0 ]
   then
       echo "... Downloading cmake $cmake_version"
-      wget -q https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$cmake_build.tar.gz  2>&1 > /dev/null
-      tar -xzvf cmake-$cmake_version.$cmake_build.tar.gz  2>&1 > /dev/null
-      cd cmake-$cmake_version.$cmake_build/
-      ./bootstrap > /dev/null
-      echo "... Building cmake"
-      make -j$(nproc)  > /dev/null
+      wget -q https://cmake.org/files/v$cmake_version/cmake-${cmake_version}.${cmake_build}-Linux-x86_64.sh 2>&1 > /dev/null
       echo "... Installing cmake"
-      sudo make install  > /dev/null
+      /bin/sh ./cmake-${cmake_version}.${cmake_build}-Linux-x86_64.sh --skip-license --prefix=/usr/local
   fi
 fi
 
