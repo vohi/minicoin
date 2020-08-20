@@ -61,8 +61,13 @@ Vagrant.configure("2") do |config|
         box.vm.provider machine["provider"]
       end
   
-      is_windows = (name.include? "windows") || (machine_box.include? "windows")
-      is_mac = (name.include? "mac") || (machine_box.include? "mac")
+      if machine["os"].nil?
+        is_windows = ((name =~ /windows/i) || (machine_box =~ /windows/i)) != nil
+        is_mac = ((name =~ /mac/i) || (machine_box =~ /mac/i)) != nil
+      else
+        is_windows = (machine["os"] =~ /windows/i) != nil
+        is_mac = (machine['os'] =~ /macos/i) != nil
+      end
 
       sources = $urls[machine_box.split(/\//).first]
       unless sources.nil?
@@ -114,6 +119,7 @@ Vagrant.configure("2") do |config|
 
       # Platform specific configurations
       if is_windows
+        machine["os"] = "windows"
         box.vm.guest = :windows
         ENV["GUEST_HOMES"] = "Users"
 
@@ -136,13 +142,18 @@ Vagrant.configure("2") do |config|
           box.vm.communicator = :winssh
         end
       elsif is_mac
+        machine["os"] = "macos"
         box.vm.guest = :darwin
         ENV["GUEST_HOMES"] = "Users"
 
         # "Intel Pro/1000 MT Server" must be used on Mac
         machine["nictype1"] = "82545EM"
       else
-        box.vm.guest = machine["guest"] unless machine["guest"].nil?
+        if machine["os"].nil?
+          machine["os"] = "linux"
+        else
+          box.vm.guest = machine["os"]
+        end
         ENV["GUEST_HOMES"] = "home"
         # rely on defaults and vagrant autodetection for nix'es
       end

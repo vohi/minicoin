@@ -231,6 +231,8 @@ The following parameters are available:
 
     communicator: optional # the communicator vagrant should use
     shared_folders: optional # set to "disabled" to turn folder sharing off
+    os: optional # 'windows' or 'mac', overrides auto detection
+    provider: optional # specify which provider should always be used to run this box
 ```
 
 There is only one `Vagrantfile` which contains the vagrant configuration
@@ -520,7 +522,8 @@ the host's perspective, there are some guest-system specific requirements:
 ## Windows
 
 A guest is identified as running Windows when either the name of the machine,
-or the name of the box includes the string "windows".
+or the name of the box includes the string "windows", or when the "os" attribute
+is set to "windows".
 
 Windows machines support WinRM and ssh, but only WinRM works reliably for
 provisioning. To be able to talk WinRM via Vagrant, install the ruby gem
@@ -531,7 +534,8 @@ on the host:
 ## Mac
 
 A guest is identified as running macOS when either the name of the machine,
-or the name of the box includes the string "mac".
+or the name of the box includes the string "mac", or when the "os" attribute
+is set to "macos".
 
 Since VirtualBox doesn't provide guest additions for Mac systems, minicoin is
 using sshfs for file sharing between the guest and the host. For this to work,
