@@ -129,7 +129,7 @@ Vagrant.configure("2") do |config|
         # Test if winrm is available
         begin
           $has_winrm = require 'winrm' unless $has_winrm
-        rescue LoadError
+        rescue => e
           puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
           puts "    #{name}: Shared folder support and file provisioning might fail"
         end
@@ -181,9 +181,14 @@ Vagrant.configure("2") do |config|
       end
 
       # map virtual machine configurations to provider specific settings
-      virtualbox_setup(box, machine)
-      vmware_setup(box, machine)
-      azure_setup(box, machine)
+      begin
+        virtualbox_setup(box, machine)
+        vmware_setup(box, machine)
+        azure_setup(box, machine)
+      rescue => e
+        puts "==> #{name}: Error initializing provider specific settings:"
+        puts "             #{e}"
+      end
 
       # folder sharing, taking guest OS and provider specific quirks into account
       default_shares = $settings["defaults"]["shared_folders"]
@@ -209,7 +214,12 @@ Vagrant.configure("2") do |config|
       roles = Marshal.load(Marshal.dump(default_roles))
       roles.concat(machine_roles)
       roles.each do |role|
-        add_role(box, role, name) unless role.nil?
+        begin
+          add_role(box, role, name) unless role.nil?
+        rescue => e
+          puts "==> #{name}: Error when adding role #{role}:"
+          puts "             #{e}"
+        end
       end
     end
   end

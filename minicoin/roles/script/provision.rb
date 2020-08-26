@@ -1,7 +1,7 @@
 def script_provision(box, args)
     script = args["script"]
     if !script.is_a?(String)
-        throw "Argument error: expecting a 'script' string"
+        raise "Argument error: expecting a 'script' string"
     end
     upload_path = "/tmp/vagrant-shell/script_provisioning.sh"
     if box.vm.guest == :windows

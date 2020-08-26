@@ -27,7 +27,7 @@ def mutagen_provision(box, role_params)
                 betas << beta
             end
         else
-            throw "Argument error: expecting 'paths' to be a list of strings or hashes from source to destination"
+            raise "Argument error: expecting 'paths' to be a list of strings or hashes from source to destination"
         end
     end
     role_params["alpha"] = alphas

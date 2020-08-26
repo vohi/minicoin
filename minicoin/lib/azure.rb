@@ -11,17 +11,16 @@ def azure_setup(box, machine)
 
     stdout, stderr, status = Open3.capture3('az account show')
     if status != 0
-        throw "Failed to get azure account information"
+        raise "Failed to get azure account information"
     end
     azureProfile = JSON.parse(stdout)
     stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
     if status != 0
-        puts "Creating new credentials"
         stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
         stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
     end
     if status != 0
-        throw "Failed to Generate azure account credentials"
+        raise "Failed to generate azure account credentials"
     end
     credentials = JSON.parse(stdout)
 
