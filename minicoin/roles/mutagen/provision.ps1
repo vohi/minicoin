@@ -1,4 +1,5 @@
 param(
+    [string]$reverse,
     [string]$role,
     [string]$boxname,
     [string]$user,
@@ -54,10 +55,15 @@ function Mount-Paths {
         if ($Alphas.count -ne $Betas.count) {
             throw "Alphas and Betas need to have the same number of entries!"
         }
-        ssh-keyscan $mutagen_host_ip >> c:\Users\vagrant\.ssh\known_hosts
+        if ($reverse -eq "true") {
+        } else {
+            ssh-keyscan $mutagen_host_ip >> c:\Users\vagrant\.ssh\known_hosts
+        }
     }
     process{
-        c:\mutagen\mutagen sync terminate minicoin | Out-Null
+        if (!($reverse -eq "true")) {
+            c:\mutagen\mutagen sync terminate minicoin | Out-Null
+        }
         for ($i = 0; $i -lt $Alphas.count; $i++) {
             $a = $Alphas[$i]
             $b = $Betas[$i]
@@ -65,14 +71,20 @@ function Mount-Paths {
             if (!(Test-Path $b)) {
                 New-Item -ItemType Directory -Force -Path $b | Out-Null
             }
-            echo yes | c:\mutagen\mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin ${user}@${mutagen_host_ip}:$a $b
+            if (!($reverse -eq "true")) {
+                echo yes | c:\mutagen\mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin ${user}@${mutagen_host_ip}:$a $b
+            }
         }
     }
     end {
-        Write-Host "Established mutagen sync points:"
-        c:\mutagen\mutagen sync list
+        if (!($reverse -eq "true")) {
+            Write-Host "Established mutagen sync points:"
+            c:\mutagen\mutagen sync list
+        }
     }
 }
 
-Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.5"
+if (!($reverse -eq "true")) {
+    Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.5"
+}
 Mount-Paths -Alphas $alpha.split(",") -Betas $beta.split(",")

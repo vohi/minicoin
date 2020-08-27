@@ -1,4 +1,5 @@
 require 'socket'
+require 'open3'
 
 def mutagen_provision(box, role_params)
     address = Socket.ip_address_list.detect{|intf| intf.ipv4_private? }
@@ -15,14 +16,22 @@ def mutagen_provision(box, role_params)
             alphas << path
             beta = path
             if box.vm.guest == :windows
-                beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                if role_params["reverse"] == true
+                    beta = beta.gsub("~", "/Users/vagrant")
+                else
+                    beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                end
             end
             betas << beta
         elsif path.is_a?(Hash)
             path.each do |alpha, beta|
                 alphas << alpha
                 if box.vm.guest == :windows
-                    beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                    if role_params["reverse"] == true
+                        beta = beta.gsub("~", "/Users/vagrant")
+                    else    
+                        beta = beta.gsub("/", "\\").gsub("~", "C:\\Users\\vagrant")
+                    end
                 end
                 betas << beta
             end
@@ -34,6 +43,27 @@ def mutagen_provision(box, role_params)
     role_params["beta"] = betas
 
     if role_params["reverse"] == true
+        box.vm.provision "mutagen_init", type: :local_command,
+            commands: [
+                "ssh-keyscan #{box.vm.hostname} >> ~/.ssh/known_hosts",
+            ]
+
+        box.trigger.before :destroy do |trigger|
+            hostip, stderr, status = Open3.capture3("dig #{box.vm.hostname} +short")
+            trigger.name = "Removing #{box.vm.hostname} from list of known hosts"
+            known_hosts = "#{$HOME}/.ssh/known_hosts"
+            trigger.ruby do |env, machine|
+                stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
+                File.open("#{known_hosts}.new", 'w') do |out|
+                    out.chmod(File.stat(known_hosts).mode)
+                    File.foreach(known_hosts) do |line|
+                        out.puts line unless line =~ /#{box.vm.hostname}/ || line =~ /#{hostip}/
+                    end
+                end
+                File.rename("#{known_hosts}.new", known_hosts)
+            end
+        end
+
         sync = 0
         alphas.each do |alpha|
             beta = betas[sync]
