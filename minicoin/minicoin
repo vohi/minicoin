@@ -41,6 +41,10 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_ls
     min_args=1
     shift
+  elif [ $1 == "cmd" ]; then
+    minicoin_command=minicoin_cmd
+    min_args=1
+    shift
   fi
 
   if [[ $minicoin_command == "" ]]; then
@@ -146,14 +150,42 @@ function minicoin_ls()
   fi
   for machine in ${machines[@]}; do
     echo "==> $machine:"
-    if [[ "$machine" =~ windows ]]; then
+    if $(vagrant winrm $machine < /dev/null &> /dev/null)
+    then
       run vagrant winrm -c "cd \$Env:USERPROFILE; cmd /c dir$args" $machine
+      error=$?
     else
       run vagrant ssh -c "ls -l$args" $machine
+      error=$?
+    fi
+    if [ $error -gt 0 ]; then
+      return $error
     fi
   done
-  error=$?
-  return $error
+  return 0
+}
+
+function minicoin_cmd()
+{
+  args=
+  if [[ ! ${script_args[@]} == "" ]]; then
+    args="${script_args[@]}"
+  fi
+  for machine in ${machines[@]}; do
+    echo "==> $machine:"
+    if $(vagrant winrm $machine < /dev/null &> /dev/null)
+    then
+      run vagrant winrm -c "cd \$Env:USERPROFILE; $args" $machine
+      error=$?
+    else
+      run vagrant ssh -c "$args" $machine
+      error=$?
+    fi
+    if [ $error -gt 0 ]; then
+      echo "==> $machine: Error executing command '$args' on $machine"
+    fi
+  done
+  return 0
 }
 
 $minicoin_command
