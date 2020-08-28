@@ -2,12 +2,15 @@ $packages = ( "visualstudio2019buildtools",
               "visualstudio2019-workload-vctools")
 
 winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2147483647"}
-cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 
-.\chocolatey feature enable -n=allowGlobalConfirmation
-ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
+chocolatey feature enable -n=allowGlobalConfirmation
+ForEach ( $p in $packages ) {
+  write-host "Installing package $p"
+  choco install -y --timeout 240 --no-progress $p
+  write-host "Finished Installing package $p"
+}
 
-.\chocolatey feature disable -n=allowGlobalConfirmation
+chocolatey feature disable -n=allowGlobalConfirmation
 
 write-host "Updating Environment"
 refreshenv
