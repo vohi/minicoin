@@ -53,7 +53,7 @@ $packages = ( "notepadplusplus", "git", "pstools",
               "cmake", "ninja" )
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
-ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
+ForEach ( $p in $packages ) { .\choco install --no-progress -y --timeout 240 $p }
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
 psexec -nobanner -accepteula | Out-Null
