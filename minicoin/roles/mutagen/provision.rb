@@ -43,11 +43,6 @@ def mutagen_provision(box, role_params)
     role_params["beta"] = betas
 
     if role_params["reverse"] == true
-        box.vm.provision "mutagen_init", type: :local_command,
-            commands: [
-                "ssh-keyscan #{box.vm.hostname} >> ~/.ssh/known_hosts",
-            ]
-
         box.trigger.before :destroy do |trigger|
             hostip, stderr, status = Open3.capture3("dig #{box.vm.hostname} +short")
             trigger.name = "Removing #{box.vm.hostname} from list of known hosts"
@@ -68,7 +63,7 @@ def mutagen_provision(box, role_params)
         alphas.each do |alpha|
             beta = betas[sync]
             box.vm.provision "mutagen_#{sync}", type: :local_command,
-                commands: [ "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{box.vm.hostname}:#{beta}" ]
+                commands: [ "echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@{BOX_IP}:#{beta}" ]
             sync += 1
         end
         return
