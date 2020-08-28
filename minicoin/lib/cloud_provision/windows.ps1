@@ -9,8 +9,6 @@ if (!($env:ChocolateyInstall)) {
     choco upgrade chocolatey
 }
 
-$oldpath = [Environment]::GetEnvironmentVariable("PATH",[System.EnvironmentVariableTarget]::Machine)
-
 cd $env:ChocolateyInstall\bin
 chocolatey feature enable -n=allowGlobalConfirmation
 
