@@ -39,6 +39,10 @@ def azure_setup(box, machine)
 
         if machine["box"].start_with?("/subscriptions/")
             azure.vm_managed_image_id = machine["box"]
+        elsif machine["box"].end_with?(".vhd")
+            azure.vm_vhd_uri = machine["box"]
+            azure.vm_operating_system = machine["os"]
+            # azure.vm_vhd_storage_account_id =
         else
             azure.vm_image_urn = machine["box"]
         end
@@ -48,16 +52,17 @@ def azure_setup(box, machine)
         azure.client_id = credentials["appId"]
         azure.client_secret = pwd
 
-        azure.vm_name = name
         azure.vm_image_urn = machine["box"]
         azure.admin_username = "vagrant"
         azure.location = location
         azure.instance_ready_timeout = 3600
+        # setting the name can easily cause conflicts, and makes the vagrant box name subject to restrictions
+        # azure.vm_name = name
+        # all machines in the same resource_group_name will be destroyed when one of them is
         # azure.resource_group_name = "minicoin_#{name}"
+
         # azure.vm_password =
         # azure.vm_size =
-        # azure.vm_vhd_uri =
-        # azure.vm_managed_image_id =
         azure.wait_for_destroy = true
     end
 
