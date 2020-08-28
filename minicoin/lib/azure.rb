@@ -27,7 +27,22 @@ def azure_setup(box, machine)
     box.vm.provider :azure do |azure, override|
         override.ssh.private_key_path = "~/.ssh/id_rsa"
         override.vm.box = "azure"
-    
+        override.vm.box_url = "https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box"
+
+        if machine["os"] == "windows"
+            # open up for ssh, winrm, and rdp
+            azure.tcp_endpoints = [ '22', '5985', '5986', '3389' ]
+            override.winrm.transport = :negotiate
+            override.winrm.basic_auth_only = false
+            override.winssh.private_key_path = "~/.ssh/id_rsa"
+        end
+
+        if machine["box"].start_with?("/subscriptions/")
+            azure.vm_managed_image_id = machine["box"]
+        else
+            azure.vm_image_urn = machine["box"]
+        end
+
         azure.tenant_id = azureProfile["tenantId"]
         azure.subscription_id = azureProfile["id"]
         azure.client_id = credentials["appId"]
@@ -36,42 +51,38 @@ def azure_setup(box, machine)
         azure.vm_name = name
         azure.vm_image_urn = machine["box"]
         azure.admin_username = "vagrant"
-        # azure.vm_password
-        # azure.resource_group_name = "minicoin_#{name}"
         azure.location = location
+        azure.instance_ready_timeout = 3600
+        # azure.resource_group_name = "minicoin_#{name}"
+        # azure.vm_password =
         # azure.vm_size =
         # azure.vm_vhd_uri =
         # azure.vm_managed_image_id =
+        azure.wait_for_destroy = true
     end
 
-    # enable mutagen syncing
-    box.vm.provision "azure",
-        type: "shell",
-        inline: "
-            echo \"127.0.0.1 #{name}\" >> /etc/hosts
-            [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
-        ",
-        upload_path: "/tmp/vagrant-shell/azure.sh"
-
-    box.vm.provision "mutagen_init", type: :local_command,
-        commands: [
-            "ssh-keyscan #{box.vm.hostname} >> ~/.ssh/known_hosts",
-            "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{$PWD} vagrant@#{box.vm.hostname}:/minicoin"
-        ]
-
-    box.trigger.before :destroy do |trigger|
-        hostip, stderr, status = Open3.capture3("dig #{box.vm.hostname} +short")
-        trigger.name = "Removing #{box.vm.hostname} from list of known hosts"
-        known_hosts = "#{$HOME}/.ssh/known_hosts"
-        trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
-            File.open("#{known_hosts}.new", 'w') do |out|
-                out.chmod(File.stat(known_hosts).mode)
-                File.foreach(known_hosts) do |line|
-                    out.puts line unless line =~ /#{box.vm.hostname}/ || line =~ /#{hostip}/
-                end
-            end
-            File.rename("#{known_hosts}.new", known_hosts)
-        end
+    if machine["os"] == "windows"
+        box.vm.provision "openssh_key",
+            type: :file,
+            source: "~/.ssh/id_rsa.pub", destination: "c:\\programdata\\ssh\\administrators_authorized_keys"
+        box.vm.provision "minicoin_init",
+            type: :file,
+            source: "./util", destination: "c:\\minicoin\\util"
+        box.vm.provision "windows_init",
+            type: :shell,
+            path: "./lib/cloud_provision/windows.ps1",
+            upload_path: "c:\\windows\\temp\\windows_init.ps1",
+            privileged: true
+    else
+        box.vm.provision "azure_init",
+            type: :shell,
+            inline: "
+                echo \"127.0.0.1 #{name}\" >> /etc/hosts
+                [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
+            ",
+            upload_path: "/tmp/vagrant-shell/azure_init.sh"
+        box.vm.provision "minicoin_init",
+            type: :file,
+            source: "./util", destination: "/minicoin/util"
     end
 end
