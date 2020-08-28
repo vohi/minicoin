@@ -44,15 +44,15 @@ def mutagen_provision(box, role_params)
 
     if role_params["reverse"] == true
         box.trigger.before :destroy do |trigger|
-            hostip, stderr, status = Open3.capture3("dig #{box.vm.hostname} +short")
-            trigger.name = "Removing #{box.vm.hostname} from list of known hosts"
-            known_hosts = "#{$HOME}/.ssh/known_hosts"
+            trigger.name = "Shutting down mutagen sync to #{name} and removing from known hosts"
             trigger.ruby do |env, machine|
+                known_hosts = "#{$HOME}/.ssh/known_hosts"
                 stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
+                ssh_info = machine.ssh_info
                 File.open("#{known_hosts}.new", 'w') do |out|
                     out.chmod(File.stat(known_hosts).mode)
                     File.foreach(known_hosts) do |line|
-                        out.puts line unless line =~ /#{box.vm.hostname}/ || line =~ /#{hostip}/
+                        out.puts line unless line.start_with?(ssh_info[:host])
                     end
                 end
                 File.rename("#{known_hosts}.new", known_hosts)

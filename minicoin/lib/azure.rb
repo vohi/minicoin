@@ -7,7 +7,6 @@ def azure_setup(box, machine)
     name = machine["name"]
     location = "northeurope"
     pwd = ENV['minicoin_key']
-    box.vm.hostname = "#{name}.#{location}.cloudapp.azure.com"
 
     stdout, stderr, status = Open3.capture3('az account show')
     if status != 0
