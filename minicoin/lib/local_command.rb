@@ -1,8 +1,6 @@
-require 'open3'
-
 module LocalCommand
     class Config < Vagrant.plugin("2", :config)
-        attr_accessor :commands
+        attr_accessor :code
     end
 
     class Plugin < Vagrant.plugin("2")
@@ -19,19 +17,10 @@ module LocalCommand
 
     class Provisioner < Vagrant.plugin("2", :provisioner)
         def provision
-            ssh_info = @machine.ssh_info
-            commands = config.commands
-            if commands.nil?
-                if config.command.is_a?(Array)
-                    commands = config.command
-                else
-                    commands = [config.command]
-                end
-            end
-            commands.each do |command|
-                command = command.gsub("{BOX_IP}", ssh_info[:host])
-                stdout, stderr, status = Open3.capture3(command)
-                throw stderr if status != 0
+            if config.code.is_a?(Proc)
+                config.code.call(@machine)
+            else
+                raise "'code' need to be a proc or lambda"
             end
         end
     end

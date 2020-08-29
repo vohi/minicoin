@@ -62,8 +62,15 @@ def mutagen_provision(box, role_params)
         sync = 0
         alphas.each do |alpha|
             beta = betas[sync]
+            mutagen_create = lambda do |machine|
+                stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{machine.ssh_info[:host]}:#{beta}")
+                if status != 0
+                    raise "Error setting up mutagen synch:\n"
+                          "    Message: #{stderr}"
+                end
+            end
             box.vm.provision "mutagen_#{sync}", type: :local_command,
-                commands: [ "echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@{BOX_IP}:#{beta}" ]
+                code: mutagen_create
             sync += 1
         end
         return
