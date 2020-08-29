@@ -110,6 +110,29 @@ def insert_disk(box, disk_filename, role_params)
     return true
 end
 
+def read_process(cmd, ui)
+    Open3.popen3(cmd) do |stdin, stdout, stderr, thread|
+        begin
+            while true do
+                ready = IO.select([stdout, stderr], nil, nil, 0)
+                unless ready.nil?
+                    ready[0].each do |io|
+                        line = io.read_nonblock(256)
+                        ui.success(line.chomp) if io == stdout
+                        ui.error(line.chomp) if io == stderr
+                    end
+                end
+                IO.select([stdout, stderr])
+            end
+        rescue EOFError
+            # EOF, process finished
+        end
+        if thread.value != 0
+            raise "Error (#{thread.value}) from process"
+        end
+    end
+end
+
 ## Add role as provisioning step for box
 def add_role(box, role, name)
     if !role.is_a?(Hash)
@@ -168,6 +191,17 @@ def add_role(box, role, name)
         role_path = "#{$PWD}/roles/#{role}"
     end
     activity = false
+
+    # check for pre--provisioning script to run locally
+    if File.file?("#{role_path}/pre-provision.sh")
+        pre_provision = lambda do |machine|
+            read_process("#{role_path}/pre-provision.sh #{name}", machine.ui)
+        end
+        box.vm.provision "Pre-provisiong for #{role}",
+            type: :local_command,
+            code: pre_provision
+    end
+
     if File.file?("#{role_path}/playbook.yml")
         box.vm.provision "ansible" do |ansible|
             ansible.playbook = "#{role_path}/playbook.yml"
@@ -262,28 +296,16 @@ def add_role(box, role, name)
             privileged: true
     end
     
+    # check for post--provisioning script to run locally
+    if File.file?("#{role_path}/post-provision.sh")
+        post_provision = lambda do |machine|
+            read_process("#{role_path}/post-provision.sh #{name}", machine.ui)
+        end
+        box.vm.provision "Post-provisiong for #{role}",
+            type: :local_command,
+            code: post_provision
+    end
     if ! activity
         puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!"
-    else
-        # check for pre-/post-provisioning script to run locally
-        if File.file?("#{role_path}/pre-provision.sh")
-            box.trigger.before [:up, :provision] do |trigger|
-                trigger.name = "before #{role}"
-                trigger.run = {
-                    path: "#{role_path}/pre-provision.sh",
-                    args: name
-                }
-            end
-        end
-    
-        if File.file?("#{role_path}/post-provision.sh")
-            box.trigger.after [:up, :provision] do |trigger|
-                trigger.name = "after #{role}"
-                trigger.run = {
-                    path: "#{role_path}/post-provision.sh",
-                    args: name
-                }
-            end
-        end
     end
 end
