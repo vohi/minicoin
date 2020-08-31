@@ -226,18 +226,9 @@ function run_on_machine() {
     fi
   fi
   
-  local psexec_session="0"
   if $(vagrant winrm $machine < /dev/null &> /dev/null)
   then
     ext="cmd"
-    local session_info=$(vagrant winrm -c "query user vagrant 2> \$null" $machine | grep Active | awk '{print $3}') > /dev/null
-    if [ -z $session_info ]
-    then
-      log_progress "==> $machine: User 'vagrant' not logged in, can't run UI programs"
-    else
-      psexec_session=$session_info
-    fi
-    log_progress "==> $machine: Testing for interactive session, got $psexec_session"
   else
     ext="sh"
   fi
@@ -297,90 +288,45 @@ function run_on_machine() {
   run="true"
   mkdir .logs 2> /dev/null
   echo $$ > "$continuous_file.pid"
-  if [[ $ext == "cmd" ]]; then
+  command=""
+  communicator="ssh"
+  cleanup_command="rm -rf"
+  if [[ $ext == "cmd" ]];
+  then
+    command="c:\\minicoin\\util\\run_helper.ps1 Documents\\"
+    cleanup_command="Remove-Item -Recurse -Force"
+    communicator="winrm"
     scriptfile=${scriptfile//\//\\}
-    command="Documents\\$scriptfile"
+  fi
+  command="${command}${scriptfile} ${job_args[@]}"
+  cleanup_command="${cleanup_command} ${job}"
 
-    runner="psexec -i $psexec_session -u vagrant -p vagrant -nobanner -w c:\\users\\vagrant cmd /c"
-    runner="$runner"" \"$command ${job_args[@]} > c:\\minicoin\\${run_file/\//\\}.out 2> c:\\minicoin\\${run_file/\//\\}.err\""
-
-    log_progress "$machine ==> Executing '$runner' at $log_stamp"
-
-    while [ "$run" == "true" ]; do
-      error=0
-      log_progress "==> $machine: running $job through winrm"
-      clean_log out err status
-      sh -c "vagrant winrm -s cmd -c '$runner' $machine > /dev/null 2> ${run_file}.status" &
-      run_pid=$!
-      if [[ $parallel == "false" ]]
-      then
-        [ -f "${run_file}.out" ] || touch "${run_file}.out"
-        [ -f "${run_file}.err" ] || touch "${run_file}.err"
-        while kill -0 $run_pid 2> /dev/null
-        do
-          log_progress "==> $machine: waiting for process to finish"
-          >&1 tail -n +0 -f ${run_file}.out & out_pid=$!
-          >&2 tail -n +0 -f ${run_file}.err & err_pid=$!
-          trap trap_handler EXIT
-          while kill -0 $run_pid 2> /dev/null
-          do
-            sleep 1
-            kill -0 $out_pid 2>/dev/null || { out_pid=; break; }
-            kill -0 $err_pid 2>/dev/null || { err_pid=; break; }
-          done
-          log_progress "==> $machine: process finished"
-          { kill $out_pid && wait $out_pid; } 2>/dev/null
-          { kill $err_pid && wait $err_pid; } 2>/dev/null
-          clean_log out err status
-        done
-      fi
-      wait $run_pid
-      error=$?
-      log_progress "==> $machine: Capturing $error from winrm return value"
-
-      [ $parallel == "false" ] && clean_log out err
-      clean_log status
-
-      log_progress "==> $machine: Job '$job' exited with error code '$error'"
-
-      echo $error >> "$continuous_file.pid"
-      if [ "$continuous" == "true" ]
-      then
-        echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
-      fi
-      run=$(test_continue "$continuous_file.pid" $continuous $machine)
-    done
-    log_progress "==> $machine: Job '$job' finished, cleaning up."
-    vagrant winrm -s cmd -c "rd Documents\\$job /S /Q" $machine 2> /dev/null
-  else
-    command="$scriptfile ${job_args[@]}"
-    log_progress "==> $machine: Executing '$command' at $log_stamp"
-
+  log_progress "==> $machine: Executing '$command' through $communicator at $log_stamp"
+  while [ "$run" == "true" ]; do
     if [[ $parallel == "true" ]]; then
       redirect=" > /minicoin/${run_file}.out 2> /minicoin/${run_file}.err"
       command="$command$redirect"
     fi
-    while [ "$run" == "true" ]
-    do
-      error=0
-      log_progress "==> $machine: running $job through ssh"
-      vagrant ssh -c "$command" $machine < /dev/null
-      error=$?
+    error=0
+    clean_log out err status
+    log_progress "==> $machine: running '$job'"
+    vagrant $communicator -c "$command" $machine
+    error=$?
 
-      [ $parallel == "false" ] && clean_log out err
+    [ $parallel == "false" ] && clean_log out err
+    log_progress "==> $machine: Job '$job' exited with error code '$error'"
 
-      log_progress "==> $machine: Job '$job' exited with error code '$error'"
+    echo $error >> "$continuous_file.pid"
+    if [ "$continuous" == "true" ]
+    then
+      echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
+    fi
+    run=$(test_continue "$continuous_file.pid" $continuous $machine)
+  done
 
-      echo $error >> "$continuous_file.pid"
-      if [ "$continuous" == "true" ]
-      then
-        echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
-      fi
-      run=$(test_continue "$continuous_file.pid" $continuous $machine)
-    done
-    log_progress "==> $machine: Job '$job' finished, cleaning up."
-    vagrant ssh -c "rm -rf $job" $machine < /dev/null 2> /dev/null
-  fi
+  log_progress "==> $machine: Job '$job' finished, cleaning up."
+  vagrant $communicator -c "$cleanup_command" $machine < /dev/null 2> /dev/null
+
   if [ $error -gt 0 ]
   then
     >&2 printf "${RED}==> $machine: Job '%s' started at $log_stamp ended with error${NOCOL}\n" "$job"
