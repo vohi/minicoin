@@ -1,3 +1,11 @@
+param (
+    [string]$admin_password
+)
+
+if ($admin_password) {
+    [Environment]::SetEnvironmentVariable("ADMIN_PASSWORD", "$admin_password", [System.EnvironmentVariableTarget]::Machine)
+}
+
 if (!($env:ChocolateyInstall)) {
     write-host "Install Chocolatey . . . "
     Set-ExecutionPolicy Bypass -Scope Process -Force

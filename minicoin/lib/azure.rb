@@ -72,9 +72,13 @@ def azure_setup(box, machine)
         box.vm.provision "minicoin_init",
             type: :file,
             source: "./util", destination: "c:\\minicoin\\util"
+        admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+        admin_password = admin_password.gsub('$', '`$') # powershell escapism
+
         box.vm.provision "windows_init",
             type: :shell,
             path: "./lib/cloud_provision/windows.ps1",
+            args: [ "#{admin_password}" ],
             upload_path: "c:\\windows\\temp\\windows_init.ps1",
             privileged: true
     else
