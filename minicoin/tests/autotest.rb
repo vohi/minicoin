@@ -3,6 +3,7 @@
 class MockVagrant
   def initialize()
     @config = MockConfig.new()
+    @plugin = MockPlugin.new()
   end
   def require_version(expr)
   end
@@ -12,6 +13,9 @@ class MockVagrant
   def config()
     return @config
   end
+  def plugin(a, b="default")
+    MockPlugin
+  end
 end
 
 class MockConfig
@@ -20,6 +24,17 @@ class MockConfig
   end
   def vm()
     return @vm
+  end
+end
+
+class MockPlugin
+  def initialize()
+  end
+  def self.name(n)
+  end
+  def self.config(a, b)
+  end
+  def self.provisioner(a)
   end
 end
 
