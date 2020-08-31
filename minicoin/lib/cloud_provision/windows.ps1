@@ -20,6 +20,9 @@ if (!(Get-WmiObject win32_service -Filter "Name = 'sshd'")) {
     Set-Service ssh-agent -StartupType Automatic
 }
 
+choco install -y -no-progress "pstools"
+psexec -nobanner -accepteula | Out-Null
+
 chocolatey feature disable -n=allowGlobalConfirmation
 
 # set PowerShell as the default log-in shell
@@ -78,3 +81,4 @@ function Install-Mutagen {
 }
 
 Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.7"
+
