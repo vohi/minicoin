@@ -45,8 +45,14 @@ for arg in "${@}"; do
   echo \'$arg\'
   if [[ "$arg" = "error" ]]; then
      exitcode=1
-     >&2 echo "Exiting with error code $exitcode"
   fi
 done
 >&2 echo "Testing stderr"
+
+if [ "$exitcode" -gt 0 ]
+then
+  >&2 echo "Exiting with error code $exitcode"
+else
+  echo "Exiting without errors"
+fi
 exit $exitcode

@@ -38,13 +38,13 @@ echo "Running test on $count machines independently"
 
 for machine in "${machines[@]}"
 do
-    # test stdout
+    echo "---- machine - stdout"
     stdout="$(minicoin run $machine test 2> /dev/null | grep 'Hello')"
     return=$?
     assert $return 0
     assert "$stdout" "Hello runner!"
 
-    # test stderr
+    echo "---- $machine - stderr"
     stderr="$(minicoin run $machine test -- error 2>&1 > /dev/null | grep 'error code')"
     return=$?
     assert $return 1
