@@ -216,7 +216,7 @@ function run_on_machine() {
 
   log_progress "==> $machine: Setting up machine"
   
-  if ! $(vagrant ssh-config $machine < /dev/null &> /dev/null)
+  if ! vagrant status --machine-readable $machine | grep "$machine,state,running" > /dev/null
   then
     log_progress "==> $machine: Machine not running - bringing it up"
     if ! vagrant up $machine
