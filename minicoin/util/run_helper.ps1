@@ -67,12 +67,10 @@ $jobargs = @(
 if ($psexec_session -eq -1) {
     Write-Warning "User '$env:USERNAME' not logged in - running '$script' non-interactively"
 } else {
-    if (Test-Path($env:ADMIN_PASSWORD) {
+    $admin_password = "vagrant"
+    if (Test-Path env:ADMIN_PASSWORD) {
         $admin_password = $env:ADMIN_PASSWORD
-    } else {
-        $admin_password = "vagrant"
     }
-    write-host "Using password '$admin_password'"
     $jobargs += @(
         "-i", $psexec_session,
         "-u", "vagrant", "-p", "$admin_password"
