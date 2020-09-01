@@ -3,32 +3,36 @@ set +ex
 
 if [[ $# < 1 ]]
 then
-  echo "Usage: $0 folder [boxname]"
-  exit 1
-fi
+  echo "Export an existing VMWare Fusion machine to a box file"
+  echo ""
+  echo "Usage: $0 vm-name [boxname]"
+  echo ""
+  exit -1
+  fi
 
-machine="$1"
-if [ ! -d "$machine" ]
-then
-  machine="$HOME/Virtual Machines.localized/$machine.vmwarevm"
-fi
-
-if [ ! -d "$machine" ]
-then
-  echo "No Virtual Machine found at '$machine'"
-  exit 2
-fi
-
-vmname=$(basename "$1")
-[ -z "$2" ] && boxname="$vmname" || boxname="$2"
+vmname="$1"
+[[ ! -z "$2" ]] && boxname="$2" || boxname="$vmname"
 boxfile="$boxname.box"
 
-echo "Exporting VM '$vmname' from '$machine' to file '$boxfile' ..."
+if [ -f "$boxfile" ]; then
+  [ -f "$boxfile.old" ] && rm $boxfile.old
+  mv $boxfile $boxfile".old"
+fi
 
-rm "$1"/*.log 2> /dev/null
-rm "$1"/*.plist 2> /dev/null
-rm -rf "$1"/*.lck 2> /dev/null
-rm -rf "$1"/Applications 2> /dev/null
-rm -rf "$1"/appListCache 2> /dev/null
+echo "Exporting VM '$vmname' to file '$boxfile' ..."
 
-tar zcvf "$boxfile" -Cvmware ./metadata.json "-C$machine" .
+vagrant package --output $boxfile $boxname
+error=$?
+
+if [ $error != 0 ]
+then
+  echo "==> $1: Packaging failure!"
+  if [ -f "$boxfile.old" ]
+  then
+    echo "==> $1: Restoring previous version"
+    mv "$boxfile.old" "$boxfile"
+  fi
+  exit $error
+fi
+
+[ -f "$boxfile.old" ] && rm $boxfile.old

@@ -2,7 +2,6 @@
 set +ex
 
 if [ $# -lt 1 ]; then
-
   echo "Export an existing VirtualBox machine to a box file"
   echo ""
   echo "Usage: $0 vm-name [boxname]"
@@ -10,11 +9,9 @@ if [ $# -lt 1 ]; then
   exit -1
 fi
 
-vmname=$1
-
-[[ ! -z "$2" ]] && boxbase=$2 || boxbase=$vmname
-
-boxfile=$boxbase.box
+vmname="$1"
+[[ ! -z "$2" ]] && boxname="$2" || boxname="$vmname"
+boxfile="$boxname.box"
 
 if [ -f "$boxfile" ]; then
   [ -f "$boxfile.old" ] && rm $boxfile.old
@@ -23,7 +20,7 @@ fi
 
 echo "Exporting VM '$vmname' to file '$boxfile' ..."
 
-vagrant package --base $vmname --output $boxfile $boxbase
+vagrant package --base $vmname --output $boxfile $boxname
 error=$?
 
 if [ $error != 0 ]
