@@ -22,6 +22,7 @@ Vagrant.configure("2") do |config|
     boxfile = box[:boxfile]
     config.vm.define "#{boxfile}-basebox" do |basebox|
       basebox.vm.box = "#{namespace}/#{boxfile}"
+      basebox.vm.box_url = "https://tqtcvagrantboxes.z16.web.core.windows.net/tqtc/#{ENV['minicoin_key']}/#{box[:boxfile]}.json"
       basebox.vm.provider "virtualbox" do |vb|
         vb.name = "#{boxfile}-basebox"
         vb.gui = true
