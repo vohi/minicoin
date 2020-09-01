@@ -56,8 +56,8 @@ def mutagen_provision(box, role_params)
                             out.puts line unless line.start_with?(ssh_info[:host])
                         end
                     end
+                    File.rename("#{known_hosts}.new", known_hosts)
                 end
-                File.rename("#{known_hosts}.new", known_hosts)
             end
         end
 
