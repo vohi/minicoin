@@ -20,6 +20,20 @@ disk space, since the entire basebox image is copied. VirtualBox doesn't support
 nested virtualization, hardware accelaration is not great, and there are no guest
 additions for macOS virtual machines (so clipboard sharing doesn't work).
 
+### VirtualBox specific provisioning
+
+Use the `virtualbox` role to provide a list of keys and values that
+should be passed on to the specified command of the `VBoxManage` tool.
+
+```
+- name: linux
+  box: generic/ubuntu1804
+  roles:
+    - role: virtualbox
+      modifyvm: # command of VBoxManage - see help for details
+        --description: "My test machine"
+```
+
 ## VMware Fusion
 
 VMware Fusion requires the
@@ -33,6 +47,12 @@ nested virtualization, which allows running e.g an Android emulator inside a Ubu
 virtual machine.
 
 macOS is a fully supported guest OS on VMware Fusion.
+
+### VMware specific provisioning
+
+Use the `vmware_desktop` role to provide a list of keys and values that
+should be used as VMX settings.
+
 
 ## Microsoft Azure
 
@@ -50,3 +70,34 @@ To confirm that everything is working and that you have access, run
 
 `$ az account show`
 `$ az account list-locations -output tsv`
+
+
+When defining a box to be used with Azure in your `boxes.yml` file, set the
+`provider` attribute to `azure`, and the `shared_folders` attribute to `disabled`.
+The `box` should be either an Azure URN, a managed image, or the URL to a VHD.
+
+```
+  - name: ubuntu-azure
+    box: canonical:ubuntuserver:18.04-LTS:latest
+    provider: azure
+    shared_folders: disabled
+```
+
+To share folders with the Azure VM, use the `mutagen` role.
+
+### Azure specific provisioning
+
+Use the `azure` role to provide a list of keys and values that should be
+used by the provider:
+
+* `location` - the location in which to launch the VM; defaults to `northeurope`
+* `vm_name` - the name the VM should have; generated to be unique by default
+* `resource_group_name` - the name of the Azure resource group; generated to be unique by default
+* 
+
+### Other Azure settings
+
+Account information and credentials are read and generated using the Azure CLI,
+and you can use environment variables to override specific settings:
+
+* `AZURE_VM_ADMIN_PASSWORD` - the password for the admin user account on the VM

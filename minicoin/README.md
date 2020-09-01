@@ -267,6 +267,8 @@ Folder sharing can be disabled for each box by setting the `shared_folders`
 attribute to `disabled`; the global `home_share` setting can be set to something
 else than `~`, or to `disabled` to only share the minicoin folder.
 
+On cloud VMs, folder-sharing should be disabled. Use the `mutagen` role instead.
+
 ## Machine-specific provisioning
 
 Additional provisioning steps are defined using the `roles` attribute in the
@@ -370,6 +372,28 @@ and specify a list of local files and remote destinations, e.g:
 The local file needs to exist on the host. On the guest, the necessary
 directory structure will be created automatically.
 
+### Mutagen file system sync
+
+Use the [`mutagen`](https://mutagen.io) role to sync local directories to the
+guest file system.
+
+```
+- name: box
+  box: generic/ubuntu1804
+  roles:
+    - role: mutagen
+      paths:
+        - ~/qt/dev/qtbase
+        - ~/qt/dev/qtbase
+```
+
+By default, `mutagen` will be installed on the guest, and will communicate to
+the host system via ssh (which requires an SSH server on the host).
+
+For cloud VMs, `mutagen` should be configured to run in reverse mode by setting
+the `reverse` attribute to `true`; this requires a `mutagen` installation on the
+host system.
+
 ### Docker
 
 minicoin can build a Dockerfile, or run a docker image.
@@ -443,26 +467,9 @@ parameters in the provisioner, e.g
 
 ## Provider-specific provisioning
 
-The following roles can be used to make provider-specific changes to
-the box. Many of these changes will only have an effect when the box
-is created, and cannot be changed during later provisioning, or when
-the box is already running.
+It's possible to specify provider-specific settings. Many of these changes will
+only have an effect when the box is created, and cannot be changed during later
+provisioning, or when the box is already running.
 
-### virtualbox
-
-Use the `virtualbox` role to provide a list of keys and values that
-should be passed on to the specified command of the `VBoxManage` tool.
-
-```
-- name: linux
-  box: generic/ubuntu1804
-  roles:
-    - role: virtualbox
-      modifyvm: # command of VBoxManage - see help for details
-        --description: "My test machine"
-```
-
-### vmware_desktop
-
-Use the `vmware_desktop` role to provide a list of keys and values that
-should be used as VMX settings.
+See [Provider Notes](docs/provider-notes.md) for provider-specific provisioning
+roles.
