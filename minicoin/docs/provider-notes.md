@@ -42,11 +42,28 @@ to be installed.
 
 `$ vagrant plugin install vagrant-vmware-desktop`
 
-Starting a new machine wiht VMware Fusion is very fast, and VMware also supports
-nested virtualization, which allows running e.g an Android emulator inside a Ubuntu
-virtual machine.
+To make minicoin use VMware Fusion, specify it explicitly as the provider when
+bringing a box up:
 
-macOS is a fully supported guest OS on VMware Fusion.
+`$ minicoin up windows10 --provider vmware_desktop`
+
+Alternatively, specify vmware_desktop as the provider in your box definition:
+
+```
+- name: windows10
+  box: tqtc/windows10
+  provider: vmware_desktop
+```
+
+Lastly, you can set the `VAGRANT_DEFAULT_PROVIDER` to `vmware_desktop` to change
+the default provider for all of minicoin runs.
+
+Starting a new machine with VMware Fusion is very fast, is it doesn't require a full copy
+of the basebox image. VMware also supports nested virtualization, which allows running
+e.g an Android emulator inside a Ubuntu virtual machine.
+
+Lastly, macOS is a fully supported guest OS on VMware Fusion, so clipboard sharing with
+the host works.
 
 ### VMware specific provisioning
 
