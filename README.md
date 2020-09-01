@@ -4,8 +4,8 @@ using virtual machines that run either locally, or in the cloud.
 This repository contains a vagrant environment, the definition of several
 standard virtual machine boxes, and scripts for executing typical jobs.
 
-All the useful stuff for using minicoin is in the [`minicoin`](minicoin)
-subdirectory.
+All the useful stuff, including detailed documentation for using minicoin, is
+in the [`minicoin`](minicoin) subdirectory.
 
 To contribute to minicoin see [contribution guidlines](minicoin/docs/contributing.md).
 For basebox maintenance documentation, see the [basebox directory](basebox).
@@ -42,8 +42,10 @@ If you are on a Windows host, you will need a bash shell to use minicoin (f.ex
 the bash that comes with git), and also create a script that forwards calls to
 the `minicoin` script:
 
-`$ echo "~/minicoin/minicoin/minicoin $@" > /bin/minicoin`
-`$ chmod +x /bin/minicoin`
+```
+$ echo "~/minicoin/minicoin/minicoin $@" > /bin/minicoin
+$ chmod +x /bin/minicoin
+```
 
 See the [Platform Notes and System Requirements](minicoin/docs/platform-notes.md)
 for platform specific details.
