@@ -16,8 +16,14 @@ function print_help() {
   echo "  after each run for the next invocation, which will be executed without"
   echo "  the overhead of setting the job up again."
   echo "--abort makes a current continuous run break out of the loop and exit."
+  echo "--no-color don't colorize output"
   echo
 }
+
+GREEN="\033[0;32m"
+RED="\033[0;31m"
+YELLOW="\e[0;33m"
+NOCOL="\033[0m"
 
 machines=()
 job="-1"
@@ -57,6 +63,12 @@ for arg in "${@}"; do
     elif [[ "$arg" == "--abort" ]]
     then
       abort="true"
+    elif [[ "$arg" == "--no-color" ]]
+    then
+      GREEN=
+      RED=
+      YELLOW=
+      NOCOL=
     else
       machines+=("$arg")
     fi
@@ -83,11 +95,6 @@ then
 fi
 
 log_stamp=$(date "+%Y%m%d-%H%M%S")
-
-GREEN="\033[0;32m"
-RED="\033[0;31m"
-YELLOW="\e[0;33m"
-NOCOL="\033[0m"
 
 function log_progress() {
   if [[ "$verbose" == "true" ]]
