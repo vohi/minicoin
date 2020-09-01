@@ -27,7 +27,9 @@ Link-Host -Hostname "\\\\VBOXSVR\\" | Out-Null
 Link-Host -Hostname "\\\\vmware-host\\Shared Folders\\-" | Out-Null
 SCRIPT
 
-    box.vm.provision "shell", name: "win_link_folders", inline: link_cmd
+    box.vm.provision "win_link_folders",
+        type: :shell,
+        inline: link_cmd
 end
 
 def mac_setup_sshfs(mac, machine)
@@ -84,14 +86,17 @@ def mac_setup_sshfs(mac, machine)
 
     # upload the private key to the guest
     if File.exist?(key_filename)
-        mac.vm.provision "file",
+        mac.vm.provision "sshfs key upload",
+            type: :file,
             source: key_filename,
             destination: ".ssh/#{$USER}"
-        mac.vm.provision "shell",
+        mac.vm.provision "sshfs key permissions",
+            type: :shell,
             inline: "chmod 0600 .ssh/#{$USER}",
             upload_path: "/tmp/vagrant-shell/start_sshfs.sh"
     end
-    mac.vm.provision "file",
+    mac.vm.provision "sshfs startup",
+        type: :file,
         source: "lib/local.sshfs.plist",
         destination: "/tmp/local.sshfs.plist"
 end
@@ -125,10 +130,7 @@ def sshfs_share_folders(box, shares)
     
     upload_path = "/Users/vagrant/sshfs_mount.sh"
     
-    mount_command = {
-    name: "sshfs_mount",
-    upload_path: "#{upload_path}",
-    inline: "
+    mount_command = "
 if [ ! -f /usr/local/bin/sshfs ]; then
     >&2 echo \"No sshfs, nothing to do\"
     exit 0
@@ -149,9 +151,11 @@ if ! (launchctl list | grep \"local.sshfs.plist\" > /dev/null); then
     fi
 fi
 "
-    }
     
-    box.vm.provision "shell", mount_command
+    box.vm.provision "sshfs_mount",
+        type: :shell,
+        upload_path: "#{upload_path}",
+        inline: mount_command
 end
 
 

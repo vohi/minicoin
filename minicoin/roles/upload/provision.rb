@@ -11,6 +11,9 @@ def upload_provision(box, role_params)
       destination = destination.gsub("~/", "")
     end
 
-    box.vm.provision "file", source: source, destination: destination
+    box.vm.provision "#{role_params['name']} upload",
+      type: :file,
+      source: source,
+      destination: destination
   end
 end

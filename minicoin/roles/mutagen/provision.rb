@@ -69,7 +69,8 @@ def mutagen_provision(box, role_params)
                           "    Message: #{stderr}"
                 end
             end
-            box.vm.provision "mutagen_#{sync}", type: :local_command,
+            box.vm.provision "mutagen_#{sync}",
+                type: :local_command,
                 code: mutagen_create
             sync += 1
         end
@@ -115,6 +116,9 @@ def mutagen_provision(box, role_params)
         else
             dest = "~/.ssh/id_rsa"
         end
-        box.vm.provision "file", source: key_file, destination: dest
+        box.vm.provision "mutagen private key upload",
+            type: :file,
+            source: key_file,
+            destination: dest
     end
 end

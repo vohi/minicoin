@@ -203,10 +203,11 @@ def add_role(box, role, name)
     end
 
     if File.file?("#{role_path}/playbook.yml")
-        box.vm.provision "ansible" do |ansible|
-            ansible.playbook = "#{role_path}/playbook.yml"
-            ansible.become = true unless box.vm.guest == :windows
-        end
+        box.vm.provision "#{role} Ansible",
+            type: :ansible do |ansible|
+                ansible.playbook = "#{role_path}/playbook.yml"
+                ansible.become = true unless box.vm.guest == :windows
+            end
         activity = true
     elsif File.file?("#{role_path}/disk.yml")
         if ["up", "provision", "reload", "validate"].include? ARGV[0]
@@ -228,12 +229,14 @@ def add_role(box, role, name)
                 docker_args += " --#{param} \"#{value}\""
             end
         end
-        box.vm.provision "file",
+        box.vm.provision "#{role}/Dockerfile upload",
+            type: :file,
             source: "#{role_path}/Dockerfile",
             destination: "#{role}/Dockerfile"
-        box.vm.provision "docker" do |docker|
-            docker.build_image "#{role}", args: docker_args
-        end
+        box.vm.provision "#{role} docker build",
+            type: :docker do |docker|
+                docker.build_image "#{role}", args: docker_args
+            end
         activity = true
     end
     
@@ -290,7 +293,9 @@ def add_role(box, role, name)
                 end
             end
         end
-        box.vm.provision "shell", name: "#{role}", path: "#{provisioning_file}",
+        box.vm.provision "#{role} script",
+            type: :shell,
+            path: "#{provisioning_file}",
             args: script_args,
             upload_path: upload_path,
             privileged: true
