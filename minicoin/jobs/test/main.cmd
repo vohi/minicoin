@@ -43,7 +43,12 @@ for %%i in (%*) DO (
     )
 )
 
->&2 echo Testing stderr
+echo Testing stdout and stderr
+for %%I in (1,2,3) do (
+    echo - stdout %%I
+    >&2 echo - stderr %%I
+    timeout /t 1 /NOBREAK > nul
+)
 
 if "!errorcode!" == "0" (
     echo Exiting without error

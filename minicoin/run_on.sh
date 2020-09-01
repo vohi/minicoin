@@ -317,7 +317,10 @@ function run_on_machine() {
     error=0
     clean_log out err status
     log_progress "==> $machine: running '$job'"
-    vagrant $communicator -c "$command" $machine
+    vagrant $communicator -c "$command" $machine < /dev/null \
+      2> >(while read -r line; do >&2 printf "${RED}%s\n${NOCOL}" "$line"; done) \
+      1> >(while read -r line; do >&1 printf "%s\n" "$line"; done)
+
     error=$?
 
     [ $parallel == "false" ] && clean_log out err

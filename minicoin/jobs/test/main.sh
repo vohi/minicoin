@@ -47,7 +47,14 @@ for arg in "${@}"; do
      exitcode=1
   fi
 done
->&2 echo "Testing stderr"
+
+echo "Testing stdout and stderr"
+for i in {1..3}
+do
+  echo "- stdout $i"
+  >&2 echo "- stderr $i"
+  sleep 1
+done
 
 if [ "$exitcode" -gt 0 ]
 then
