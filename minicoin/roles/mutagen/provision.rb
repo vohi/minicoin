@@ -49,10 +49,12 @@ def mutagen_provision(box, role_params)
                 known_hosts = "#{$HOME}/.ssh/known_hosts"
                 stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
                 ssh_info = machine.ssh_info
-                File.open("#{known_hosts}.new", 'w') do |out|
-                    out.chmod(File.stat(known_hosts).mode)
-                    File.foreach(known_hosts) do |line|
-                        out.puts line unless line.start_with?(ssh_info[:host])
+                unless ssh_info.nil?
+                    File.open("#{known_hosts}.new", 'w') do |out|
+                        out.chmod(File.stat(known_hosts).mode)
+                        File.foreach(known_hosts) do |line|
+                            out.puts line unless line.start_with?(ssh_info[:host])
+                        end
                     end
                 end
                 File.rename("#{known_hosts}.new", known_hosts)
