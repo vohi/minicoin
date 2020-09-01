@@ -61,14 +61,35 @@ def mutagen_provision(box, role_params)
             end
         end
 
+        if box.vm.guest == :windows
+            box.vm.provision "mutagen key upload",
+                type: :file,
+                source: "~/.ssh/id_rsa.pub",
+                destination: "..\\.ssh\\#{$USER}.pub"
+            mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
+        else
+            box.vm.provision "mutagen key upload",
+                type: :file,
+                source: "~/.ssh/id_rsa.pub",
+                destination: "#{ENV['GUEST_HOMES']}/vagrant/.ssh/#{$USER}.pub"
+            mutagen_key_add = "cat ~/.ssh/#{$USER}.pub >> ~/.ssh/authorized_keys"
+        end
+        box.vm.provision "mutagen key add",
+            type: :shell,
+            inline: mutagen_key_add
         sync = 0
         alphas.each do |alpha|
             beta = betas[sync]
             mutagen_create = lambda do |machine|
-                stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{machine.ssh_info[:host]}:#{beta}")
-                if status != 0
-                    raise "Error setting up mutagen synch:\n"
-                          "    Message: #{stderr}"
+                ssh_info = machine.ssh_info
+                if ssh_info.nil?
+                    machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                    raise "Error setting up mutagen sync: no ssh info available for #{name}!"
+                else
+                    stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
+                    if status != 0
+                        machine.ui.warn("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                    end
                 end
             end
             box.vm.provision "mutagen_#{sync}",
