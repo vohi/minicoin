@@ -56,35 +56,34 @@ function Mount-Paths {
             throw "Alphas and Betas need to have the same number of entries!"
         }
         if ($reverse -eq "true") {
-        } else {
             ssh-keyscan $mutagen_host_ip >> c:\Users\vagrant\.ssh\known_hosts
         }
     }
     process{
-        if (!($reverse -eq "true")) {
+        if ($reverse -eq "true") {
             c:\mutagen\mutagen sync terminate minicoin | Out-Null
         }
         for ($i = 0; $i -lt $Alphas.count; $i++) {
             $a = $Alphas[$i]
             $b = $Betas[$i]
-            Write-Host "Mapping as" $user "from" $a "on" $mutagen_host_ip "to" $b
             if (!(Test-Path $b)) {
                 New-Item -ItemType Directory -Force -Path $b | Out-Null
             }
-            if (!($reverse -eq "true")) {
+            if ($reverse -eq "true") {
+                Write-Host "Mapping as" $user "from" $a "on" $mutagen_host_ip "to" $b
                 echo yes | c:\mutagen\mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin ${user}@${mutagen_host_ip}:$a $b
             }
         }
     }
     end {
-        if (!($reverse -eq "true")) {
+        if ($reverse -eq "true") {
             Write-Host "Established mutagen sync points:"
             c:\mutagen\mutagen sync list
         }
     }
 }
 
-if (!($reverse -eq "true")) {
+if ($reverse -eq "true") {
     Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.5"
 }
 Mount-Paths -Alphas $alpha.split(",") -Betas $beta.split(",")
