@@ -53,7 +53,11 @@ def mutagen_provision(box, role_params)
                     File.open("#{known_hosts}.new", 'w') do |out|
                         out.chmod(File.stat(known_hosts).mode)
                         File.foreach(known_hosts) do |line|
-                            out.puts line unless line.start_with?(ssh_info[:host])
+                            if ssh_info[:host] == "127.0.0.1"
+                                out.puts line unless line.start_with?("[127.0.0.1]:#{ssh_info[:port]} ")
+                            else
+                                out.puts line unless line.start_with?(ssh_info[:host])
+                            end
                         end
                     end
                     File.rename("#{known_hosts}.new", known_hosts)
@@ -62,21 +66,23 @@ def mutagen_provision(box, role_params)
         end
 
         if box.vm.guest == :windows
-            box.vm.provision "mutagen key upload",
-                type: :file,
-                source: "~/.ssh/id_rsa.pub",
-                destination: "..\\.ssh\\#{$USER}.pub"
+            mutagen_key_destination = "..\\.ssh\\#{$USER}.pub"
             mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
+            mutagen_key_add_script = "c:\\windows\\temp\\mutagen_key_add.ps1"
         else
-            box.vm.provision "mutagen key upload",
-                type: :file,
-                source: "~/.ssh/id_rsa.pub",
-                destination: "#{ENV['GUEST_HOMES']}/vagrant/.ssh/#{$USER}.pub"
-            mutagen_key_add = "cat ~/.ssh/#{$USER}.pub >> ~/.ssh/authorized_keys"
+            mutagen_key_destination = ".ssh/#{$USER}.pub"
+            mutagen_key_add = "pwd; cat #{mutagen_key_destination} >> .ssh/authorized_keys"
+            mutagen_key_add_script = "/tmp/vagrant-shell/mutagen_key_add.sh"
         end
+        box.vm.provision "mutagen key upload",
+            type: :file,
+            source: "~/.ssh/id_rsa.pub",
+            destination: mutagen_key_destination
         box.vm.provision "mutagen key add",
             type: :shell,
-            inline: mutagen_key_add
+            inline: mutagen_key_add,
+            upload_path: mutagen_key_add_script,
+            privileged: false
         sync = 0
         alphas.each do |alpha|
             beta = betas[sync]
