@@ -222,6 +222,13 @@ Vagrant.configure("2") do |config|
           puts "             #{e}"
         end
       end
+
+      # make powershell the default ssh shell on Windows at the end, as some provisioners rely on cmd
+      if box.vm.guest == :windows
+        box.vm.provision "powershell_default",
+          type: :shell,
+          inline: "New-ItemProperty -Path \"HKLM:\\SOFTWARE\\OpenSSH\" -Name DefaultShell -Value \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -PropertyType String -Force | Out-Null"
+      end
     end
   end
 end
