@@ -6,7 +6,7 @@ winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2147483647"}
 chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) {
   write-host "Installing package $p"
-  choco install -y --timeout 240 --no-progress $p
+  choco install -y --timeout 600 --no-progress $p
   write-host "Finished Installing package $p"
 }
 
