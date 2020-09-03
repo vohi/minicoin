@@ -1,6 +1,9 @@
 require 'json'
 require 'open3'
 
+$AZURE_PROFILE = nil
+$AZURE_CREDENTIALS = nil
+
 # VirtualBox specific settings
 def azure_setup(box, machine)
     return unless machine['provider'] == "azure"
@@ -8,22 +11,24 @@ def azure_setup(box, machine)
     location = "northeurope"
     pwd = ENV['minicoin_key']
 
-    stdout, stderr, status = Open3.capture3('az account show')
-    if status != 0
-        raise "Failed to get azure account information"
-    end
-    azureProfile = JSON.parse(stdout)
-    stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
-    if status != 0
-        stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
-        stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
-    end
-    if status != 0
-        raise "Failed to generate azure account credentials"
-    end
-    credentials = JSON.parse(stdout)
-
     box.vm.provider :azure do |azure, override|
+        if $AZURE_PROFILE.nil?
+            stdout, stderr, status = Open3.capture3('az account show')
+            if status != 0
+                raise "Failed to get azure account information"
+            end
+            $AZURE_PROFILE = JSON.parse(stdout)
+            stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
+            if status != 0
+                stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
+                stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
+            end
+            if status != 0
+                raise "Failed to generate azure account credentials"
+            end
+            $AZURE_CREDENTIALS = JSON.parse(stdout)
+        end
+        
         override.ssh.private_key_path = "~/.ssh/id_rsa"
         override.vm.box = "azure"
         override.vm.box_url = "https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box"
@@ -46,9 +51,9 @@ def azure_setup(box, machine)
             azure.vm_image_urn = machine["box"]
         end
 
-        azure.tenant_id = azureProfile["tenantId"]
-        azure.subscription_id = azureProfile["id"]
-        azure.client_id = credentials["appId"]
+        azure.tenant_id = $AZURE_PROFILE["tenantId"]
+        azure.subscription_id = $AZURE_PROFILE["id"]
+        azure.client_id = $AZURE_CREDENTIALS["appId"]
         azure.client_secret = pwd
 
         azure.vm_image_urn = machine["box"]
