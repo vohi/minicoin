@@ -1,3 +1,7 @@
+param (
+    [String[]]$Packages
+)
+
 function UpdateRegistry {
     param (
         [parameter(Mandatory=$true)]
@@ -48,9 +52,13 @@ $oldpath = [Environment]::GetEnvironmentVariable("PATH",[System.EnvironmentVaria
 
 cd $ChocoInstallPath
 
-$packages = ( "notepadplusplus", "git", "pstools",
-              "strawberryperl", "python2",
-              "cmake", "ninja" )
+if (!$Packages) {
+    $Packages = ( "notepadplusplus", "git", "pstools",
+                "strawberryperl", "python2",
+                "cmake", "ninja" )
+} else {
+    $Packages = $Packages.split(",")
+}
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) { .\choco install --no-progress -y --timeout 600 $p }
