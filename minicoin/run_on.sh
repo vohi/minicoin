@@ -255,7 +255,13 @@ function run_on_machine() {
   echo "==> $machine: running '$job' with arguments '${script_args[@]}'"
   if [ -f "jobs/$job/pre-run.sh" ]; then
     log_progress "==> $machine: Initializing $job"
-    source jobs/$job/pre-run.sh $machine "${script_args[@]}" || return $?
+    jobs/$job/pre-run.sh $machine "${script_args[@]}"
+    error=$?
+    if [ $error -gt 0 ]
+    then
+      >&2 printf "${RED}Pre-run initializatoin exited with error code $error, assuming error and aborting!${NOCOL}"
+      return -3
+    fi
   fi
 
   log_progress "==> $machine: Uploading '$upload_source'..."
@@ -356,8 +362,13 @@ function run_on_machine() {
   if [ -f "jobs/$job/post-run.sh" ]
   then
     log_progress "==> $machine: Cleaning up after '$job'"
-    source jobs/$job/post-run.sh $machine "${script_args[@]}"
+    jobs/$job/post-run.sh $machine "${script_args[@]}"
     post_error=$?
+    if [ $post_error -gt 0 ]
+    then
+      >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
+    fi
+
     [ $error -eq 0 ] && error=$post_error
   fi
   return $error
