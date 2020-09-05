@@ -150,15 +150,15 @@ function minicoin_ls()
   fi
   for machine in ${machines[@]}; do
     echo "==> $machine:"
-    if $(vagrant winrm $machine < /dev/null &> /dev/null)
+    if $(run vagrant winrm $machine < /dev/null &> /dev/null)
     then
       run vagrant winrm -c "cd \$Env:USERPROFILE; cmd /c dir$args" $machine
-      error=$?
     else
       run vagrant ssh -c "ls -l$args" $machine
-      error=$?
     fi
+    error=$?
     if [ $error -gt 0 ]; then
+      echo "==> $machine: Error executing command on $machine"
       return $error
     fi
   done
@@ -173,16 +173,16 @@ function minicoin_cmd()
   fi
   for machine in ${machines[@]}; do
     echo "==> $machine:"
-    if $(vagrant winrm $machine < /dev/null &> /dev/null)
+    if $(run vagrant winrm $machine < /dev/null &> /dev/null)
     then
-      run vagrant winrm -c "cd \$Env:USERPROFILE; $args" $machine
-      error=$?
+      run vagrant winrm -s powershell -c "cd \$Env:USERPROFILE; $args" $machine
     else
       run vagrant ssh -c "$args" $machine
-      error=$?
     fi
+    error=$?
     if [ $error -gt 0 ]; then
       echo "==> $machine: Error executing command '$args' on $machine"
+      return $error
     fi
   done
   return 0
