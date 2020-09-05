@@ -233,14 +233,18 @@ function run_on_machine() {
     fi
   fi
   
+  upload_source=jobs/$job
+
   if $(vagrant winrm $machine < /dev/null &> /dev/null)
   then
     ext="cmd"
+    if [ ! -f "jobs/$job/main.cmd" ]; then
+      ext="ps1"
+    fi
   else
     ext="sh"
   fi
 
-  upload_source=jobs/$job
   scriptfile=$job/main.$ext
 
   if [ ! -f "jobs/$scriptfile" ]; then
@@ -298,7 +302,7 @@ function run_on_machine() {
   command=""
   communicator="ssh"
   cleanup_command="rm -rf"
-  if [[ $ext == "cmd" ]];
+  if [[ $ext == "cmd" || $ext == "ps1" ]];
   then
     command="c:\\minicoin\\util\\run_helper.ps1 Documents\\"
     cleanup_command="Remove-Item -Recurse -Force"
