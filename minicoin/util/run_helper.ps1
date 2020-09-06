@@ -43,13 +43,6 @@ $outpath = New-TemporaryFile
 $errpath = New-TemporaryFile
 $script = $env:USERPROFILE + "\" + $script
 
-try {
-    $sessioninfo = (query user vagrant | Select-String vagrant).toString().split() | where {$_}
-    $psexec_session = $sessioninfo[2]
-} catch {
-    $psexec_session = -1
-}
-
 # quote parameters with whitespace again for cmd
 $cmdargs = @()
 ForEach ($arg in $args) {
@@ -60,41 +53,58 @@ ForEach ($arg in $args) {
     }
 }
 
+$admin_password = "vagrant"
+if (Test-Path env:ADMIN_PASSWORD) {
+    $admin_password = $env:ADMIN_PASSWORD
+}
+
 $jobargs = @(
     "-nobanner"
 )
 
-if ($psexec_session -eq -1) {
-    Write-Warning "User '$env:USERNAME' not logged in - running '$script' non-interactively"
-} else {
-    $admin_password = "vagrant"
-    if (Test-Path env:ADMIN_PASSWORD) {
-        $admin_password = $env:ADMIN_PASSWORD
-    }
+try {
+    $ErrorActionPreference="SilentlyContinue"
+    $sessioninfo = (query user vagrant | Select-String Active).toString().split() | where {$_}
+    $ErrorActionPreference="Continue"
     $jobargs += @(
-        "-i", $psexec_session,
-        "-u", "vagrant", "-p", "$admin_password"
+        "-i", $sessioninfo[2],
+        "-u", "vagrant", "-p", $admin_password
     )
+} catch {
+    Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
 }
 
 $jobargs += @(
     "-w", "$env:USERPROFILE",
-    "cmd.exe", "/C", "$script", "$cmdargs", "> $outpath", "2> $errpath"
+    "cmd.exe", "/C"
 )
 
-$pinfo = New-Object System.Diagnostics.ProcessStartInfo
-$pinfo.FileName = "psexec.exe"
-$pinfo.CreateNoWindow = $true
-$pinfo.UseShellExecute = $false
-$pinfo.Arguments = $jobargs
+if ($script.ToLower().EndsWith("ps1")) {
+    $jobargs += @(
+        "powershell.exe", "-ExecutionPolicy", "Bypass",
+        "-File"
+    )
+}
 
-$process = New-Object System.Diagnostics.Process
-$process.StartInfo = $pinfo
+$jobargs += @(
+    "$script", "$cmdargs", "> $outpath", "2> $errpath"
+)
 
 try {
+    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+    $pinfo.FileName = "psexec.exe"
+    $pinfo.CreateNoWindow = $true
+    $pinfo.UseShellExecute = $true
+    $pinfo.Arguments = $jobargs
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $pinfo
+
     $process.Start() | Out-Null
 } catch {
-    Write-Error "Failure to start '$script' through psexec - aborting"
+    Write-StdErr "Failure to start '$script' through psexec - aborting"
+    Write-StdErr "Error message: $($_.ToString())"
+    $PSItem.InvocationInfo | Format-List *
     exit $LASTEXITCODE
 }
 
@@ -109,7 +119,9 @@ try {
     }
     Repeat-Output $stdout $stderr
 } catch {
-    write-host "Some exception"
+    Write-StdErr "Exception while reading process output - exiting"
+    Write-StdErr "Error message: $($_.ToString())"
+    $PSItem.InvocationInfo | Format-List *
 }
 
 $stdout.Dispose();
