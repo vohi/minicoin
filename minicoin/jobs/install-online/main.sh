@@ -6,6 +6,13 @@ then
     account_path="$HOME/Library/Application Support/Qt"
 else
     account_path="$HOME/.local/share/Qt"
+
+    # make sure we are logged in
+    sudo cp /var/lib/lightdm/.Xauthority ~/.Xauthority
+    export XAUTHORITY=~/.Xauthority
+    export DISPLAY=:0
+    xdotool type "vagrant"
+    xdotool key --clearmodifiers Return
 fi
 
 jobpath="$(dirname $0)"
@@ -32,15 +39,16 @@ fi
 
 cd Qt/6.0.0
 
-platforms=$(find . -maxdepth 1 -mindepth 1 -type d)
+platforms=$(find . -maxdepth 1 -mindepth 1 -type d ! -name Src)
 for p in "$platforms"
 do
     cd $p
+    echo "Using Qt in $PWD"
+    export LD_LIBRARY_PATH=$PWD/lib
+    break
 done
 
-export LD_LIBRARY_PATH=$PWD/lib
-export DISPLAY=:0
 bin/qtdiag
 bin/uic --version
 bin/moc --version
-bin/qmake --version
+bin/qmake -query

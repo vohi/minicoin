@@ -28,11 +28,18 @@ if not exist "Qt\6.0.0" (
 cd Qt\6.0.0
 
 for /D %%D in (*) do (
-    cd %%D
-    set PATH="%CD%\bin;%PATH%"
+    if not "%%D" == "Src" (
+        cd %%D
+        echo "Using Qt in %cd%"
+        set PATH="%CD%\bin;%PATH%"
+        goto :RUNTEST
+
+    )
 )
+
+:RUNTEST
 
 qtdiag
 uic --version
 moc --version
-qmake --version
+qmake --query

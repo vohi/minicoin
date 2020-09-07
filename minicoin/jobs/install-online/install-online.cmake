@@ -25,14 +25,10 @@ if (NOT INSTALL_ROOT)
 endif()
 
 set(INSTALL_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/${INSTALL_ROOT})
-
-if(EXISTS ${INSTALL_ROOT}/${QT_VERSION})
-  message(STATUS "Removing previous installation in ${INSTALL_ROOT}/${QT_VERSION}")
-  file(REMOVE_RECURSE ${INSTALL_ROOT}/${QT_VERSION})
-endif()
+set(installer_file_base "qt-unified-${installer_file_os}-${installer_version}-online")
 
 set(qt_base_url "http://download.qt.io/development_releases/online_installers")
-set(installer_file "qt-unified-${installer_file_os}-${installer_version}-online.${installer_file_ext}")
+set(installer_file ${installer_file_base}.${installer_file_ext})
 
 if(DEFINED ENV{TEMP})
   set(TMPDIR $ENV{TEMP})
@@ -45,5 +41,16 @@ file(DOWNLOAD "${qt_base_url}/${installer_file}" ${TMPDIR}/${installer_file} SHO
 file(COPY ${TMPDIR}/${installer_file} DESTINATION . FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
 file(REMOVE ${TMPDIR}/${installer_file})
 
+if(APPLE)
+  execute_process(COMMAND hdiutil attach ${installer_file})
+  set(installer_file "/Volumes/${installer_file_base}/${installer_file_base}.app/Contents/MacOS/${installer_file_base}")
+else()
+  set(installer_file "./${installer_file}")
+endif()
+
 message(STATUS "Running ${installer_file}")
-execute_process(COMMAND ./${installer_file} install ${PACKAGE} --root ${INSTALL_ROOT} --accept-licenses --auto-answer telemetry-question=No,AssociateCommonFiletypes=No,OverwriteTargetDirectory=Yes)
+execute_process(COMMAND ${installer_file} install ${PACKAGE} --root ${INSTALL_ROOT} --accept-licenses --auto-answer telemetry-question=No,AssociateCommonFiletypes=No,OverwriteTargetDirectory=Yes,installationErrorWithCancel=Ignore --confirm-command)
+
+if(APPLE)
+  execute_process(COMMAND hdiutil detach /Volumes/${installer_file_base})
+endif()
