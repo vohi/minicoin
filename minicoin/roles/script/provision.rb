@@ -7,8 +7,12 @@ def script_provision(box, args)
     if box.vm.guest == :windows
         upload_path = "c:\\Windows\\temp\\script_provisioning.ps1"
     end
-    box.vm.provision "shell",
-      name: "script_provisioning",
-      upload_path: upload_path,
-      inline:args["script"]
+    
+    privileged = true
+    privileged = args["privileged"] == true unless args["privileged"].nil?
+    box.vm.provision "custom script",
+        type: :shell,
+        upload_path: upload_path,
+        inline: args["script"],
+        privileged: privileged
 end
