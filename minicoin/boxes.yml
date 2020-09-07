@@ -92,6 +92,9 @@ machines:
     box: tqtc/$minicoin_key/macos1015
     roles:
       - role: hello-world
+      - role: script
+        script: "brew install cmake"
+        privileged: false
 
 ## Specialized machines
 
