@@ -13,6 +13,10 @@
                 {
                     "name": "vmware_desktop",
                     "url": "https://$server/$minicoin_key/vmware_desktop/windows10-0.0.3.box"
+                },
+                {
+                    "name": "azure",
+                    "url": "https://$server/$minicoin_key/azure/windows10-0.0.3.box"
                 }
             ]
         }
