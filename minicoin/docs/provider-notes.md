@@ -88,19 +88,37 @@ To confirm that everything is working and that you have access, run
 `$ az account show`
 `$ az account list-locations -output tsv`
 
+With the azure provider, minicoin will disable all folder sharing, as it is usually
+not desired to share an entire home directory with a remote server. Instead, use
+the `mutagen` role to set up folder syncing.
 
-When defining a box to be used with Azure in your `boxes.yml` file, set the
-`provider` attribute to `azure`, and the `shared_folders` attribute to `disabled`.
-The `box` should be either an Azure URN, a managed image, or the URL to a VHD.
+If the box for a machine is available for azure as well and defines the azure-specific
+attributes, then you can work with the box as usual, passing `--provider azure` to
+minicoin when bringing the box up, e.g.
+
+`$ minicoin up windows10 --provider azure`
+
+When defining a box specific to be used with Azure in your `boxes.yml` file, set the
+`provider` attribute to `azure`. Install the `azure` dummy box for vagrant via
+
+`$ vagrant box add azure https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box --provider azure`
+
+and use `azure` as the box in your machine definition. Finally, apply azure specific
+provisioning to specify the image from which the box should be deployed, e.g
 
 ```
   - name: ubuntu-azure
-    box: canonical:ubuntuserver:18.04-LTS:latest
+    box: azure
     provider: azure
-    shared_folders: disabled
+    roles:
+      - role: azure
+        vm_image_urn: canonical:ubuntuserver:18.04-LTS:latest
+      - role: mutagen
+        paths:
+          - ~/qt/dev/qtbase
 ```
 
-To share folders with the Azure VM, use the `mutagen` role.
+To start such a box, you won't need to pass the `--provider` parameter to `minicoin up`.
 
 ### Azure specific provisioning
 
@@ -109,8 +127,11 @@ used by the provider:
 
 * `location` - the location in which to launch the VM; defaults to `northeurope`
 * `vm_name` - the name the VM should have; generated to be unique by default
+* `vm_image_urn` - the name of the image on the Azure marketplace that the VM should use
 * `resource_group_name` - the name of the Azure resource group; generated to be unique by default
-* 
+
+See the [Azure plugin documentation](https://github.com/azure/vagrant-azure) for a complete list
+of available settings.
 
 ### Other Azure settings
 
