@@ -3,10 +3,6 @@
 settings:
   home_share: $HOME
   defaults:
-    roles:
-      - role: upload
-        files:
-          $HOME/.gitconfig: ~/.gitconfig
     shared_folders:
       - $PWD: /minicoin # required by provisioning scripts
       - $HOME_SHARE: /$GUEST_HOMES/host
