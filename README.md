@@ -31,12 +31,13 @@ or an account with a cloud provider.
 See [provider specific details](minicoin/docs/provider-notes.md) for more
 information.
 
-Clone this repository, and create a symbolic link to the `minicoin` script in
-a PATH directory, for example:
+Clone this repository, and if on macOS or Linux, run the `setup.sh` script to
+install `minicoin` in `/usr/local/bin`:
 
-`$ ln -s ~/minicoin/minicoin/minicoin /usr/local/bin/minicoin`
-
-(yes, that's three minicoin's).
+```
+$ cd minicoin
+$ ./setup.sh
+```
 
 If you are on a Windows host, you will need a bash shell to use minicoin (f.ex
 the bash that comes with git), and also create a script that forwards calls to
