@@ -3,9 +3,22 @@ require 'open3'
 
 $AZURE_PROFILE = nil
 $AZURE_CREDENTIALS = nil
+$AZURE_CLI_INSTALLED = nil
 
 # VirtualBox specific settings
 def azure_setup(box, machine)
+    if $AZURE_CLI_INSTALLED.nil?
+        begin
+            `az version`
+            $AZURE_CLI_INSTALLED = true
+        rescue
+            $AZURE_CLI_INSTALLED = false
+        end
+    end
+    if $AZURE_CLI_INSTALLED == false
+        return
+    end
+
     name = machine["name"]
     location = "northeurope"
     pwd = ENV['minicoin_key']
@@ -22,7 +35,11 @@ def azure_setup(box, machine)
         if $AZURE_PROFILE.nil?
             stdout, stderr, status = Open3.capture3('az account show')
             if status != 0
-                raise "Failed to get azure account information"
+                $AZURE_PROFILE = {}
+                $AZURE_CREDENTIALS = {}
+                puts "Azure CLI installed, but failed to get azure account information."
+                puts "Make sure you are logged in with 'az login'"
+                next
             end
             $AZURE_PROFILE = JSON.parse(stdout)
             stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
