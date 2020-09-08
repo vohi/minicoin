@@ -27,13 +27,37 @@ end
 
 $PWD = File.dirname(__FILE__)
 
+$REQUESTED_BOXES = []
+
+for a in 1 ... ARGV.length
+  arg = ARGV[a]
+  if arg.start_with?("-")
+    next
+  end
+  $REQUESTED_BOXES << ARGV[a]
+end
+
 Vagrant.configure("2") do |config|
   machines = load_minicoin()
   machines.each do |machine|
-    name = machine["name"]    
+    name = machine["name"]
     if name.nil?
       puts "==> Machine without name: #{machine}"
       next
+    end
+    unless $REQUESTED_BOXES.empty?
+      requested = false
+      for requested_box in $REQUESTED_BOXES
+        if requested_box.start_with?("/") && requested_box.end_with?("/")
+          requested = name =~ /#{requested_box[1..requested_box.length - 2]}/
+        elsif requested_box == name
+          requested = true
+        end
+        break if requested
+      end
+      if !requested
+        next
+      end
     end
     machine_box = machine["box"]
     machine_url = machine_box
