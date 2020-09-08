@@ -61,7 +61,6 @@ def azure_setup(box, machine)
 
         # azure.vm_password =
         # azure.vm_size =
-        azure.wait_for_destroy = true
     end
 
     if machine["os"] == "windows"
