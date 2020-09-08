@@ -6,12 +6,19 @@ $AZURE_CREDENTIALS = nil
 
 # VirtualBox specific settings
 def azure_setup(box, machine)
-    return unless machine['provider'] == "azure"
     name = machine["name"]
     location = "northeurope"
     pwd = ENV['minicoin_key']
 
     box.vm.provider :azure do |azure, override|
+        override.vm.synced_folder ".", "/minicoin", disabled: true
+        unless machine['actual_shared_folders'].nil?
+            machine['actual_shared_folders'].each do |shared_folder|
+                shared_folder.each do |host, guest|
+                    override.vm.synced_folder host, guest, disabled: true
+                end
+            end
+        end
         if $AZURE_PROFILE.nil?
             stdout, stderr, status = Open3.capture3('az account show')
             if status != 0
@@ -30,8 +37,6 @@ def azure_setup(box, machine)
         end
         
         override.ssh.private_key_path = "~/.ssh/id_rsa"
-        override.vm.box = "azure"
-        override.vm.box_url = "https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box"
 
         if machine["os"] == "windows"
             # open up for ssh, winrm, and rdp
@@ -41,22 +46,11 @@ def azure_setup(box, machine)
             override.winssh.private_key_path = "~/.ssh/id_rsa"
         end
 
-        if machine["box"].start_with?("/subscriptions/")
-            azure.vm_managed_image_id = machine["box"]
-        elsif machine["box"].end_with?(".vhd")
-            azure.vm_vhd_uri = machine["box"]
-            azure.vm_operating_system = machine["os"]
-            # azure.vm_vhd_storage_account_id =
-        else
-            azure.vm_image_urn = machine["box"]
-        end
-
         azure.tenant_id = $AZURE_PROFILE["tenantId"]
         azure.subscription_id = $AZURE_PROFILE["id"]
         azure.client_id = $AZURE_CREDENTIALS["appId"]
         azure.client_secret = pwd
 
-        azure.vm_image_urn = machine["box"]
         azure.admin_username = "vagrant"
         azure.location = location
         azure.instance_ready_timeout = 3600
