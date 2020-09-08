@@ -84,7 +84,7 @@ def azure_setup(box, machine)
         box.vm.provision "azure_init",
             type: :shell,
             inline: "
-                echo \"127.0.0.1 #{name}\" >> /etc/hosts
+                echo \"127.0.0.1 $(hostname)\" >> /etc/hosts
                 [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
             ",
             upload_path: "/tmp/vagrant-shell/azure_init.sh"
