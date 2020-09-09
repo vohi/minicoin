@@ -29,6 +29,10 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_run
     min_args=2
     shift
+  elif [ $1 == "list" ]; then
+    minicoin_command=minicoin_list
+    min_args=0
+    shift
   elif [ $1 == "jobs" ]; then
     minicoin_command=minicoin_jobs
     min_args=0
@@ -68,6 +72,10 @@ IFS='
   do
      printf "    %s\n" "$line"
   done
+  echo
+  echo "  list"
+  echo
+  echo "    List the available machines, without querying them for their status."
   echo
   echo "  ls machine1 machine2 ... [-- [args]]"
   echo
@@ -119,6 +127,12 @@ function minicoin_run()
 
   run . run_on.sh "${run_args[@]}"
   error=$?
+  return $?
+}
+
+function minicoin_list()
+{
+  run ruby lib/minicoin.rb list
   return $?
 }
 

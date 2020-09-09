@@ -39,6 +39,9 @@ end
 
 Vagrant.configure("2") do |config|
   machines = load_minicoin()
+  if ARGV[0] == "list"
+    puts "Available machines are:"
+  end
   machines.each do |machine|
     name = machine["name"]
     if name.nil?
@@ -77,6 +80,12 @@ Vagrant.configure("2") do |config|
     end
     if machine_box.nil?
       puts "==> #{name}: Machine has no box set"
+      next
+    end
+
+
+    if ARGV[0] == "list"
+      puts "- #{name} (box: #{machine_box})"
       next
     end
 
