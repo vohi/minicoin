@@ -32,7 +32,7 @@ def mutagen_host_to_guest(box, name, alphas, betas)
         mutagen_key_add_script = "c:\\windows\\temp\\mutagen_key_add.ps1"
     else
         mutagen_key_destination = ".ssh/#{$USER}.pub"
-        mutagen_key_add = "pwd; cat #{mutagen_key_destination} >> .ssh/authorized_keys"
+        mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
         mutagen_key_add_script = "/tmp/vagrant-shell/mutagen_key_add.sh"
     end
     box.vm.provision "mutagen key upload",
