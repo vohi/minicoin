@@ -5,16 +5,18 @@ $AZURE_PROFILE = nil
 $AZURE_CREDENTIALS = nil
 $AZURE_CLI_INSTALLED = nil
 
+if $AZURE_CLI_INSTALLED.nil?
+    begin
+        `az version`
+        $AZURE_CLI_INSTALLED = true
+        ENV["VAGRANT_EXPERIMENTAL"] = "dependency_provisioners"
+    rescue
+        $AZURE_CLI_INSTALLED = false
+    end
+end
+
 # VirtualBox specific settings
 def azure_setup(box, machine)
-    if $AZURE_CLI_INSTALLED.nil?
-        begin
-            `az version`
-            $AZURE_CLI_INSTALLED = true
-        rescue
-            $AZURE_CLI_INSTALLED = false
-        end
-    end
     if $AZURE_CLI_INSTALLED == false
         return
     end
@@ -78,34 +80,39 @@ def azure_setup(box, machine)
 
         # azure.vm_password =
         # azure.vm_size =
-    end
 
-    if machine["os"] == "windows"
-        box.vm.provision "openssh_key",
-            type: :file,
-            source: "~/.ssh/id_rsa.pub", destination: "c:\\programdata\\ssh\\administrators_authorized_keys"
-        box.vm.provision "minicoin_init",
-            type: :file,
-            source: "./util", destination: "c:\\minicoin\\util"
-        admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
-        admin_password = admin_password.gsub('$', '`$') # powershell escapism
-
-        box.vm.provision "windows_init",
-            type: :shell,
-            path: "./lib/cloud_provision/windows.ps1",
-            args: [ "#{admin_password}" ],
-            upload_path: "c:\\windows\\temp\\windows_init.ps1",
-            privileged: true
-    else
-        box.vm.provision "azure_init",
-            type: :shell,
-            inline: "
-                echo \"127.0.0.1 $(hostname)\" >> /etc/hosts
-                [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
-            ",
-            upload_path: "/tmp/vagrant-shell/azure_init.sh"
-        box.vm.provision "minicoin_init",
-            type: :file,
-            source: "./util", destination: "/minicoin/util"
+        if override.vm.guest == :windows
+            override.vm.provision "openssh_key",
+                type: :file,
+                before: :all,
+                source: "~/.ssh/id_rsa.pub", destination: "c:\\programdata\\ssh\\administrators_authorized_keys"
+            override.vm.provision "minicoin_init",
+                type: :file,
+                before: :all,
+                source: "./util", destination: "c:\\minicoin\\util"
+            admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+            admin_password = admin_password.gsub('$', '`$') # powershell escapism
+    
+            override.vm.provision "cloud_init",
+                before: :all,
+                type: :shell,
+                path: "./lib/cloud_provision/windows.ps1",
+                args: [ "#{admin_password}" ],
+                upload_path: "c:\\windows\\temp\\windows_init.ps1",
+                privileged: true
+        else
+            override.vm.provision "cloud_init",
+                type: :shell,
+                before: :all,
+                inline: "
+                    echo \"127.0.0.1 $(hostname)\" >> /etc/hosts
+                    [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
+                ",
+                upload_path: "/tmp/vagrant-shell/azure_init.sh"
+            override.vm.provision "minicoin_init",
+                type: :file,
+                before: :all,
+                source: "./util", destination: "/minicoin/util"
+        end
     end
 end
