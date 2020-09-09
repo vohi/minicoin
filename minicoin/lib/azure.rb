@@ -81,27 +81,30 @@ def azure_setup(box, machine)
         # azure.vm_password =
         # azure.vm_size =
 
-        if override.vm.guest == :windows
+        if override.vm.guest == :windows || machine["os"] == "windows"
+            admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+            admin_password = admin_password.gsub('$', '`$') # powershell escapism
+
             override.vm.provision "openssh_key",
                 type: :file,
                 before: :all,
                 source: "~/.ssh/id_rsa.pub", destination: "c:\\programdata\\ssh\\administrators_authorized_keys"
-            override.vm.provision "minicoin_init",
-                type: :file,
-                before: :all,
-                source: "./util", destination: "c:\\minicoin\\util"
-            admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
-            admin_password = admin_password.gsub('$', '`$') # powershell escapism
-    
-            override.vm.provision "cloud_init",
-                before: :all,
+
+            override.vm.provision "cloud_init (win)",
                 type: :shell,
+                before: :all,
                 path: "./lib/cloud_provision/windows.ps1",
                 args: [ "#{admin_password}" ],
                 upload_path: "c:\\windows\\temp\\windows_init.ps1",
                 privileged: true
+
+            override.vm.provision "minicoin_init (win)",
+                type: :file,
+                before: :all,
+                source: "./util", destination: "c:\\minicoin\\util"
+
         else
-            override.vm.provision "cloud_init",
+            override.vm.provision "cloud_init (nix)",
                 type: :shell,
                 before: :all,
                 inline: "
@@ -109,7 +112,7 @@ def azure_setup(box, machine)
                     [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin
                 ",
                 upload_path: "/tmp/vagrant-shell/azure_init.sh"
-            override.vm.provision "minicoin_init",
+            override.vm.provision "minicoin_init (nix)",
                 type: :file,
                 before: :all,
                 source: "./util", destination: "/minicoin/util"
