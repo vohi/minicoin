@@ -41,6 +41,10 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_jobhelp
     min_args=0
     shift
+  elif [ $1 == "update" ]; then
+    minicoin_command=minicoin_update
+    min_args=0
+    shift
   elif [ $1 == "ls" ]; then
     minicoin_command=minicoin_ls
     min_args=1
@@ -90,6 +94,10 @@ IFS='
   echo "  job-help job"
   echo
   echo "    Prints the help for 'job', if available."
+  echo
+  echo "  update"
+  echo
+  echo "    Fetches the latest version of minicoin and rebases the local version to it."
   echo
   echo "  <vagrant-command> [options] [machines...]"
   echo "    status      outputs status of the machines"
@@ -154,6 +162,11 @@ function minicoin_jobhelp()
     echo "Failed to print help for $job"
   fi
   return $error
+}
+
+function minicoin_update()
+{
+  run git pull --rebase --autostash
 }
 
 function minicoin_ls()
