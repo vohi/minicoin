@@ -41,6 +41,7 @@ Vagrant.configure("2") do |config|
   machines = load_minicoin()
   if ARGV[0] == "list"
     puts "Available machines are:"
+    puts
   end
   machines.each do |machine|
     name = machine["name"]
@@ -85,7 +86,7 @@ Vagrant.configure("2") do |config|
 
 
     if ARGV[0] == "list"
-      puts "- #{name} (box: #{machine_box})"
+      puts "#{name.ljust(25)} #{machine_box}"
       next
     end
 
