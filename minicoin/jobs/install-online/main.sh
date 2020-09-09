@@ -8,9 +8,6 @@ else
     account_path="$HOME/.local/share/Qt"
 
     # make sure we are logged in
-    sudo cp /var/lib/lightdm/.Xauthority ~/.Xauthority
-    export XAUTHORITY=~/.Xauthority
-    export DISPLAY=:0
     xdotool type "vagrant"
     xdotool key --clearmodifiers Return
 fi

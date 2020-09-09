@@ -17,7 +17,7 @@ case $distro in
 
     case $desktop in
       kde)
-        packages=( "sddm kubuntu-desktop" )
+        packages=( "kubuntu-desktop" )
         ;;
       lxde)
         packages=( "lubuntu-desktop" )
@@ -102,3 +102,23 @@ fi
 if [[ ! -z $startdesktop ]]; then
   $startdesktop
 fi
+
+echo "Setting up remote login with xdotool..."
+$command "xdotool" > /dev/null
+xorg_cmd=$(ps a -C Xorg -o command)
+auth=0
+for cmd in $xorg_cmd
+do
+  if [ $auth == 1 ]
+  then
+    auth=$cmd
+    cp $auth /home/vagrant/.Xauthority
+    chown vagrant /home/vagrant/.Xauthority
+    chmod 600 /home/vagrant/.Xauthority
+    break
+  fi
+  [ $cmd == "-auth" ] && auth=1
+done
+
+echo 'export XAUTHORITY=$HOME/.Xauthority' >> /home/vagrant/.profile
+echo 'export DISPLAY=:0' >> /home/vagrant/.profile
