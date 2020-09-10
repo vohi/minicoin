@@ -34,7 +34,10 @@ continuous="false"
 abort="false"
 
 function list_jobs() {
-  ls jobs | awk {'printf (" - %s\n", $1)'}  
+  for job in $(ls -d jobs/*/)
+  do
+    basename $job | awk {'printf (" - %s\n", $1)'}
+  done
 }
 
 for arg in "${@}"; do
