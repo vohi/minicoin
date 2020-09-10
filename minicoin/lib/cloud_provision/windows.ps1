@@ -1,5 +1,6 @@
 param (
-    [string]$admin_password
+    [string]$admin_password,
+    [string]$mutagen_version
 )
 
 if ($admin_password) {
@@ -88,5 +89,5 @@ function Install-Mutagen {
     ./mutagen-agent.exe install
 }
 
-Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.7"
+Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version $mutagen_version
 
