@@ -53,6 +53,9 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_cmd
     min_args=1
     shift
+  elif [ $1 == "help" ]; then
+    minicoin_command="vagant help"
+    min_args=99
   fi
 
   if [[ $minicoin_command == "" ]]; then

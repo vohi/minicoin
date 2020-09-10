@@ -1,0 +1,23 @@
+Configures and builds the Qt module from the sources in the current directory
+
+If the Qt module is "qtbase", the job generates a helper script on the guest
+that runs "qmake" and "cmake" for this build. Other modules and projects can
+then use those scripts.
+
+The build directory on the guest is by default ~/[module]-build
+
+The build job supports Qt 5 (using qmake/make) and Qt 6 (using cmake/ninja).
+
+By default, the job configures Qt with
+
+-confirm-license -developer-build -opensource -nomake examples
+
+and builds the src directory (as well the qmake target for Qt 6).
+
+Supported job parameters:
+
+--configure "configure-line": overrides the default
+
+--target: other target than src/all (or sub-src for Qt 5)
+
+--build: a suffix for the build directory

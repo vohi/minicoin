@@ -1,0 +1,7 @@
+Configures and builds the Qt project from the sources in the current directory
+
+Runs qmake and make, or cmake and ninja, for the most recently built Qt.
+
+Supported job parameters:
+
+--target Build a specific target
