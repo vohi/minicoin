@@ -7,8 +7,8 @@ assumptions:
 on the host
 * the second argument passed into the script is the directory from which
 `minicoin` was run
-* the minicoin directory is available in `/minicoin` (or `C:\minicoin`), so
-utility scripts can be found there
+* the `minicoin/util` directory is available in `/minicoin/util` (or
+`C:\minicoin\util`), so utility scripts can be found there
 * the user's home directory (if not disabled) is available in a "host"
 subdirectory the platform's location for user directories (ie 
 `/home/host` for linux, `/Users/host` for macOS, `C:\Users\host` on Windows)
@@ -34,6 +34,5 @@ Linux box, "Job works on 'C:\Users\host\qt'" on the Windows box, and
 manually in your own scripts, if you don't want to use `parse-opts`.
 
 Otherwise, the roles for the machines will define what other
-assumptions scripts can make. See the **Provisioning** section below for
-details.
-
+assumptions scripts can make. See the [Roles](../README.md#roles)
+section for details.

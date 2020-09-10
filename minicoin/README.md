@@ -134,8 +134,8 @@ from boxes in the default file.
 
 ## Machine definition
 
-A machine needs to have a unique name, use a box that `vagrant` can launch a
-VM from
+A machine needs to have a unique name, and a box that `vagrant` can launch a
+VM from. All other settings are optional.
 
 The following parameters are available:
 
@@ -224,13 +224,31 @@ org `tqtc`.
 
 For disk images, the URLs under the `disks` key will be attempted.
 
-# Provisioning
+## Default provisioning and file sharing
 
-Provisioning is executed when the machine is booted up for the first time via
+Default rules are defined in the `settings` section of the `boxes.yml` files.
+
+Unless folder-sharing is disabled, the minicoin directory with the Vagrantfile
+will be shared with the guest as a folder `/minicoin`; the home directory of
+the current user (or whatever the `home_share` attribute specifies) will be shared
+with the guest as a folder `host` (`/home/host` on Linux, `C:\Users\host` on
+Windows, `/Users/host` on Mac guests).
+
+Folder sharing can be disabled for each box by setting the `shared_folders`
+attribute to `disabled`; the global `home_share` setting can be set to something
+else than `~`, or to `disabled` to only share the minicoin folder.
+
+On cloud-hosted VMs, folder-sharing should be disabled. Use the `mutagen` role
+instead.
+
+# Roles
+
+Roles define what provisioning steps are executed when the machine is booted up
+for the first time via
 
 `$ minicoin up machine`
 
-or when provisioning is explicitly executed using
+or when provisioning is explicitly run using
 
 `$ minicoin provision machine`
 
@@ -250,27 +268,10 @@ e.g.
 
 `$ minicoin provision ubuntu1804 --provision-with linux-desktop:script`
 
-## Default provisioning and file sharing
-
-Default rules are defined in the `settings` section of the `boxes.yml` files.
-
-Unless folder-sharing is disabled, the minicoin directory with the Vagrantfile
-will be shared with the guest as a folder `/minicoin`; the home directory of
-the current user (or whatever the `home_share` attribute specifies) will be shared
-with the guest as a folder `host` (`/home/host` on Linux, `C:\Users\host` on
-Windows, `/Users/host` on Mac guests).
-
-Folder sharing can be disabled for each box by setting the `shared_folders`
-attribute to `disabled`; the global `home_share` setting can be set to something
-else than `~`, or to `disabled` to only share the minicoin folder.
-
-On cloud-hosted VMs, folder-sharing should be disabled. Use the `mutagen` role
-instead.
-
 ## Machine-specific provisioning
 
-Additional provisioning steps are defined using the `roles` attribute in the
-machine's definition.
+Which roles a machine should have after provisioning is defined using the `roles`
+attribute in the machine's definition.
 
 ```
 - name: simple
@@ -287,13 +288,12 @@ machine's definition.
 - name: parameterized
   box: generic/ubuntu1804
   roles:
-    - role: role-name
+    - role: arguments
       param1: foo
       param2: bar
     - docker: name
       image: foo/bar
 ```
-
 
 See [Supported Roles](roles/README.md) for a list of available roles, and how to
 use them.

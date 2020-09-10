@@ -11,18 +11,29 @@ can be run using the special role type `docker`.
 As far as the provisioning is executed on the guest, it will be run with root
 privileges.
 
-### Scripted
+## Scripted
 
-For each subdirectory, minicoin will look for a `provision.sh` file for linux/macOS
-guests, or for a `provision.cmd` or `provision.ps1` file for Windows guests. Such
-a script will be executed on the guest using shell provisioning.
+Minicoin will always look for a provisioning script file; `provision.sh` for
+linux/macOS guests, and `provision.cmd` or `provision.ps1` file for Windows guests.
+Such a script will be executed on the guest using shell provisioning.
 
 The script will receive the name of the role for which it was run, the name of
 the machine, and the user name on the host, as command line arguments.
 
 If the role is parameterized, then the parameters are passed to the provisioning
-script as named arguments, ie the script `roles/arguments/provision.sh` will be
-called with arguments `--param1 foo --param2 bar` in the example above.
+script as named arguments.
+
+```
+- name: parameterized
+  box: generic/ubuntu1804
+  roles:
+    - role: arguments
+      param1: foo
+      param2: bar
+```
+
+the script `roles/arguments/provision.sh` will be called with arguments
+`--param1 foo --param2 bar` in the example above.
 
 Scripted provisioning is always done for roles that provide a provision script,
 even if there is another provisioner type (such as ansible or disk) present for
@@ -39,7 +50,7 @@ on the guest, ie.
       script: "echo Hello World"
 ```
 
-#### Host-side scripting
+### Host-side scripting
 
 Roles can provide `pre-provision.sh` and `post-provision.sh` script files; those will
 be executed on the host before and after the guest is being provisioned, respectively.
@@ -57,10 +68,10 @@ will be run as pre- and post-provisioning steps on the host:
       postprovision: "rm latest_keys"
 ```
 
-### File provisioning
+## Uploading files
 
-To upload a file to the guest during provisiniong, use the `upload` role,
-and specify a list of local files and remote destinations, e.g:
+To upload a file or directory to the guest during provisiniong, use the `upload`
+role, and specify a list of local files and remote destinations, e.g:
 
 ```
 - name: box
@@ -74,7 +85,7 @@ and specify a list of local files and remote destinations, e.g:
 The local file needs to exist on the host. On the guest, the necessary
 directory structure will be created automatically.
 
-### Mutagen file system sync
+## Mutagen file system sync
 
 Use the [`mutagen`](https://mutagen.io) role to sync local directories to the
 guest file system.
@@ -86,17 +97,17 @@ guest file system.
     - role: mutagen
       paths:
         - ~/qt/dev/qtbase
-        - ~/qt/dev/qtbase
+        - ~/qt/dev/qtdeclarative
 ```
 
-By default, `mutagen` will be installed on the guest, and will communicate to
-the host system via ssh (which requires an SSH server on the host).
+If `mutagen` is available on the host, then the sync will be created on the host.
+Otherwise (or if the `reverse` attribute is set to true), `mutagen` will be
+installed on the guest, and will communicate to the host system via ssh (which
+requires an SSH server on the host).
 
-For cloud VMs, `mutagen` should be configured to run in reverse mode by setting
-the `reverse` attribute to `true`; this requires a `mutagen` installation on the
-host system.
+For cloud VMs, `mutagen` needs to be installed on the host.
 
-### Docker
+## Docker
 
 minicoin can build a Dockerfile, or run a docker image.
 
@@ -129,14 +140,14 @@ will be built. Parameters are passed to the `docker build` run:
 This will call `docker build --rm --tag builder/wasm:513`.
 
 
-### Ansible
+## Ansible
 
 If minicoin finds a `playbook.yml` file, then the machine will be provisioned
 using [ansible](https://ansible.com).
 
-### Disks
+## Disks
 
-If minicoin finds a file `disk.yml`, then a disk or drive will be inserted or
+If minicoin finds a `disk.yml` file, then a disk or drive will be inserted or
 attached.
 
 ```
@@ -173,5 +184,5 @@ It's possible to specify provider-specific settings. Many of these changes will
 only have an effect when the box is created, and cannot be changed during later
 provisioning, or when the box is already running.
 
-See [Provider Notes](docs/provider-notes.md) for provider-specific provisioning
+See [Provider Notes](../docs/provider-notes.md) for provider-specific provisioning
 roles.
