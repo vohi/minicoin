@@ -100,7 +100,7 @@ then
   error=$?
 elif [ -f Makefile ]
 then
-  [ -z $target ] && target="sub-all"
+  [ -z $target ] && target="sub-src"
   echo "Building '$target' using make!"
   make $target -j$(nproc)
   error=$?
