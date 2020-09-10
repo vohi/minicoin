@@ -10,7 +10,7 @@ def script_provision(box, args)
     
     privileged = true
     privileged = args["privileged"] == true unless args["privileged"].nil?
-    box.vm.provision "custom script",
+    box.vm.provision "script:custom",
         type: :shell,
         upload_path: upload_path,
         inline: args["script"],

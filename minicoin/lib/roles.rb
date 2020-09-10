@@ -197,13 +197,13 @@ def add_role(box, role, name)
         pre_provision = lambda do |machine|
             read_process("#{role_path}/pre-provision.sh #{name}", machine.ui)
         end
-        box.vm.provision "Pre-provisiong for #{role}",
+        box.vm.provision "#{role}:pre-provision",
             type: :local_command,
             code: pre_provision
     end
 
     if File.file?("#{role_path}/playbook.yml")
-        box.vm.provision "#{role} Ansible",
+        box.vm.provision "#{role}:ansible",
             type: :ansible do |ansible|
                 ansible.playbook = "#{role_path}/playbook.yml"
                 ansible.become = true unless box.vm.guest == :windows
@@ -229,11 +229,11 @@ def add_role(box, role, name)
                 docker_args += " --#{param} \"#{value}\""
             end
         end
-        box.vm.provision "#{role}/Dockerfile upload",
+        box.vm.provision "#{role}:dockerfile",
             type: :file,
             source: "#{role_path}/Dockerfile",
             destination: "#{role}/Dockerfile"
-        box.vm.provision "#{role} docker build",
+        box.vm.provision "#{role}:dockerbuild",
             type: :docker do |docker|
                 docker.build_image "#{role}", args: docker_args
             end
@@ -293,7 +293,7 @@ def add_role(box, role, name)
                 end
             end
         end
-        box.vm.provision "#{role} script",
+        box.vm.provision "#{role}:script",
             type: :shell,
             path: "#{provisioning_file}",
             args: script_args,
@@ -306,7 +306,7 @@ def add_role(box, role, name)
         post_provision = lambda do |machine|
             read_process("#{role_path}/post-provision.sh #{name}", machine.ui)
         end
-        box.vm.provision "Post-provisiong for #{role}",
+        box.vm.provision "#{role}:post-provision",
             type: :local_command,
             code: post_provision
     end

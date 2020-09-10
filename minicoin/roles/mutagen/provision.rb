@@ -35,11 +35,11 @@ def mutagen_host_to_guest(box, name, alphas, betas)
         mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
         mutagen_key_add_script = "/tmp/vagrant-shell/mutagen_key_add.sh"
     end
-    box.vm.provision "mutagen key upload",
+    box.vm.provision "mutagen:key upload",
         type: :file,
         source: "~/.ssh/id_rsa.pub",
         destination: mutagen_key_destination
-    box.vm.provision "mutagen key add",
+    box.vm.provision "mutagen:key add",
         type: :shell,
         inline: mutagen_key_add,
         upload_path: mutagen_key_add_script,
@@ -59,7 +59,7 @@ def mutagen_host_to_guest(box, name, alphas, betas)
                 end
             end
         end
-        box.vm.provision "mutagen_#{sync}",
+        box.vm.provision "mutagen:sync_create #{sync}",
             type: :local_command,
             code: mutagen_create
         sync += 1
@@ -106,7 +106,7 @@ def mutagen_guest_to_host(box, name, alphas, betas)
         else
             dest = "~/.ssh/id_rsa"
         end
-        box.vm.provision "mutagen private key upload",
+        box.vm.provision "mutagen(reverse):key upload",
             type: :file,
             source: key_file,
             destination: dest
