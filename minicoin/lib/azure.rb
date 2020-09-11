@@ -15,7 +15,7 @@ if $AZURE_CLI_INSTALLED.nil?
     end
 end
 
-# VirtualBox specific settings
+# Azure specific settings
 def azure_setup(box, machine)
     if $AZURE_CLI_INSTALLED == false
         return
@@ -86,6 +86,7 @@ def azure_setup(box, machine)
             admin_password = admin_password.gsub('$', '`$') # powershell escapism
             begin
                 mutagen_version = `mutagen version`
+                mutagen_version = mutagen_version.strip()
             rescue
                 mutagen_version = "0.11.7"
             end
