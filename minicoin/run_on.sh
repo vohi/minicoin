@@ -308,7 +308,7 @@ function run_on_machine() {
   run="true"
   mkdir .logs 2> /dev/null
   echo $$ > "$continuous_file.pid"
-  command=""
+  command="chmod +x ${scriptfile} && "
   communicator="ssh"
   cleanup_command="rm -rf"
   if [[ $ext == "cmd" || $ext == "ps1" ]];
