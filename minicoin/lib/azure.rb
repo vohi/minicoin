@@ -62,6 +62,7 @@ def azure_setup(box, machine)
             azure.tcp_endpoints = [ '22', '5985', '5986', '3389' ]
             override.winrm.transport = :negotiate
             override.winrm.basic_auth_only = false
+            override.winrm.timeout = 3600
             override.winssh.private_key_path = "~/.ssh/id_rsa"
         end
 
