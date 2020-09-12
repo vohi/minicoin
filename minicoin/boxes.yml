@@ -21,15 +21,6 @@ urls:
 # machine definitions
 machines:
 
-## Test machines
-
-#  - name: test-linux
-#    box: generic/ubuntu1804
-#  - name: test-windows
-#    box: tqtc/$minicoin_key/windows10
-#  - name: test-mac
-#    box: tqtc/$minicoin_key/macos1015
-
 ## Simple Linux machine
 
   - name: ubuntu1804
@@ -102,22 +93,4 @@ machines:
   - name: doc-server
     box: generic/ubuntu1804
     roles: doc-server
-    memory: 2048
-  - name: wasm-builder
-    box: generic/ubuntu1804
-    roles:
-      - role: wasm-builder
-        tag: ["qtbuilder/wasm:5.13", "qtbuilder/wasm:latest"]
-        build-arg: qt_version=5.13
-      - docker: webserver
-        image: netresearch/node-webserver
-        args: "-p 80:8080 --mount type=bind,source=/home/host,target=/app/public,readonly"
-
-## Boxes provisioned via coin scripts
-  - name: coin-ubuntu
-    box: generic/ubuntu1804
-    roles:
-      - role: coin-node
-        template: qtci-linux-Ubuntu-18.04-x86_64
-        coin-root: $COIN_ROOT
     memory: 2048
