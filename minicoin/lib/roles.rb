@@ -201,6 +201,11 @@ def add_role(box, role, name)
             type: :local_command,
             code: pre_provision
     end
+    begin
+        ex_attributes = YAML.load_file("#{role_path}/attributes.yml")
+    rescue
+        ex_attributes = {}
+    end
 
     if File.file?("#{role_path}/playbook.yml")
         box.vm.provision "#{role}:ansible",
@@ -294,16 +299,27 @@ def add_role(box, role, name)
             end
         end
 
-        provisioning_name = "#{role}:script"
-        if role == "install"
-            provisioning_name = "install:#{role_params['packages']}"
-        end
-        box.vm.provision provisioning_name,
+        attributes = {
             type: :shell,
             path: "#{provisioning_file}",
             args: script_args,
             upload_path: upload_path,
             privileged: true
+        }
+        begin
+            ex_attributes["shell"].each do |key, value|
+                key = key.to_sym
+                attributes[key] = value
+            end
+        rescue
+        end
+
+        provisioning_name = "#{role}:script"
+        if role == "install"
+            provisioning_name = "install:#{role_params['packages']}"
+        end
+        box.vm.provision provisioning_name,
+            attributes
     end
     
     # check for post--provisioning script to run locally

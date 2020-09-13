@@ -1,0 +1,3 @@
+shell:
+  # unfortunately, vagrant's reboot logic for Windows fails
+  # reboot: true
