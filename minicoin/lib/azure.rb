@@ -64,6 +64,15 @@ def azure_setup(box, machine)
             override.winrm.basic_auth_only = false
             override.winrm.timeout = 3600
             override.winssh.private_key_path = "~/.ssh/id_rsa"
+            begin # windows hostnames can't be more than 15 character long
+                vm_name = ""
+                loop do
+                    vm_name = Haikunator.haikunate(100)
+                    break if vm_name.length() <= 15
+                end
+                azure.vm_name = vm_name
+            rescue
+            end
         end
 
         azure.tenant_id = $AZURE_PROFILE["tenantId"]
@@ -74,13 +83,6 @@ def azure_setup(box, machine)
         azure.admin_username = "vagrant"
         azure.location = location
         azure.instance_ready_timeout = 3600
-        # setting the name can easily cause conflicts, and makes the vagrant box name subject to restrictions
-        # azure.vm_name = name
-        # all machines in the same resource_group_name will be destroyed when one of them is
-        # azure.resource_group_name = "minicoin_#{name}"
-
-        # azure.vm_password =
-        # azure.vm_size =
 
         if machine["os"] == "windows"
             admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
