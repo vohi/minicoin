@@ -293,7 +293,12 @@ def add_role(box, role, name)
                 end
             end
         end
-        box.vm.provision "#{role}:script",
+
+        provisioning_name = "#{role}:script"
+        if role == "install"
+            provisioning_name = "install:#{role_params['packages']}"
+        end
+        box.vm.provision provisioning_name,
             type: :shell,
             path: "#{provisioning_file}",
             args: script_args,
