@@ -7,22 +7,26 @@ def mutagen_host_to_guest(box, name, alphas, betas)
     box.trigger.before :destroy do |trigger|
         trigger.name = "Shutting down mutagen sync to #{name} and removing from known hosts"
         trigger.ruby do |env, machine|
-            known_hosts = "#{$HOME}/.ssh/known_hosts"
             stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
             ssh_info = machine.ssh_info
             unless ssh_info.nil?
-                File.open("#{known_hosts}.new", 'w') do |out|
-                    out.chmod(File.stat(known_hosts).mode)
-                    File.foreach(known_hosts) do |line|
-                        if ssh_info[:host] == "127.0.0.1"
-                            out.puts line unless line.start_with?("[127.0.0.1]:#{ssh_info[:port]} ")
-                        else
-                            out.puts line unless line.start_with?(ssh_info[:host])
-                        end
-                    end
-                end
-                File.rename("#{known_hosts}.new", known_hosts)
+                keyname = "[127.0.0.1]"
+                keyname = "#{ssh_info[:host]}" unless ssh_info[:host] == "127.0.0.1"
+                keyname = "#{keyname}:#{ssh_info[:port]}" if ssh_info[:port] != 22
+                `ssh-keygen -R #{keyname}`
             end
+        end
+    end
+    box.trigger.before [ :halt, :suspend ] do |trigger|
+        trigger.name = "Pausing mutagen sync to #{name}"
+        trigger.ruby do |env, machine|
+            stdout, stderr, status = Open3.capture3("mutagen sync pause minicoin-#{name}")
+        end
+    end
+    box.trigger.after [ :up, :resume ] do |trigger|
+        trigger.name = "Resuming mutagen sync to #{name}"
+        trigger.ruby do |env, machine|
+            stdout, stderr, status = Open3.capture3("echo yes | mutagen sync resume minicoin-#{name}")
         end
     end
 
