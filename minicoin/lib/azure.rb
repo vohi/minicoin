@@ -84,6 +84,7 @@ def azure_setup(box, machine)
 
         if override.vm.guest == :windows || machine["os"] == "windows"
             admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+            override.vagrant.sensitive = [ admin_password, pwd ]
             admin_password = admin_password.gsub('$', '`$') # powershell escapism
             begin
                 mutagen_version = `mutagen version`
@@ -111,6 +112,7 @@ def azure_setup(box, machine)
                 source: "./util", destination: "c:\\minicoin\\util"
 
         else
+            override.vagrant.sensitive = [ pwd ]
             override.vm.provision "cloud_init (nix)",
                 type: :shell,
                 before: :all,

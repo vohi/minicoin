@@ -38,6 +38,7 @@ for a in 1 ... ARGV.length
 end
 
 Vagrant.configure("2") do |config|
+  config.vagrant.sensitive = [ ENV["minicoin_key"] ]
   machines = load_minicoin()
   if ARGV[0] == "list"
     puts "Available machines are:"
