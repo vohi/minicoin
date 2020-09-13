@@ -172,8 +172,6 @@ Vagrant.configure("2") do |config|
 
         if $has_winrm
           box.vm.communicator = :winrm
-          box.winrm.transport = :plaintext
-          box.winrm.basic_auth_only = true
         else
           box.vm.communicator = :winssh
         end
