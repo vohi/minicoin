@@ -82,7 +82,7 @@ def azure_setup(box, machine)
         # azure.vm_password =
         # azure.vm_size =
 
-        if override.vm.guest == :windows || machine["os"] == "windows"
+        if machine["os"] == "windows"
             admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
             override.vagrant.sensitive = [ admin_password, pwd ]
             admin_password = admin_password.gsub('$', '`$') # powershell escapism
