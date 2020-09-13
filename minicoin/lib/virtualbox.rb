@@ -79,4 +79,19 @@ def virtualbox_setup(box, machine)
             ]
         end
     end
+
+    # if it's a virtualbox VM, workaround destroy bug in VirtualBox
+    vboxdir = "#{$HOME}/VirtualBox VMs/#{machine['name']}"
+    if File.directory?(vboxdir)
+        box.trigger.after :destroy do |trigger|
+            trigger.name = "Workaround for VirtualBox bug"
+            trigger.ruby do |env, machine|
+                if File.directory?(vboxdir)
+                    puts "#{vboxdir} still exists, deleting!"
+                    require 'fileutils'
+                    FileUtils.remove_dir(vboxdir, true)
+                end
+            end
+        end
+    end
 end
