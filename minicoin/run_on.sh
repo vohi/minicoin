@@ -330,11 +330,20 @@ function run_on_machine() {
     error=0
     clean_log out err status
     log_progress "==> $machine: running '$job'"
+    start_seconds=$(date +%s)
+
     vagrant $communicator -c "$command" $machine < /dev/null \
       2> >(while read -r line; do >&2 printf "${RED}%s\n${NOCOL}" "$line"; done) \
       1> >(while read -r line; do >&1 printf "%s\n" "$line"; done)
-
     error=$?
+
+    end_seconds=$(date +%s)
+    diff_seconds=$((end_seconds-start_seconds))
+    time_format="%S seconds"
+    [ $diff_seconds -gt 60 ] && time_format="%M minutes, $time_format"
+    [ $diff_seconds -gt 3600 ] && time_format="%H hours, $time_format"
+    readable_time=$(date -r $diff_seconds -u +"$time_format")
+    printf "==> $machine: Job '$job' finished in %s\n" "$readable_time"
 
     [ $parallel == "false" ] && clean_log out err
     log_progress "==> $machine: Job '$job' exited with error code '$error'"
