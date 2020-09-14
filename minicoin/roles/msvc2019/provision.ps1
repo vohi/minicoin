@@ -1,5 +1,7 @@
+. "c:\minicoin\util\install_helper.ps1"
+
 $packages = ( 
-              "visualstudio2019-workload-vctools"
+                "visualstudio2019-workload-vctools"
             )
 
 & cmd /c "winrm set winrm/config/winrs @{MaxMemoryPerShellMB=`"2147483647`"}"
@@ -7,7 +9,12 @@ $packages = (
 chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) {
     $measurement = Measure-Command {
-        & chocolatey install --no-progress --limitoutput -y $p | Out-Default
+        Run-KeepAlive -ScriptBlock {
+            param($package)
+            write-host "Installing $package"
+            & chocolatey install --no-progress --limitoutput -y $package | Out-Default
+            write-host "Done Installing $package"
+        } -Arguments $p -HeartBeat 30
     }
     $duration = ""
     if ($measurement.TotalMinutes -lt 1) {
