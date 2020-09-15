@@ -2,6 +2,8 @@ param (
    [string]$script
 )
 
+[bool]$verbose = $false
+
 function Write-StdErr {
     param ([PSObject] $InputObject)
     $outFunc = if ($host.Name -eq 'ConsoleHost') {
@@ -23,20 +25,18 @@ function Repeat-Output {
         [System.Object]$stdout,
         [System.Object]$stderr
     )
-    if (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
-        while (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
-            $out_line = $stdout.ReadLine();
-            $err_line = $stderr.ReadLine();
-            if (![String]::IsNullOrEmpty($out_line)) {
-                write-host $out_line
-            }
-            if (![String]::IsNullOrEmpty($err_line)) {
-                Write-StdErr $err_line
-            }
+    while (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
+        $out_line = $stdout.ReadLine();
+        $err_line = $stderr.ReadLine();
+        if (![String]::IsNullOrEmpty($out_line)) {
+            write-host $out_line
         }
-    } else {
-        Start-Sleep -Milliseconds 50
+        if (![String]::IsNullOrEmpty($err_line)) {
+            Write-StdErr $err_line
+        }
+        Start-Sleep -Milliseconds 25
     }
+    Start-Sleep -Milliseconds 250
 }
 
 $outpath = New-TemporaryFile
@@ -51,6 +51,9 @@ ForEach ($arg in $args) {
     } else {
         $cmdargs += $arg
     }
+    if ($arg -eq "--verbose") {
+        $verbose = $true
+    }
 }
 
 $admin_password = "vagrant"
@@ -63,13 +66,22 @@ $jobargs = @(
 )
 
 try {
+    if ($verbose) {
+        Write-StdErr "Searching active session for user 'vagrant'"
+    }
     $ErrorActionPreference="SilentlyContinue"
     $sessioninfo = (query user vagrant | Select-String Active).toString().split() | where {$_}
     $ErrorActionPreference="Continue"
+    if (($sessioninfo -eq $null) -or ($sessioninfo.Length -eq 0)) {
+        throw "No session found"
+    }
     $jobargs += @(
         "-i", $sessioninfo[2],
         "-u", "vagrant", "-p", $admin_password
     )
+    if ($verbose) {
+        Write-StdErr "Active session found: $sessioninfo"
+    }
 } catch {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
 }
@@ -97,15 +109,27 @@ try {
     $pinfo.UseShellExecute = $true
     $pinfo.Arguments = $jobargs
 
+    if ($verbose) {
+        Write-StdErr "Calling $($pinfo.FileName) with Arguments:"
+        Write-StdErr "$jobargs"
+    }
+
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $pinfo
 
     $process.Start() | Out-Null
+    if ($verbose) {
+        Write-StdErr "Process started with id $($process.id)"
+    }
 } catch {
     Write-StdErr "Failure to start '$script' through psexec - aborting"
     Write-StdErr "Error message: $($_.ToString())"
     $PSItem.InvocationInfo | Format-List *
     exit $LASTEXITCODE
+}
+
+if ($verbose) {
+    Write-StdErr "Reading $outpath and $errpath"
 }
 
 $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
@@ -114,6 +138,9 @@ $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
 $stderr = New-Object System.IO.StreamReader($stderr_file)
 
 try {
+    if ($verbose) {
+        Write-StdErr "Waiting for $process"
+    }
     while (!$process.HasExited) {
         Repeat-Output $stdout $stderr
     }
@@ -122,6 +149,10 @@ try {
     Write-StdErr "Exception while reading process output - exiting"
     Write-StdErr "Error message: $($_.ToString())"
     $PSItem.InvocationInfo | Format-List *
+}
+
+if ($verbose) {
+    Write-StdErr "Cleaning up $outpath and $errpath"
 }
 
 $stdout.Dispose();
@@ -134,6 +165,6 @@ Remove-Item $errpath
 
 $process.WaitForExit()
 if ($process.ExitCode -ne 0) {
-    write-host "Process exited with" $process.ExitCode
+    Write-StdErr "Process exited with $($process.ExitCode)"
 }
 exit $process.ExitCode

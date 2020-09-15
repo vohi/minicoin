@@ -304,6 +304,11 @@ function run_on_machine() {
     job_args+=($arg)
   done
 
+  # pass --verbose through to guest
+  if [[ $verbose == "true" ]]; then
+    job_args+=( "--verbose" )
+  fi
+
   error=0
   run="true"
   mkdir .logs 2> /dev/null
