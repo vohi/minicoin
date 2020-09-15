@@ -136,32 +136,25 @@ Vagrant.configure("2") do |config|
         auto_correct: true
       ports = machine["ports"]
       if !ports.nil?
-        struct_error = true
-        if ports.is_a?(Array)
+        begin
           ports.each do |port|
-            if port.is_a?(Hash)
-              struct_error = false
-              port_guest = port["guest"]
-              port_host = port["host"]
-              port_id = port["id"]
-              if !port_guest.nil? && !port_host.nil?
-                if port_id == "rdp"
-                  machine["rdp_port"] = port_host
-                end
-                box.vm.network "forwarded_port", id: port["id"],
-                  guest: port_guest, guest_ip: port["guest_ip"],
-                  host: port_host, host_ip: port["host_ip"],
-                  protocol: port["protocol"],
-                  auto_correct: port["auto_correct"]
-              else
-                puts "==> #{name}: port forwarding requires values for guest and host (#{port})"
-              end
+            attributes = {
+              :auto_correct => true
+            }
+            port.each do |key, value|
+              attributes[key.to_sym] = value
             end
+            raise "No ID" if attributes[:id].nil?
+            raise "No guest port" if attributes[:guest].nil?
+            if attributes[:id] == "rdp"
+              # turn on local hypervisor's RDP server, if supported
+              machine["rdp"] = true
+            end
+            attributes[:host] = attributes[:guest] * 10 + machine["index"] if attributes[:host].nil?
+            box.vm.network "forwarded_port", attributes
           end
-        else
-        end
-        if struct_error
-          puts "==> #{name}: 'ports' needs to be a list of mappings"
+        rescue
+          puts "==> #{name}: 'ports' needs to be a list of mappings, and 'id' and 'guest' needs to be set"
         end
       end
 

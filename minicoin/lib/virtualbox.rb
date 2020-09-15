@@ -14,8 +14,8 @@ def virtualbox_setup(box, machine)
         modifyvm["--vram"] = machine["vram"] unless machine["vram"].nil?
         modifyvm["--nictype1"] = machine["nictype1"] unless machine["nictype1"].nil?
         modifyvm["--nictype2"] = machine["nictype2"] unless machine["nictype2"].nil?
-        modifyvm["--vrde"] = "on" unless machine["rdp_port"].nil?
-        modifyvm["--vrdeport"] = machine["rdp_port"] unless machine["rdp_port"].nil?
+        modifyvm["--vrde"] = "on" if machine["rdp"]
+        modifyvm["--vrdeport"] = "5000-5050" if machine["rdp"]
         modifyvm["--graphicscontroller"] = "vmsvga" unless box.vm.guest == :windows
         modifyvm["--graphicscontroller"] = "vboxsvga" if box.vm.guest == :windows
         
