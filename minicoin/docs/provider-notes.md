@@ -1,8 +1,29 @@
 # Provider Notes and Requirements
 
-minicoin is primarily tested with [VirtualBox](https://virtualbox.org), 
-[VMware Fusion](https://www.vmware.com/products/fusion.html), and
-[Microsoft Azure](https://portal.azure.com).
+Vagrant communicates with different virtualization backends using `providers`.
+The default provider is [VirtualBox](https://virtualbox.org), since it's free
+and ships out of the box with vagrant.
+
+Other providers that minicoin is tested with are:
+
+* [VMware Fusion](https://www.vmware.com/products/fusion.html); use `vmware_desktop`
+as the provider
+* [Microsoft Azure](https://portal.azure.com); use `azure` as the provider
+
+The provider can be specified explicitly when bringing up a machine:
+
+`$ vagrant up windows10 --provider azure`
+
+or in the declaration of the machine in the `boxes.yml` file:
+
+```
+- name: windows10
+  provider: azure
+```
+
+Or you can set the `VAGRANT_DEFAULT_PROVIDER` to change the default provider
+for all of minicoin runs. If you don't have VirtualBox installed, you should
+set the default provider to what you want to use instead.
 
 Other providers that vagrant supports might work with just a few adjustments -
 [contributions](contributing.md) welcome!
@@ -12,13 +33,18 @@ Other providers that vagrant supports might work with just a few adjustments -
 VirtualBox is the default choice for vagrant; it's free and cross platform,
 and good enough for most use cases.
 
-With VirtualBox, you will also need the
+When using VirtualBox, you will also need the
 [Oracle VM VirtualBox Extension Pack](https://www.virtualbox.org/wiki/Downloads).
 
-It's main disadvantage is that spinning up machines is slow and requires a lot of
-disk space, since the entire basebox image is copied. VirtualBox doesn't support
-nested virtualization, hardware accelaration is not great, and there are no guest
-additions for macOS virtual machines (so clipboard sharing doesn't work).
+Since it's the default, it's the easiest provider to get started, and it's
+also the one that minicoin is most actively tested with.
+
+The main disadvantage with VirtualBox is that spinning up machines is slow and
+requires a lot of disk space, since the entire basebox image is copied. VirtualBox
+doesn't support nested virtualization, hardware acceleration is not great, and
+there are no guest additions for macOS virtual machines (so clipboard sharing
+doesn't work).
+
 
 ### VirtualBox specific provisioning
 
@@ -55,15 +81,17 @@ Alternatively, specify vmware_desktop as the provider in your box definition:
   provider: vmware_desktop
 ```
 
-Lastly, you can set the `VAGRANT_DEFAULT_PROVIDER` to `vmware_desktop` to change
-the default provider for all of minicoin runs.
-
 Starting a new machine with VMware Fusion is very fast, is it doesn't require a full copy
 of the basebox image. VMware also supports nested virtualization, which allows running
-e.g an Android emulator inside a Ubuntu virtual machine.
+e.g an Android emulator inside a Ubuntu virtual machine. Lastly, macOS is a fully
+supported guest OS on VMware Fusion, so clipboard sharing with the host works.
 
-Lastly, macOS is a fully supported guest OS on VMware Fusion, so clipboard sharing with
-the host works.
+However, there are some of hiccups in both VMware Fusion and the vagrant plugin. You
+might experience frequent issues with the network configuration and port forwarding when
+frequently creating and destroying machines. Often, re-running the minicoin command works,
+but sometimes it's necessary to restart the `vagrant-vmware-utility` services (using
+launchctl or systemctl), to wipe out configuration files (in `/opt/vagrant-vmware-desktop`),
+or even to reboot the host computer to reset the network services.
 
 ### VMware specific provisioning
 
@@ -101,14 +129,14 @@ minicoin when bringing the box up, e.g.
 When defining a box specific to be used with Azure in your `boxes.yml` file, set the
 `provider` attribute to `azure`. Install the `azure` dummy box for vagrant via
 
-`$ vagrant box add azure https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box --provider azure`
+`$ vagrant box add azure-dummy https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box --provider azure`
 
-and use `azure` as the box in your machine definition. Finally, apply azure specific
+and then use `azure-dummy` as the box in your machine definition. Finally, apply azure specific
 provisioning to specify the image from which the box should be deployed, e.g
 
 ```
   - name: ubuntu-azure
-    box: azure
+    box: azure-dummy
     provider: azure
     roles:
       - role: azure

@@ -29,7 +29,7 @@ You need to install [Vagrant](https://vagrantup.com), and a virtual machine
 provider that vagrant supports, like [VirtualBox](https://virtualbox.org),
 or an account with a cloud provider.
 See [provider specific details](minicoin/docs/provider-notes.md) for more
-information.
+information about providers.
 
 Clone this repository, and if on macOS or Linux, run the `setup.sh` script to
 install `minicoin` in `/usr/local/bin`:
