@@ -10,7 +10,7 @@ if [ $# -lt 1 ]; then
 fi
 
 vmname="$1"
-[[ ! -z "$2" ]] && boxname="$2" || boxname="$vmname"
+[[ ! -z "$2" ]] && boxname="$2" || boxname=${vmname/basebox/virtualbox}
 boxfile="$boxname.box"
 
 if [ -f "$boxfile" ]; then
@@ -20,7 +20,7 @@ fi
 
 echo "Exporting VM '$vmname' to file '$boxfile' ..."
 
-vagrant package --base $vmname --output $boxfile $boxname
+vagrant package --output $boxfile $vmname
 error=$?
 
 if [ $error != 0 ]

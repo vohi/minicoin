@@ -5,7 +5,7 @@ if [ $# -lt 2 ]
 then
   echo "Publish a box file to the AWS 'tqtc-vagrant-boxes' S3 bucket" 
   echo ""
-  echo "Usage: $0 boxfile aws|azure [private] [virtualbox|vmware_desktop]"
+  echo "Usage: $0 boxfile aws|azure [private] [virtualbox|vmware_desktop|azure]"
   echo ""
   echo "Uses the AWS and Azure cli clients. Make sure access credentials are configured."
   echo "The box file will be world-readable, so make sure it doesn't contain any secrets."
@@ -21,7 +21,9 @@ fi
 provider=
 [ ! -z "$4" ] && provider="$4/"
 
-metafile=$(echo "../minicoin/boxes/tqtc/$blobname" | sed -e 's/-.*\.box/\.json/')
+metafile=${blobname%-*} # strip version number
+metafile=${metafile%-*} # and provider from filename
+metafile="../minicoin/boxes/tqtc/$metafile.json"
 if [ -f "$metafile" ] && [ ! -z "$private" ]
 then
   metafilename="$(basename $metafile)"
