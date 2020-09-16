@@ -19,6 +19,24 @@
                     "url": "https://$server/$minicoin_key/azure/windows10-0.0.3.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.4",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "https://$server/$minicoin_key/virtualbox/windows10-virtualbox-0.0.4.box"
+                },
+                {
+                    "name": "vmware_desktop",
+                    "url": "https://$server/$minicoin_key/vmware_desktop/windows10-vmware-0.0.4.box"
+                },
+                {
+                    "name": "azure",
+                    "url": "https://$server/$minicoin_key/azure/windows10-azure-0.0.4.box"
+                }
+            ]
         }
     ]
 }
