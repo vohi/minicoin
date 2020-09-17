@@ -1,0 +1,11 @@
+- yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ basic }}"
+    - "{{ x11 }}"
+    - "{{ opengl }}"
+    - "{{ ssl }}"
+    - "{{ font }}"
+    - "{{ wayland }}"
+    - "{{ vkb }}"

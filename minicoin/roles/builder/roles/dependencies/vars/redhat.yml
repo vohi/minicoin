@@ -1,0 +1,33 @@
+basic:
+  - zlib-devel
+
+x11:
+  - libX11*
+  - libxcb*
+  - libxcb-devel
+  - libX11-xcb*
+  - libXrender*
+  - libXrender-devel*
+  - libXi*
+  - libXi-devel*
+  - libxkbcommon-devel
+
+accessibility:
+  - libatspi2.0-dev
+
+opengl:
+  - mesa-libGL-devel
+
+ssl:
+  - libssl*
+  - openssl-devel*
+
+font:
+  - fontconfig
+
+wayland:
+  - libwayland-*
+  - mesa-libwayland-egl*
+
+vkb:
+  - hunspell

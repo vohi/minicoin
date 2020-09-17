@@ -1,0 +1,16 @@
+- name: Enable repositories
+  apt_repository:
+    repo: deb http://archive.ubuntu.com/ubuntu bionic main restricted
+    state: present
+
+- name: Install build tools
+  apt:
+    name:
+      - build-essential
+      - python
+      - perl
+      - bison
+      - gperf
+      - flex
+      - ninja-build
+    state: present

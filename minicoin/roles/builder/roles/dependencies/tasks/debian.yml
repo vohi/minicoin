@@ -1,0 +1,12 @@
+- apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ basic }}"
+    - "{{ x11 }}"
+    - "{{ accessibility }}"
+    - "{{ opengl }}"
+    - "{{ ssl }}"
+    - "{{ font }}"
+    - "{{ wayland }}"
+    - "{{ vkb }}"

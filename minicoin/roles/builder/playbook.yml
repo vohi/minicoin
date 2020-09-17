@@ -1,0 +1,7 @@
+- name: Qt Builder
+  hosts: all
+  gather_facts: True
+
+  roles:
+    - tools
+    - dependencies
