@@ -53,6 +53,27 @@ $ chmod +x /bin/minicoin
 See the [Platform Notes and System Requirements](minicoin/docs/platform-notes.md)
 for platform specific details.
 
+## Optional packages for an optimal experience
+
+Minicoin can do most things with only VirtualBox and vagrant being present, but for an optimal
+experience, install the following on your host as well:
+
+* [Ansible](https://docs.ansible.com/ansible/latest/installation_guide)
+
+Ansible is a tool for automating the provisioning of machines in a declarative way, making
+it unnecessary to write complex shell scripts. Some of the prebuild
+[roles](minicoin/roles/README.md) use Ansible.
+
+* [mutagen.io](https://mutagen.io/documentation/introduction/installation)
+
+Mutagen provides very fast synchronization of your local file system to the guest, and is used
+by the [mutagen](https://git.qt.io/vohilshe/minicoin/-/tree/master/minicoin/roles#mutagen-file-system-sync)
+role. If installed, minicoin will establish the sync-point on the host. If not installed on the
+host, the role will try to install mutagen on the guest, and "call back" to the host, which
+requires an SSH server to run on the host, and a somewhat complex exchange of authorization keys.
+
+In addition, machines hosted on the cloud cannot call back to the host, so using machines on e.g.
+Azure requires a local mutagen installation.
 
 # Security notice
 
