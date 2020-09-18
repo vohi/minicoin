@@ -6,5 +6,15 @@
     - packages
 
 - name: Make nginx serve correct directory
-  shell: sed -i 's/root.*/root \/home\/vagrant;/' /etc/nginx/sites-available/default
+  lineinfile:
+    path: /etc/nginx/sites-available/default
+    regexp: ^\s+root.*
+    line: "        root /home/vagrant;"
+  notify: restart nginx
+
+- name: Turn on auto-indexing
+  lineinfile:
+    path: /etc/nginx/sites-available/default
+    regexp: ^\s+try_files.*
+    line: "                 autoindex on;"
   notify: restart nginx

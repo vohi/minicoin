@@ -92,5 +92,7 @@ machines:
       - role: android-builder
   - name: doc-server
     box: generic/ubuntu1804
-    roles: doc-server
+    roles:
+      - builder
+      - doc-server
     memory: 2048
