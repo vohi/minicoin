@@ -1,6 +1,4 @@
-- name: Install libclang-dev and llvm for qdoc
+- name: Install dependencies for qdoc
   apt:
-    name: ['libclang-dev', 'llvm']
+    name: ['clang-10', 'libclang-10-dev', 'llvm-10']
     state: present
-  tags:
-    - packages
