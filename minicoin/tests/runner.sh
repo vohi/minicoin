@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
 set -o pipefail
+declare -i errors=0
 
 echo "============================> Testing parse-opts  <============================"
 ./parse-opts-test.sh
 
 echo "============================> Testing Vagrantfile <============================"
 ruby autotest.rb
+if [ $? -gt 0 ]
+then
+    errors=$(( errors + 1 ))
+fi
+minicoin list > /dev/null
+if [ $? -gt 0 ]
+then
+    errors=$(( errors + 1 ))
+fi
+
 
 echo "============================> Testing job running <============================"
 machines=( "${@}" )
@@ -19,7 +30,6 @@ GREEN="\033[0;32m"
 RED="\033[0;31m"
 NOCOL="\033[0m"
 
-declare -i errors=0
 function assert()
 {
     actual="$1"
