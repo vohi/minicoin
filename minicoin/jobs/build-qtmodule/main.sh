@@ -48,7 +48,7 @@ then
 elif [ -f Makefile ] && [ -z $configure ]
 then
   echo "'$module' already configured with qmake"
-elif [[ $module == "qtbase" ]]
+elif [[ -f "$sources/configure" ]]
 then
   generate_toollink=( "qmake" )
   configure="-confirm-license -developer-build -opensource -nomake examples $configure"
@@ -105,7 +105,7 @@ then
   make $target -j$(nproc)
   error=$?
 else
-  2> echo "No build system generated, aborting"
+  >&2 echo "No build system generated, aborting"
 fi
 
 exit $error
