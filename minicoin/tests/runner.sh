@@ -1,34 +1,35 @@
 #!/usr/bin/env bash
 set -o pipefail
 declare -i errors=0
-
-echo "============================> Testing parse-opts  <============================"
-./parse-opts-test.sh
-
-echo "============================> Testing Vagrantfile <============================"
-ruby autotest.rb
-if [ $? -gt 0 ]
-then
-    errors=$(( errors + 1 ))
-fi
-minicoin list > /dev/null
-if [ $? -gt 0 ]
-then
-    errors=$(( errors + 1 ))
-fi
-
-
-echo "============================> Testing job running <============================"
-machines=( "${@}" )
-if [ $# -eq 0 ]
-then
-    echo "For additional tests, provide names of running machines!"
-    exit
-fi
-
 GREEN="\033[0;32m"
 RED="\033[0;31m"
 NOCOL="\033[0m"
+
+
+function finish() {
+    [ $errors -gt 0 ] && printf "${RED}" || printf "${GREEN}"
+    printf "Done with $errors error!${NOCOL}\n"
+    exit
+}
+
+echo "============================> Testing parse-opts  <============================"
+./parse-opts-test.sh
+[ $? -gt 0 ] && errors=$(( errors + 1 ))
+
+echo "============================> Testing Vagrantfile <============================"
+ruby autotest.rb
+[ $? -gt 0 ] && errors=$(( errors + 1 ))
+minicoin list > /dev/null
+[ $? -gt 0 ] && errors=$(( errors + 1 ))
+
+if [ $# -eq 0 ]
+then
+    echo "For additional tests, provide names of running machines!"
+    finish
+fi
+
+echo "============================> Testing job running <============================"
+machines=( "${@}" )
 
 function assert()
 {
@@ -79,5 +80,4 @@ then
     assert $return $count
 fi
 
-[ $errors -gt 0 ] && printf "${RED}" || printf "${GREEN}"
-printf "Done with $errors error!${NOCOL}\n"
+finish
