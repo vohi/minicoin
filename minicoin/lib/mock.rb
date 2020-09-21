@@ -3,7 +3,9 @@
 class MockVagrant
     def initialize()
       @config = MockConfig.new()
+      @config.vagrant = self
       @plugin = MockPlugin.new()
+      @sensitive = Array.new
     end
     def require_version(expr)
     end
@@ -16,14 +18,27 @@ class MockVagrant
     def plugin(a, b="default")
       MockPlugin
     end
+    def sensitive
+      @sensitive
+    end
+    def sensitive=(sensitive)
+      @sensitive << sensitive
+    end
   end
   
   class MockConfig
     def initialize()
       @vm = MockVm.new(nil)
+      @vagrant = nil
     end
     def vm()
       return @vm
+    end
+    def vagrant
+      @vagrant
+    end
+    def vagrant=(vagrant)
+      @vagrant = vagrant
     end
   end
   
