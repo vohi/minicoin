@@ -84,7 +84,7 @@ can be executed on machines. Jobs can receive command line arguments, access the
 host file system via folder sharing, and use the software installed through
 provisioning steps.
 
-See [Defining Jobs](jobs/README.md) for documentation on how to implement jobs.
+See [Defining Jobs](jobs/jobs#defining-jobs) for documentation on how to implement jobs.
 
 ## Executing Jobs
 
