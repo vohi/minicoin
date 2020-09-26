@@ -12,10 +12,6 @@ function print_help() {
   echo "  "
   echo "--parallel triggers parallel execution of the job on several machines."
   echo "  By default, the job is executed on each machine sequentially."
-  echo "--continuous runs the job in a loop (implies --parallel), waiting"
-  echo "  after each run for the next invocation, which will be executed without"
-  echo "  the overhead of setting the job up again."
-  echo "--abort makes a current continuous run break out of the loop and exit."
   echo "--no-color don't colorize output"
   echo
 }
@@ -30,8 +26,6 @@ job="-1"
 script_args=()
 parallel="false"
 verbose="false"
-continuous="false"
-abort="false"
 
 function list_jobs() {
   for job in $(ls -d jobs/*/)
@@ -60,12 +54,6 @@ for arg in "${@}"; do
     elif [[ "$arg" == "--verbose" ]]
     then
       verbose="true"
-    elif [[ "$arg" == "--continuous" ]]
-    then
-      continuous="true"
-    elif [[ "$arg" == "--abort" ]]
-    then
-      abort="true"
     elif [[ "$arg" == "--no-color" ]]
     then
       GREEN=
@@ -106,52 +94,6 @@ function log_progress() {
   fi
 }
 
-# continuous runs with more than one machine need to run parallel
-if [[ $continuous == "true" && $(( ${#machines[@]} - 1 )) -gt 0 ]]
-then
-  log_progress "More than one machine running continuously - running parallel"
-  parallel="true"
-fi
-
-function test_continue() {
-  local continuous_file=$1
-  local continuous=$2
-  local machine=$3
-  local run="true"
-
-  if [ $continuous == "true" ] || [ $continuous == "wakeup" ]
-  then
-    if [ $continuous == "true" ]
-    then
-      log_progress "==> $machine: Continuous process, waiting to wake up..."
-    fi
-    run="true"
-
-    timestamp_old=$(stat -f "%m" $continuous_file 2> /dev/null)
-    timestamp_new=$timestamp_old
-    while [[ $timestamp_new -eq $timestamp_old ]]
-    do
-      sleep 1
-      timestamp_new=$(stat -f "%m" $continuous_file 2> /dev/null)
-      staterror=$?
-      if [[ $staterror != 0 ]]
-      then
-        log_progress "==> $machine: Aborted, exiting"
-        run="false"
-      fi
-    done
-  else
-    run="false"
-  fi
-
-  echo $run
-}
-
-function trap_handler() {
-  [[ -n $out_pid ]] && kill $out_pid 2>/dev/null
-  [[ -n $err_pid ]] && kill $err_pid 2>/dev/null
-}
-
 function clean_log() {
   for ext in "${@}"
   do
@@ -161,67 +103,7 @@ function clean_log() {
 
 function run_on_machine() {
   local machine="$1"
-  continuous_file=".logs/$job-$machine"
-  run_file="$continuous_file-$log_stamp"
-  if [[ -f "$continuous_file.pid" ]]
-  then
-    log_progress "==> $machine: Checking '$continuous_file.pid'"
-    pid=$(head -n 1 "$continuous_file.pid")
-    log_progress "==> $machine: Probing process $pid read from '$continuous_file.pid'"
-    local process_info=$(ps -o pid,pgid $pid)
-    local process_error=$?
-
-    if [ $process_error -eq 0 ]
-    then
-      if [[ $abort == "true" ]]
-      then
-        printf "==> $machine: Waiting for current job '%s' to finish" "$job"
-        mv "$continuous_file.pid" "$continuous_file.exiting" 2> /dev/null
-        count=0
-        while [[ $process_error -eq 0 ]]
-        do
-          printf "."
-          sleep 1
-          process_info=$(ps -o pid,pgid $pid)
-          process_error=$?
-          count=$(( $count+1 ))
-          if [[ $count -gt 15 ]]
-          then
-            break
-          fi
-        done
-        printf "\n"
-        process_info=$(ps $pid)
-        if [[ $? -eq 0 ]]
-        then
-          printf "${YELLOW}==> $machine: $Timeout - terminating job '$job'${NOCOL}\n"
-          log_progress "==> $machine: sending SIGTERM to processes in group $pid"
-          kill -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
-        fi
-        process_info=$(ps $pid)
-        if [[ $? -eq 0 ]]
-        then
-          printf "${RED}==> $machine: Failed to terminate job '$job' with process id $pid - killing${NOCOL}\n"
-          log_progress "==> $machine: sending SIGKILL to processes in group $pid"
-          kill -9 -- -$(ps -o pgid,pid | grep ^$pid | awk '{print $2}')
-        fi
-        log_progress "==> $machine: job terminated, cleaning up"
-        rm $continuous_file.exiting 2> /dev/null
-        return 0
-      fi
-      echo "==> $machine: Waking up current job!"
-      echo $log_stamp >> "$continuous_file.pid"
-      run=$(test_continue "$continuous_file.pid" "wakeup" $machine)
-      local last_error=$(tail -n 1 "$continuous_file.pid" | awk '{print $1}')
-      log_progress "==> $machine: Last job existed with '$last_error'"
-      return $last_error
-    else
-      echo "==> $machine: Aborted job '$job' discovered, deleting"
-      rm $continuous_file.pid 2> /dev/null
-    fi
-  fi
-  [[ $abort == "true" ]] && return 0
-
+  run_file=".logs/${job}-${machine}-${log_stamp}"
   exec 0<&- # closing stdin
 
   log_progress "==> $machine: Setting up machine"
@@ -256,16 +138,6 @@ function run_on_machine() {
   fi
 
   echo "==> $machine: running '$job' with arguments '${script_args[@]}'"
-  if [ -f "jobs/$job/pre-run.sh" ]; then
-    log_progress "==> $machine: Initializing $job"
-    jobs/$job/pre-run.sh $machine "${script_args[@]}"
-    error=$?
-    if [ $error -gt 0 ]
-    then
-      >&2 printf "${RED}Pre-run initializatoin exited with error code $error, assuming error and aborting!${NOCOL}"
-      return -3
-    fi
-  fi
 
   log_progress "==> $machine: Uploading '$upload_source'..."
   if ! vagrant upload $upload_source $job $machine > /dev/null
@@ -299,8 +171,6 @@ function run_on_machine() {
     if [[ $arg =~ $whitespace ]]; then
       arg=\"$arg\"
     fi
-    log_progress "==> $machine: Argument '$arg' added"
-
     job_args+=($arg)
   done
 
@@ -312,7 +182,6 @@ function run_on_machine() {
   error=0
   run="true"
   mkdir .logs 2> /dev/null
-  echo $$ > "$continuous_file.pid"
   command="chmod +x ${scriptfile} && "
   communicator="ssh"
   cleanup_command="rm -rf"
@@ -327,41 +196,32 @@ function run_on_machine() {
   cleanup_command="${cleanup_command} ${job}"
 
   log_progress "==> $machine: Executing '$command' through $communicator at $log_stamp"
-  while [ "$run" == "true" ]; do
-    if [[ $parallel == "true" ]]; then
-      redirect=" > /minicoin/${run_file}.out 2> /minicoin/${run_file}.err"
-      command="$command$redirect"
-    fi
-    error=0
-    clean_log out err status
-    log_progress "==> $machine: running '$job'"
-    start_seconds=$(date +%s)
 
-    vagrant $communicator -c "$command" $machine < /dev/null \
-      2> >(while read -r line; do >&2 printf "${RED}%s\n${NOCOL}" "$line"; done) \
-      1> >(while read -r line; do >&1 printf "%s\n" "$line"; done)
-    error=$?
+  if [[ $parallel == "true" ]]; then
+    redirect=" > /minicoin/${run_file}.out 2> /minicoin/${run_file}.err"
+    command="$command$redirect"
+  fi
+  error=0
+  clean_log out err status
+  log_progress "==> $machine: running '$job'"
+  start_seconds=$(date +%s)
 
-    end_seconds=$(date +%s)
-    diff_seconds=$((end_seconds-start_seconds))
-    time_format="%S seconds"
-    [ $diff_seconds -gt 60 ] && time_format="%M minutes, $time_format"
-    [ $diff_seconds -gt 3600 ] && time_format="%H hours, $time_format"
-    readable_time=$(date -r $diff_seconds -u +"$time_format")
-    printf "==> $machine: Job '$job' finished in %s\n" "$readable_time"
+  vagrant $communicator -c "$command" $machine < /dev/null \
+    2> >(while read -r line; do >&2 printf "${RED}%s\n${NOCOL}" "$line"; done) \
+    1> >(while read -r line; do >&1 printf "%s\n" "$line"; done)
+  error=$?
 
-    [ $parallel == "false" ] && clean_log out err
-    log_progress "==> $machine: Job '$job' exited with error code '$error'"
+  end_seconds=$(date +%s)
+  diff_seconds=$((end_seconds-start_seconds))
+  time_format="%S seconds"
+  [ $diff_seconds -gt 60 ] && time_format="%M minutes, $time_format"
+  [ $diff_seconds -gt 3600 ] && time_format="%H hours, $time_format"
+  readable_time=$(date -r $diff_seconds -u +"$time_format")
+  printf "==> $machine: Job '$job' finished in %s\n" "$readable_time"
 
-    echo $error >> "$continuous_file.pid"
-    if [ "$continuous" == "true" ]
-    then
-      echo "==> $machine: Waiting for next run; run 'minicoin run --abort $machine $job' to exit"
-    fi
-    run=$(test_continue "$continuous_file.pid" $continuous $machine)
-  done
-
-  log_progress "==> $machine: Job '$job' finished, cleaning up."
+  [ $parallel == "false" ] && clean_log out err
+  log_progress "==> $machine: Job '$job' exited with error code '$error'"
+  log_progress "==> $machine: Cleaning up."
   vagrant $communicator -c "$cleanup_command" $machine < /dev/null 2> /dev/null
 
   if [ $error -gt 0 ]
@@ -374,25 +234,23 @@ function run_on_machine() {
     fi
   fi
   [ $parallel == "false" ] && clean_log out err
-  rm $continuous_file.pid 2> /dev/null
 
-  if [ -f "jobs/$job/post-run.sh" ]
-  then
-    log_progress "==> $machine: Cleaning up after '$job'"
-    jobs/$job/post-run.sh $machine "${script_args[@]}"
-    post_error=$?
-    if [ $post_error -gt 0 ]
-    then
-      >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
-    fi
-
-    [ $error -eq 0 ] && error=$post_error
-  fi
   return $error
 }
 
 total_error=0
 pids=()
+
+if [ -f "jobs/$job/pre-run.sh" ]; then
+  log_progress "==> $machine: Running pre-run script for $job"
+  jobs/$job/pre-run.sh "${script_args[@]}"
+  error=$?
+  if [ $error -gt 0 ]
+  then
+    >&2 printf "${RED}Pre-run initialization exited with error code $error, assuming error and aborting!${NOCOL}"
+    return -3
+  fi
+fi
 
 for machine in "${machines[@]}"
 do
@@ -417,5 +275,18 @@ do
   total_error=$(( total_error+$? ))
   index=$(( index + 1 ))
 done
+
+if [ -f "jobs/$job/post-run.sh" ]
+then
+  log_progress "==> $machine: Running post-run script for $job"
+  jobs/$job/post-run.sh "${script_args[@]}"
+  post_error=$?
+  if [ $post_error -gt 0 ]
+  then
+    >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
+  fi
+
+  [ $error -eq 0 ] && error=$post_error
+fi
 
 exit $total_error
