@@ -147,7 +147,8 @@ function run_on_machine() {
   
   upload_source="$jobroot/$job"
 
-  if $(vagrant winrm $machine < /dev/null &> /dev/null)
+  communicator=$(minicoin info $machine | awk {'print $3'})
+  if [ $communicator == "winrm" ]
   then
     ext="cmd"
     if [ ! -f "$upload_source/main.cmd" ]; then
@@ -210,13 +211,11 @@ function run_on_machine() {
   run="true"
   mkdir .logs 2> /dev/null
   command="chmod +x ${scriptfile} && "
-  communicator="ssh"
   cleanup_command="rm -rf"
   if [[ $ext == "cmd" || $ext == "ps1" ]];
   then
     command="c:\\minicoin\\util\\run_helper.ps1 Documents\\"
     cleanup_command="Remove-Item -Recurse -Force"
-    communicator="winrm"
     scriptfile=${scriptfile//\//\\}
   fi
   command="${command}${scriptfile} ${job_args[@]}"
