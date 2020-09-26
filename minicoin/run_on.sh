@@ -32,6 +32,24 @@ function list_jobs() {
   do
     basename $job | awk {'printf (" - %s\n", $1)'}
   done
+
+  if [ -d "$HOME/minicoin/jobs" ]
+  then
+    echo "User-defined jobs:"
+    for job in $(ls -d "$HOME/minicoin/jobs"/*/)
+    do
+      basename $job | awk {'printf (" - %s\n", $1)'}
+    done
+  fi
+
+  if [ -d "$MINICOIN_PROJECT_DIR/minicoin/jobs" ]
+  then
+    echo "Local jobs:"
+    for job in $(ls -d "$MINICOIN_PROJECT_DIR/minicoin/jobs"/*/)
+    do
+      basename $job | awk {'printf (" - %s\n", $1)'}
+    done
+  fi
 }
 
 for arg in "${@}"; do
@@ -70,8 +88,17 @@ done
 
 job="${machines[@]: -1}"
 
-if [ ! -d "jobs/$job" ]
+jobroot=
+if [ -d "$MINICOIN_PROJECT_DIR/minicoin/jobs/$job" ]
 then
+  jobroot="$MINICOIN_PROJECT_DIR/minicoin/jobs"
+elif [ -d "$HOME/minicoin/jobs/$job" ]
+then
+  jobroot="$HOME/minicoin/jobs"
+elif [ -d "jobs/$job" ]
+then
+  jobroot="jobs"
+else
   echo "There's no job '$job'. Available jobs are:"
   list_jobs
   exit -1
@@ -118,12 +145,12 @@ function run_on_machine() {
     fi
   fi
   
-  upload_source=jobs/$job
+  upload_source="$jobroot/$job"
 
   if $(vagrant winrm $machine < /dev/null &> /dev/null)
   then
     ext="cmd"
-    if [ ! -f "jobs/$job/main.cmd" ]; then
+    if [ ! -f "$upload_source/main.cmd" ]; then
       ext="ps1"
     fi
   else
@@ -132,7 +159,7 @@ function run_on_machine() {
 
   scriptfile=$job/main.$ext
 
-  if [ ! -f "jobs/$scriptfile" ]; then
+  if [ ! -f "$jobroot/$scriptfile" ]; then
     >&2 printf "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}\n"
     return -2
   fi
@@ -241,9 +268,9 @@ function run_on_machine() {
 total_error=0
 pids=()
 
-if [ -f "jobs/$job/pre-run.sh" ]; then
+if [ -f "$jobroot/$job/pre-run.sh" ]; then
   log_progress "==> $machine: Running pre-run script for $job"
-  jobs/$job/pre-run.sh "${script_args[@]}"
+  $jobroot/$job/pre-run.sh "${script_args[@]}"
   error=$?
   if [ $error -gt 0 ]
   then
@@ -276,10 +303,10 @@ do
   index=$(( index + 1 ))
 done
 
-if [ -f "jobs/$job/post-run.sh" ]
+if [ -f "$jobroot/$job/post-run.sh" ]
 then
   log_progress "==> $machine: Running post-run script for $job"
-  jobs/$job/post-run.sh "${script_args[@]}"
+  $jobroot/$job/post-run.sh "${script_args[@]}"
   post_error=$?
   if [ $post_error -gt 0 ]
   then

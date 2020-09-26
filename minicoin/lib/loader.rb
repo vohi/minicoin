@@ -131,12 +131,25 @@ def load_minicoin()
         user_yaml = YAML.load_file(user_file)
     end
     
+    local_yaml = nil
+    project_dir = ENV['MINICOIN_PROJECT_DIR']
+    if project_dir && project_dir != $PWD && project_dir != $HOME
+        local_file = File.join(project_dir, 'minicoin/boxes.yml')
+        if File.file?(local_file)
+            local_yaml = YAML.load_file(local_file)
+        end
+    end
+
     yaml = load_includes(yaml, $PWD)
     user_yaml = load_includes(user_yaml, $HOME)
+    local_yaml = load_includes(local_yaml, project_dir)
     
     machines = load_boxes(yaml, user_yaml)
+    machines = load_boxes(yaml, local_yaml)
     load_settings(yaml, user_yaml)
+    load_settings(yaml, local_yaml)
     load_urls(yaml, user_yaml)
-    
+    load_urls(yaml, local_yaml)
+
     return machines
 end
