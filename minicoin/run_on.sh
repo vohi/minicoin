@@ -133,18 +133,6 @@ function run_on_machine() {
   run_file=".logs/${job}-${machine}-${log_stamp}"
   exec 0<&- # closing stdin
 
-  log_progress "==> $machine: Setting up machine"
-  
-  if ! vagrant status --machine-readable $machine | grep "$machine,state,running" > /dev/null
-  then
-    log_progress "==> $machine: Machine not running - bringing it up"
-    if ! vagrant up $machine
-    then
-      printf "${RED}Can't bring up machine '$machine' - aborting${NOCOL}\n"
-      exit -2
-    fi
-  fi
-  
   upload_source="$jobroot/$job"
 
   communicator=$(minicoin info $machine | awk {'print $3'})
@@ -168,10 +156,26 @@ function run_on_machine() {
   echo "==> $machine: running '$job' with arguments '${script_args[@]}'"
 
   log_progress "==> $machine: Uploading '$upload_source'..."
-  if ! vagrant upload $upload_source $job $machine > /dev/null
+  if ! vagrant upload $upload_source $job $machine 2> /dev/null > /dev/null
   then
-    >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
-    return -3
+    log_progress "==> $machine: Upload failed, trying to set up machine"
+  
+    if ! vagrant status --machine-readable $machine | grep "$machine,state,running" > /dev/null
+    then
+      log_progress "==> $machine: Machine not running - bringing it up"
+      if ! vagrant up $machine
+      then
+        >&2 printf "${RED}Can't bring up machine '$machine' - aborting${NOCOL}\n"
+        exit -2
+      fi
+    fi
+
+    log_progress "==> $machine: Retrying uploading '$upload_source'..."
+    if ! vagrant upload $upload_source $job $machine > /dev/null
+    then
+      >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
+      return -3
+    fi
   fi
 
   # poorest-man yaml parser
