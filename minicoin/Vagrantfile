@@ -129,35 +129,6 @@ Vagrant.configure("2") do |config|
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
 
-      # id must be ssh
-      box.vm.network "forwarded_port", id: "ssh",
-        guest: 22,
-        host: 2200 + machine["index"],
-        auto_correct: true
-      ports = machine["ports"]
-      if !ports.nil?
-        begin
-          ports.each do |port|
-            attributes = {
-              :auto_correct => true
-            }
-            port.each do |key, value|
-              attributes[key.to_sym] = value
-            end
-            raise "No ID" if attributes[:id].nil?
-            raise "No guest port" if attributes[:guest].nil?
-            if attributes[:id] == "rdp"
-              # turn on local hypervisor's RDP server, if supported
-              machine["rdp"] = true
-            end
-            attributes[:host] = attributes[:guest] * 10 + machine["index"] if attributes[:host].nil?
-            box.vm.network "forwarded_port", attributes
-          end
-        rescue
-          puts "==> #{name}: 'ports' needs to be a list of mappings, and 'id' and 'guest' needs to be set"
-        end
-      end
-
       # Platform specific configurations
       if is_windows
         machine["os"] = "windows"
@@ -167,6 +138,9 @@ Vagrant.configure("2") do |config|
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
         machine["nictype1"] = "82540EM"
+
+        # default to rdp forwarding, unless ports are set
+        machine["ports"] = [ { "id" => "rdp" } ] if machine["ports"].nil?
 
         # Test if winrm is available
         begin
@@ -208,6 +182,42 @@ Vagrant.configure("2") do |config|
         box.ssh.insert_key = false
       end
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
+
+      # port forwarding
+      box.vm.network "forwarded_port", id: "ssh", # id must be ssh
+        guest: 22,
+        host: 2200 + machine["index"],
+        auto_correct: true
+      ports = machine["ports"]
+      if !ports.nil?
+        begin
+          ports.each do |port|
+            attributes = {
+              :auto_correct => true
+            }
+            port.each do |key, value|
+              attributes[key.to_sym] = value
+            end
+            raise "No ID" if attributes[:id].nil?
+            if attributes[:guest].nil?
+              case attributes[:id]
+              when "rdp"
+                attributes[:guest] = 3389
+              else
+                raise "No guest port"
+              end
+            end
+            if attributes[:id] == "rdp"
+              # turn on local hypervisor's RDP server, if supported
+              machine["rdp"] = true
+            end
+            attributes[:host] = attributes[:guest] * 10 + machine["index"] if attributes[:host].nil?
+            box.vm.network "forwarded_port", attributes
+          end
+        rescue
+          puts "==> #{name}: 'ports' needs to be a list of mappings, and 'id' and 'guest' needs to be set"
+        end
+      end
 
       # private network setup
       box.vm.hostname = name
