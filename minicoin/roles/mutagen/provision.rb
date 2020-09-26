@@ -152,12 +152,12 @@ def mutagen_provision(box, role_params)
                 alphas << alpha
                 if box.vm.guest == :windows
                     if role_params["reverse"] == true
-                        beta = beta.gsub("/", "\\").gsub("~", "C:\\#{ENV['GUEST_HOMES']}\\vagrant")
+                        beta = beta.gsub("/", "\\").gsub("~", "#{ENV['GUEST_HOMES']}\\vagrant")
                     else    
-                        beta = beta.gsub("~", "/#{ENV['GUEST_HOMES']}/vagrant")
+                        beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
                     end
                 else
-                    beta = beta.gsub("~", "/#{ENV['GUEST_HOMES']}/vagrant")
+                    beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
                 end
                 betas << beta
             end

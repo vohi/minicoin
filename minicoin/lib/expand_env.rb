@@ -25,6 +25,7 @@ def expand_env(value, box)
         
         value = value.sub("$#{env_name}", env_val)
         if !box.nil? && box.vm.guest == :windows
+            value = value.gsub("/C:\\", "C:\\")
             value = value.gsub("/", "\\\\")
         end
     end

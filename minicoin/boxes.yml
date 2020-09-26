@@ -5,7 +5,7 @@ settings:
   defaults:
     shared_folders:
       - $PWD: /minicoin # required by provisioning scripts
-      - $HOME_SHARE: /$GUEST_HOMES/host
+      - $HOME_SHARE: $GUEST_HOMES/host
 
 ## locations from which we can download tqtc boxes and disk archives
 

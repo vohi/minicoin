@@ -58,7 +58,8 @@ class MockVagrant
       @guest = type
       @box = ""
       @url = ""
-  
+      @box_url = ""
+      @communicator = :ssh
       @boxes = {}
     end
     def vm()
@@ -75,6 +76,18 @@ class MockVagrant
     def box=(box)
       @box = box
     end
+    def box_url()
+      @box_url
+    end
+    def box_url=(box_url)
+      @box_url = box_url
+    end
+    def communicator()
+      @communicator
+    end
+    def communicator=(communicator)
+      @communicator = communicator
+    end
     def hostname=(hostname)
     end
     def guest()
@@ -84,8 +97,6 @@ class MockVagrant
       @guest = guest
     end
     def network(a, b)
-    end
-    def communicator()
     end
     def provider(a)
     end

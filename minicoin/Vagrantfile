@@ -99,7 +99,7 @@ Vagrant.configure("2") do |config|
       next
     end
 
-    config.vm.define machine["name"], autostart: false do |box|
+    config.vm.define name, autostart: false do |box|
       if !machine["provider"].nil?
         box.vm.provider machine["provider"]
       end
@@ -134,7 +134,7 @@ Vagrant.configure("2") do |config|
         machine["os"] = "windows"
         box.vm.guest = :windows
         box.vm.hostname = name[0..14] # windows hostnames cannot be more than 15 characters long
-        ENV["GUEST_HOMES"] = "Users"
+        ENV["GUEST_HOMES"] = "C:\\Users"
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
         machine["nictype1"] = "82540EM"
@@ -158,7 +158,7 @@ Vagrant.configure("2") do |config|
       elsif is_mac
         machine["os"] = "macos"
         box.vm.guest = :darwin
-        ENV["GUEST_HOMES"] = "Users"
+        ENV["GUEST_HOMES"] = "/Users"
 
         # "Intel Pro/1000 MT Server" must be used on Mac
         machine["nictype1"] = "82545EM"
@@ -168,7 +168,7 @@ Vagrant.configure("2") do |config|
         else
           box.vm.guest = machine["os"]
         end
-        ENV["GUEST_HOMES"] = "home"
+        ENV["GUEST_HOMES"] = "/home"
         # rely on defaults and vagrant autodetection for nix'es
       end
 
@@ -182,6 +182,11 @@ Vagrant.configure("2") do |config|
         box.ssh.insert_key = false
       end
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
+
+      if ARGV[0] == "info"
+        puts "#{name} #{machine['os']} #{box.vm.communicator} #{ENV['GUEST_HOMES']}"
+        next
+      end
 
       # port forwarding
       box.vm.network "forwarded_port", id: "ssh", # id must be ssh
