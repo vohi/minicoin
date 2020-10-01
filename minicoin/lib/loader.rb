@@ -122,10 +122,10 @@ def load_minicoin()
     rescue => error
         raise
     end
-    global_file = File.join($PWD, 'boxes.yml')
+    global_file = File.join($PWD, 'minicoin.yml')
     yaml = YAML.load_file(global_file)
     
-    user_file = File.join($HOME, 'minicoin/boxes.yml')
+    user_file = File.join($HOME, 'minicoin/minicoin.yml')
     user_yaml = nil
     if File.file?(user_file)
         user_yaml = YAML.load_file(user_file)
@@ -134,7 +134,7 @@ def load_minicoin()
     local_yaml = nil
     project_dir = ENV['MINICOIN_PROJECT_DIR']
     if project_dir && project_dir != $PWD && project_dir != $HOME
-        local_file = File.join(project_dir, 'minicoin/boxes.yml')
+        local_file = File.join(project_dir, '.minicoin/minicoin.yml')
         if File.file?(local_file)
             local_yaml = YAML.load_file(local_file)
         end

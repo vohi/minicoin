@@ -108,7 +108,7 @@ $ vagrant box add --name tqtc/windows10-0.0.2 windows10-0.0.2.box
 ```
 
 This takes again a while, vagrant is unpacking the box file into it's boxes storage.
-In the meantime, add a test box to your `boxes.yml` file, such as:
+In the meantime, add a test box to your `minicoin.yml` file, such as:
 
 ```
 - name: test-windows10-0.0.2

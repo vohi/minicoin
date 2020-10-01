@@ -14,7 +14,7 @@ The provider can be specified explicitly when bringing up a machine:
 
 `$ vagrant up windows10 --provider azure`
 
-or in the declaration of the machine in the `boxes.yml` file:
+or in the declaration of the machine in the `minicoin.yml` file:
 
 ```
 - name: windows10
@@ -126,8 +126,8 @@ minicoin when bringing the box up, e.g.
 
 `$ minicoin up windows10 --provider azure`
 
-When defining a box specific to be used with Azure in your `boxes.yml` file, set the
-`provider` attribute to `azure`. Install the `azure` dummy box for vagrant via
+When defining a box specific to be used with Azure, set the `provider` attribute to
+`azure`. Install the `azure` dummy box for vagrant via
 
 `$ vagrant box add azure-dummy https://github.com/azure/vagrant-azure/raw/v2.0/dummy.box --provider azure`
 

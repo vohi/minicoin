@@ -189,7 +189,7 @@ def add_role(box, role, name)
     # local roles have precendence
     project_dir = ENV['MINICOIN_PROJECT_DIR']
     if project_dir && project_dir != $PWD && project_dir != $HOME
-        role_path = File.join(ENV["MINICOIN_PROJECT_DIR"], "minicoin/roles/#{role}")
+        role_path = File.join(ENV["MINICOIN_PROJECT_DIR"], ".minicoin/roles/#{role}")
         role_path = nil unless File.exist?(role_path)
     end
     if role_path.nil?

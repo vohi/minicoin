@@ -42,10 +42,10 @@ function list_jobs() {
     done
   fi
 
-  if [ -d "$MINICOIN_PROJECT_DIR/minicoin/jobs" ]
+  if [ -d "${MINICOIN_PROJECT_DIR}/.minicoin/jobs" ]
   then
     echo "Local jobs:"
-    for job in $(ls -d "$MINICOIN_PROJECT_DIR/minicoin/jobs"/*/)
+    for job in $(ls -d "${MINICOIN_PROJECT_DIR}/.minicoin/jobs"/*/)
     do
       basename $job | awk {'printf (" - %s\n", $1)'}
     done
@@ -89,12 +89,12 @@ done
 job="${machines[@]: -1}"
 
 jobroot=
-if [ -d "$MINICOIN_PROJECT_DIR/minicoin/jobs/$job" ]
+if [ -d "${MINICOIN_PROJECT_DIR}/.minicoin/jobs/$job" ]
 then
-  jobroot="$MINICOIN_PROJECT_DIR/minicoin/jobs"
-elif [ -d "$HOME/minicoin/jobs/$job" ]
+  jobroot="${MINICOIN_PROJECT_DIR}/.minicoin/jobs"
+elif [ -d "${HOME}/minicoin/jobs/$job" ]
 then
-  jobroot="$HOME/minicoin/jobs"
+  jobroot="${HOME}/minicoin/jobs"
 elif [ -d "jobs/$job" ]
 then
   jobroot="jobs"
@@ -179,13 +179,13 @@ function run_on_machine() {
   fi
 
   # poorest-man yaml parser
-  if [[ -f "$HOME/minicoin/boxes.yml" ]]
+  if [[ -f "$HOME/minicoin/minicoin.yml" ]]
   then
-    home_share=$(cat $HOME/minicoin/boxes.yml | grep "home_share:" | awk '{print $2}')
+    home_share=$(cat $HOME/minicoin/minicoin.yml | grep "home_share:" | awk '{print $2}')
   fi
   if [[ $host_home == "" ]]
   then
-    home_share=$(cat boxes.yml | grep "home_share:" | awk '{print $2}')
+    home_share=$(cat minicoin.yml | grep "home_share:" | awk '{print $2}')
   fi
   if [[ $home_share == "" ]]
   then

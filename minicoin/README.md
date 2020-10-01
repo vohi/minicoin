@@ -127,8 +127,8 @@ minicoin is based on [Vagrant](https://vagrantup.com), but tries to provide a
 clearer separation of the data defining machines, and the code implementing
 the logic.
 
-Machines are defined in the `machines` section of the `boxes.yml` file. The
-default `boxes.yml` file is loaded first; a `boxes.yml` file in `~/minicoin`
+Machines are defined in the `machines` section of the `minicoin.yml` file. The
+default `minicoin.yml` file is loaded first; a `minicoin.yml` file in `~/minicoin`
 will be loaded if present, and can add additional boxes, or override settings
 from boxes in the default file.
 
@@ -204,7 +204,7 @@ machines:
 `$ minicoin_key=password123 vagrant up proprietary`
 
 Base boxes (and disk images; see **Disk provisioning**) will be downloaded
-from the URLs listed in the `urls` section of the `boxes.yml` file. Servers
+from the URLs listed in the `urls` section of the `minicoin.yml` file. Servers
 are attempted in sequence.
 
 ```
@@ -226,7 +226,7 @@ For disk images, the URLs under the `disks` key will be attempted.
 
 ## Default provisioning and file sharing
 
-Default rules are defined in the `settings` section of the `boxes.yml` files.
+Default rules are defined in the `settings` section of the `minicoin.yml` files.
 
 Unless folder-sharing is disabled, the minicoin directory with the Vagrantfile
 will be shared with the guest as a folder `/minicoin`; the home directory of
