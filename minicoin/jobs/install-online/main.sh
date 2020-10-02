@@ -8,8 +8,8 @@ else
     account_path="$HOME/.local/share/Qt"
 
     # make sure we are logged in
-    xdotool type "vagrant"
-    xdotool key --clearmodifiers Return
+    XAUTHORITY=$XAUTH_FILE sudo xdotool type "vagrant"
+    XAUTHORITY=$XAUTH_FILE sudo xdotool key --clearmodifiers Return
 fi
 
 jobpath="$(dirname $0)"

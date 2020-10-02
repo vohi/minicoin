@@ -111,14 +111,10 @@ for cmd in $xorg_cmd
 do
   if [ $auth == 1 ]
   then
-    auth=$cmd
-    cp $auth /home/vagrant/.Xauthority
-    chown vagrant /home/vagrant/.Xauthority
-    chmod 600 /home/vagrant/.Xauthority
+    echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
     break
   fi
   [ $cmd == "-auth" ] && auth=1
 done
 
-echo 'export XAUTHORITY=$HOME/.Xauthority' >> /home/vagrant/.profile
 echo 'export DISPLAY=:0' >> /home/vagrant/.profile

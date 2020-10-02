@@ -2,6 +2,14 @@
 
 . /minicoin/util/parse-opts.sh "$@"
 
+if [[ $XAUTH_FILE != "" ]]
+then
+    # make sure we are logged in
+    XAUTHORITY=$XAUTH_FILE sudo xdotool type "vagrant"
+    XAUTHORITY=$XAUTH_FILE sudo xdotool key --clearmodifiers Return
+fi
+
+
 # set defaults
 build=
 configure=
