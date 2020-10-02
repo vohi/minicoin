@@ -24,8 +24,8 @@ Supported job parameters:
 
   Build a different target than src/all (or sub-src for Qt 5), e.g.
 
-  $ minicoin run windows10 build-qtmodule -- tst_qobject_check
-  $ minicoin run doc-server build-qtmodule -- html_docs
+  $ minicoin run windows10 build-qtmodule -- --target tst_qobject_check
+  $ minicoin run doc-server build-qtmodule -- --target html_docs
 
 --build
 
