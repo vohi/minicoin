@@ -155,6 +155,7 @@ def mutagen_provision(box, role_params)
                         beta = beta.gsub("/", "\\").gsub("~", "#{ENV['GUEST_HOMES']}\\vagrant")
                     else    
                         beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
+                        beta = beta.gsub("\\", "/")
                     end
                 else
                     beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
