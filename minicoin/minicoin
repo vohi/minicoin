@@ -38,6 +38,10 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_info
     min_args=0
     shift
+  elif [ $1 == "describe" ]; then
+    minicoin_command=minicoin_describe
+    min_args=0
+    shift
   elif [ $1 == "jobs" ]; then
     minicoin_command=minicoin_jobs
     min_args=0
@@ -93,7 +97,11 @@ IFS='
   echo
   echo "    List the available machines, without querying them for their status."
   echo
-  echo "  ls machine1 machine2 ... [-- [args]]"
+  echo "  describe [machine1 [machine2]]"
+  echo
+  echo "    Prints the YAML version for the specificed machines"
+  echo
+  echo "  ls machine1 [machine2] ... [-- [args]]"
   echo
   echo "    Show the directory contents of each machine. 'args' will be passed to the"
   echo "    respective command, ie 'ls' on mac and Linux guests, and the 'dir' command"
@@ -159,6 +167,12 @@ function minicoin_list()
 function minicoin_info()
 {
   run ruby lib/minicoin.rb info "${machines[@]}"
+  return $?
+}
+
+function minicoin_describe()
+{
+  run ruby lib/minicoin.rb describe "${machines[@]}"
   return $?
 }
 
