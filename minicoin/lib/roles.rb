@@ -201,6 +201,8 @@ def add_role(box, role, name)
     end
     activity = false
 
+    role_params["role"] = role
+    role_params["role_path"] = role_path
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
         pre_provision = lambda do |machine|
@@ -278,7 +280,7 @@ def add_role(box, role, name)
             script_ext = ".ps1"
             arg_marker = "-"
             combine_array = true
-            script_args = ["-role", role, "-user", $USER]
+            script_args = ["-user", $USER]
         end
         upload_path = "c:\\Windows\\temp\\"
     end
