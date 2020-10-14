@@ -12,7 +12,7 @@ else
 fi
 
 printf "Checking for the winrm ruby gem..."
-if [[ ! $(gem list winrm2 | grep winrm) ]]
+if [[ ! $(gem list winrm | grep winrm) ]]
 then
     echo " - not found!"
     echo
