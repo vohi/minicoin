@@ -77,7 +77,17 @@ end
 
 def load_boxes(yaml, user_yaml)
     machines = yaml["machines"]
-    
+
+    defaults = yaml["settings"]["defaults"]
+    unless defaults.nil?
+        defaults.each do |setting, value|
+            next if setting == "roles" || setting == "shared_folders"
+            machines.each do |machine|
+                machine[setting] = value if machine[setting].nil?
+            end
+        end
+    end
+
     user_machines = user_yaml["machines"] unless user_yaml.nil?
     user_machines = [] if user_machines.nil?
     user_machines.each do |user_machine|
@@ -144,10 +154,10 @@ def load_minicoin()
     user_yaml = load_includes(user_yaml, $HOME)
     local_yaml = load_includes(local_yaml, project_dir)
     
-    machines = load_boxes(yaml, user_yaml)
-    machines = load_boxes(yaml, local_yaml)
     load_settings(yaml, user_yaml)
     load_settings(yaml, local_yaml)
+    machines = load_boxes(yaml, user_yaml)
+    machines = load_boxes(yaml, local_yaml)
     load_urls(yaml, user_yaml)
     load_urls(yaml, local_yaml)
 
