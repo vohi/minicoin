@@ -1,4 +1,4 @@
-def virtualbox_provision(box, args)
+def virtualbox_provision(box, name, args)
     if !args.is_a?(Hash)
         raise "Argument error: expecting args to be a hash"
     end

@@ -146,7 +146,6 @@ def add_role(box, role, name)
         role_params[role] = role_name
     end
     
-    role_params["boxname"] = name
     role_params.each do |key, value|
         if value.nil?
             next
@@ -260,7 +259,7 @@ def add_role(box, role, name)
     if File.file?(provisioning_file)
         require provisioning_file
         begin
-            eval("#{role}_provision(box, role_params)")
+            eval("#{role}_provision(box, name, role_params)")
             activity = true
         rescue => error
             puts "==> #{name}: Error with #{role} role: #{error}"

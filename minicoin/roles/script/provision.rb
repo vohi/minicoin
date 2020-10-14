@@ -1,4 +1,4 @@
-def script_provision(box, args)
+def script_provision(box, name, args)
     script = args["script"]
     if !script.is_a?(String)
         raise "Argument error: expecting a 'script' string"

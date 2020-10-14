@@ -1,4 +1,4 @@
-def vmware_fusion_provision(box, args)
+def vmware_fusion_provision(box, name, args)
     if !args.is_a?(Hash)
         raise "Argument error: expecting args to be a hash"
     end
