@@ -1,120 +1,128 @@
 # Mocking classes for testing Vagrant
 # THe hierarchy is MockVagrant -> MockConfig -> MockVM -> MockBox
 class MockVagrant
-    def initialize()
-      @config = MockConfig.new()
-      @config.vagrant = self
-      @plugin = MockPlugin.new()
-      @sensitive = Array.new
-    end
-    def require_version(expr)
-    end
-    def configure(version)
-      yield @config
-    end
-    def config()
-      return @config
-    end
-    def plugin(a, b="default")
-      MockPlugin
-    end
-    def sensitive
-      @sensitive
-    end
-    def sensitive=(sensitive)
-      @sensitive << sensitive
-    end
+  def initialize()
+    @config = MockConfig.new()
+    @config.vagrant = self
+    @plugin = MockPlugin.new()
+    @sensitive = Array.new
   end
-  
-  class MockConfig
-    def initialize()
-      @vm = MockVm.new(nil)
-      @vagrant = nil
-    end
-    def vm()
-      return @vm
-    end
-    def vagrant
-      @vagrant
-    end
-    def vagrant=(vagrant)
-      @vagrant = vagrant
-    end
+  def require_version(expr)
   end
-  
-  class MockPlugin
-    def initialize()
-    end
-    def self.name(n)
-    end
-    def self.config(a, b)
-    end
-    def self.provisioner(a)
-    end
+  def configure(version)
+    yield @config
   end
-  
-  class MockVm
-    def initialize(type)
-      @guest = type
-      @box = ""
-      @url = ""
-      @box_url = ""
-      @communicator = :ssh
-      @boxes = {}
-    end
-    def vm()
-      return self
-    end
-    def define(a, b=nil)
-      vm = MockVm.new(nil)
-      @boxes[a] = vm
-      yield vm
-    end
-    def box()
-      return @box
-    end
-    def box=(box)
-      @box = box
-    end
-    def box_url()
-      @box_url
-    end
-    def box_url=(box_url)
-      @box_url = box_url
-    end
-    def communicator()
-      @communicator
-    end
-    def communicator=(communicator)
-      @communicator = communicator
-    end
-    def hostname=(hostname)
-    end
-    def guest()
-      return @guest
-    end
-    def guest=(guest)
-      @guest = guest
-    end
-    def network(a, b)
-    end
-    def provider(a)
-    end
-    def synced_folder(a, b, c=nil)
-    end
-    def provision(a, b)
-    end
-    def trigger()
-      return MockTrigger.new()
-    end
-    def boxes()
-      return @boxes
-    end
+  def config()
+    return @config
   end
-  
-  class MockTrigger
-    def before(a)
-    end
-    def after(a)
-    end
+  def plugin(a, b="default")
+    MockPlugin
   end
+  def sensitive
+    @sensitive
+  end
+  def sensitive=(sensitive)
+    @sensitive << sensitive
+  end
+end
+
+class MockConfig
+  def initialize()
+    @vm = MockVm.new(nil)
+    @vagrant = nil
+  end
+  def vm()
+    return @vm
+  end
+  def vagrant
+    @vagrant
+  end
+  def vagrant=(vagrant)
+    @vagrant = vagrant
+  end
+end
+
+class MockPlugin
+  def initialize()
+  end
+  def self.name(n)
+  end
+  def self.config(a, b)
+  end
+  def self.provisioner(a)
+  end
+end
+
+class MockWinssh
+  def insert_key=(a)
+  end
+end
+
+class MockVm
+  def initialize(type)
+    @guest = type
+    @box = ""
+    @url = ""
+    @box_url = ""
+    @communicator = :ssh
+    @boxes = {}
+  end
+  def vm()
+    return self
+  end
+  def define(a, b=nil)
+    vm = MockVm.new(nil)
+    @boxes[a] = vm
+    yield vm
+  end
+  def box()
+    return @box
+  end
+  def box=(box)
+    @box = box
+  end
+  def box_url()
+    @box_url
+  end
+  def box_url=(box_url)
+    @box_url = box_url
+  end
+  def communicator()
+    @communicator
+  end
+  def communicator=(communicator)
+    @communicator = communicator
+  end
+  def hostname=(hostname)
+  end
+  def guest()
+    return @guest
+  end
+  def guest=(guest)
+    @guest = guest
+  end
+  def network(a, b)
+  end
+  def provider(a)
+  end
+  def synced_folder(a, b, c=nil)
+  end
+  def provision(a, b)
+  end
+  def trigger()
+    return MockTrigger.new()
+  end
+  def boxes()
+    return @boxes
+  end
+  def winssh()
+    MockWinssh.new
+  end
+end
+
+class MockTrigger
+  def before(a)
+  end
+  def after(a)
+  end
+end

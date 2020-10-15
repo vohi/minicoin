@@ -145,9 +145,10 @@ Vagrant.configure("2") do |config|
         # Test if winrm is available
         begin
           $has_winrm = require 'winrm' unless $has_winrm
-        rescue => e
-          puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
-          puts "    #{name}: Shared folder support and file provisioning might fail"
+        rescue LoadError => e
+          if ARGV[0] != "info"
+            puts "==> #{name}: WinRM gem not installed, falling back to winssh!"
+          end
         end
 
         if $has_winrm
