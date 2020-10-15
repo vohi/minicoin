@@ -62,11 +62,14 @@ should be passed on to the specified command of the `VBoxManage` tool.
 
 ## VMware Fusion
 
-VMware Fusion requires the
-["vagrant-vmware-desktop"](https://www.vagrantup.com/docs/providers/vmware) plugin
-to be installed.
+VMware Fusion requires the ["Vagrant VMware Utility"](https://www.vagrantup.com/vmware/downloads.html)
+package. After that utility package has been installed, you can install the
+[Vagrant VMware Desktop provider plugin](https://www.vagrantup.com/docs/providers/vmware)
+using the standard plugin installation procedure:
 
 `$ vagrant plugin install vagrant-vmware-desktop`
+
+Note that this plugin requires a license, which you need to install as well.
 
 To make minicoin use VMware Fusion, specify it explicitly as the provider when
 bringing a box up:
