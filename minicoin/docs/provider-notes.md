@@ -116,8 +116,10 @@ needs to be installed, and you need to have valid Azure credentials:
 
 To confirm that everything is working and that you have access, run
 
-`$ az account show`
-`$ az account list-locations -output tsv`
+```
+$ az account show
+$ az account list-locations --output tsv
+```
 
 With the azure provider, minicoin will disable all folder sharing, as it is usually
 not desired to share an entire home directory with a remote server. Instead, use
