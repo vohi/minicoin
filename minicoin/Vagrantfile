@@ -185,7 +185,7 @@ Vagrant.configure("2") do |config|
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
 
       if ARGV[0] == "info"
-        puts "#{name} #{machine['os']} #{box.vm.communicator} #{ENV['GUEST_HOMES']}"
+        puts "#{name} #{machine['os']} #{box.vm.communicator} #{ENV['GUEST_HOMES']} #{ENV["HOME_SHARE"]}"
         next
       end
 

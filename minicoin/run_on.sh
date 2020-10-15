@@ -135,7 +135,8 @@ function run_on_machine() {
 
   upload_source="$jobroot/$job"
 
-  communicator=$(minicoin info $machine | awk {'print $3'})
+  machine_info=$(minicoin info $machine)
+  communicator=$(echo $machine_info | awk {'print $3'})
   if [[ $communicator == "winrm" || $communicator == "winssh" ]]
   then
     [ $communicator == "winssh" ] && communicator="ssh"
@@ -179,21 +180,14 @@ function run_on_machine() {
     fi
   fi
 
-  # poorest-man yaml parser
-  if [[ -f "$HOME/minicoin/minicoin.yml" ]]
-  then
-    home_share=$(cat $HOME/minicoin/minicoin.yml | grep "home_share:" | awk '{print $2}')
-  fi
-  if [[ $host_home == "" ]]
-  then
-    home_share=$(cat minicoin.yml | grep "home_share:" | awk '{print $2}')
-  fi
+  home_share=$(echo $machine_info | awk {'print $5'})
   if [[ $home_share == "" ]]
   then
     home_share=$HOME
   fi
   host_home=${home_share/\~/$HOME}
   host_home=${home_share/\$HOME/$HOME}
+  echo $host_home
 
   # job scripts can expect P0 to be home on host, and P1 PWD on host
   job_args=( "$host_home" )
