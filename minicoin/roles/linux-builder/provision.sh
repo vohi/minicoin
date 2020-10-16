@@ -36,9 +36,11 @@ case $distro in
             "libwayland-.*"
             "libxcomposite-dev"
             "hunspell libhunspell-dev"
-    # install dependencies for running tests
+            # install dependencies for running tests
             "avahi-daemon"
             "docker"
+            # qdoc
+            "clang-10" "libclang-10-dev" "llvm-10"
     )
   ;;
   centos*)

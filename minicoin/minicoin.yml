@@ -90,9 +90,10 @@ machines:
       - role: linux-desktop
         desktop: lxde
       - role: android-builder
+
   - name: doc-server
     box: generic/ubuntu1804
     roles:
-      - builder
+      - linux-builder
       - doc-server
     memory: 2048

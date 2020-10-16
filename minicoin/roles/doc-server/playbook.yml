@@ -1,8 +1,7 @@
-- name: Machine for building and serving documentation
+- name: Machine for serving documentation
   hosts: all
 
   gather_facts: False
   roles:
     - base
-    - build
     - doc-server
