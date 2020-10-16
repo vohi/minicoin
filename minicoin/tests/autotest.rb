@@ -20,7 +20,10 @@ def load_testmachines()
   user_output = load_includes(user_output, root)
 
   load_settings(test_output, user_output)
-  load_boxes(test_output, user_output, true)
+  machines = load_boxes(test_output, user_output, true)
+
+  merge_roles(machines)
+
   load_urls(test_output, user_output)
 
   return test_output
@@ -117,6 +120,9 @@ class Tester
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
                            "private_net" => "1.1.1.1"
+        },
+        {"name" => "merged_role", "box" => "generic",
+                                   "roles" => [{"role" => "mutagen", "paths" => ["path2", "path1"]}]
         },
         {"name" => "submachine", "box" => "subgeneric"},
         {"name" => "machine1", "box" => "duplicate", "gui" => true }

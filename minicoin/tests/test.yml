@@ -30,3 +30,9 @@ machines:
     box: generic
     roles:
       - role: hello-world
+  - name: merged_role
+    box: generic
+    roles:
+      - role: mutagen
+        paths:
+          - path2

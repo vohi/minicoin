@@ -16,10 +16,11 @@ def merge_yaml(first, second)
 
     if first.is_a?(Array)
         if second.is_a?(Array)
-            return first + second
+            result = first + second
+        else
+            result = first.clone
+            result << second
         end
-        result = first.clone
-        result << second
         return result
     end
 
@@ -132,6 +133,38 @@ def load_includes(yaml, basedir)
     return yaml
 end
 
+def merge_roles(machines)
+    # post processing of roles: if a role is defined multiple times, merge them
+    machines.each do |machine|
+        roles = machine["roles"]
+        unless roles.nil?
+            role_set = []
+            role_indices = {}
+            index = 0
+            roles.each do |role|
+                if role.is_a?(Hash)
+                    rolename = role["role"]
+                    if role_indices.has_key?(rolename)
+                        index = role_indices[rolename]
+                        role_set[index] = merge_yaml(role_set[index], role)
+                    else
+                        role_indices[rolename] = index
+                        role_set << role
+                        index += 1
+                    end
+                else
+                    role_set << role
+                    role_indices[rolename] = index
+                    index += 1
+                end
+            end
+            role_set.each do |role|
+                machine["roles"] = role_set
+            end
+        end
+    end
+end
+
 def load_minicoin()
     begin # see tests/autotest.rb
         return load_testmachines()["machines"]
@@ -165,6 +198,9 @@ def load_minicoin()
     load_settings(yaml, local_yaml)
     machines = load_boxes(yaml, user_yaml, true)
     machines = load_boxes(yaml, local_yaml, false)
+
+    merge_roles(machines)
+
     load_urls(yaml, user_yaml)
     load_urls(yaml, local_yaml)
 

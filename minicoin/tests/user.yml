@@ -21,3 +21,8 @@ machines:
       - role: script
         script: "hello"
     private_net: 1.1.1.1
+  - name: merged_role
+    roles:
+      - role: mutagen
+        paths:
+          - path1
