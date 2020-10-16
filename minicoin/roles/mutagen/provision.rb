@@ -63,7 +63,7 @@ def mutagen_host_to_guest(box, name, alphas, betas)
                 end
             end
         end
-        box.vm.provision "mutagen:sync_create #{sync}",
+        box.vm.provision "mutagen:sync_create #{alpha}",
             type: :local_command,
             code: mutagen_create
         sync += 1

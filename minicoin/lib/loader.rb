@@ -75,15 +75,22 @@ def load_urls(yaml, user_yaml)
     yaml["urls"] = $urls
 end
 
-def load_boxes(yaml, user_yaml)
+def load_boxes(yaml, user_yaml, include_defaults)
     machines = yaml["machines"]
 
-    defaults = yaml["settings"]["defaults"]
-    unless defaults.nil?
-        defaults.each do |setting, value|
-            next if setting == "roles" || setting == "shared_folders"
-            machines.each do |machine|
-                machine[setting] = value if machine[setting].nil?
+    if include_defaults
+        defaults = yaml["settings"]["defaults"]
+        unless defaults.nil?
+            defaults.each do |setting, value|
+                # make deep copies
+                default_value = value.dup
+                machines.each do |machine|
+                    if machine[setting].kind_of?(Array)
+                        machine[setting].concat(default_value)
+                    elsif machine[setting].nil?
+                        machine[setting] = default_value
+                    end
+                end
             end
         end
     end
@@ -156,8 +163,8 @@ def load_minicoin()
     
     load_settings(yaml, user_yaml)
     load_settings(yaml, local_yaml)
-    machines = load_boxes(yaml, user_yaml)
-    machines = load_boxes(yaml, local_yaml)
+    machines = load_boxes(yaml, user_yaml, true)
+    machines = load_boxes(yaml, local_yaml, false)
     load_urls(yaml, user_yaml)
     load_urls(yaml, local_yaml)
 

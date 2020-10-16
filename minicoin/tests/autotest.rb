@@ -18,8 +18,9 @@ def load_testmachines()
 
   test_output = load_includes(test_output, root)
   user_output = load_includes(user_output, root)
-  load_boxes(test_output, user_output)
+
   load_settings(test_output, user_output)
+  load_boxes(test_output, user_output, true)
   load_urls(test_output, user_output)
 
   return test_output
