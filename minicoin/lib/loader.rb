@@ -85,10 +85,10 @@ def load_boxes(yaml, user_yaml, include_defaults)
                 # make deep copies
                 default_value = value.dup
                 machines.each do |machine|
-                    if machine[setting].kind_of?(Array)
-                        machine[setting].concat(default_value)
-                    elsif machine[setting].nil?
+                    if machine[setting].nil?
                         machine[setting] = default_value
+                    else
+                        machine[setting] = merge_yaml(default_value, machine[setting])
                     end
                 end
             end
