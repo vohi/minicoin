@@ -1,3 +1,5 @@
+$ANSIBLE_FOUND = nil
+
 def fetch_file(uri, local)
     begin
         downloader = Vagrant::Util::Downloader.new(uri, local)
@@ -219,12 +221,18 @@ def add_role(box, role, name)
     end
 
     if File.file?("#{role_path}/playbook.yml")
-        box.vm.provision "#{role}:ansible",
-            type: :ansible do |ansible|
-                ansible.playbook = "#{role_path}/playbook.yml"
-                ansible.become = true unless box.vm.guest == :windows
-            end
-        activity = true
+        $ANSIBLE_FOUND = `which ansible` if $ANSIBLE_FOUND == nil
+        $ANSIBLE_FOUND = false if $ANSIBLE_FOUND == ""
+        if $ANSIBLE_FOUND
+            box.vm.provision "#{role}:ansible",
+                type: :ansible do |ansible|
+                    ansible.playbook = "#{role_path}/playbook.yml"
+                    ansible.become = true unless box.vm.guest == :windows
+                end
+            activity = true
+        else
+            raise "Ansible not installed"
+        end
     elsif File.file?("#{role_path}/disk.yml")
         if ["up", "provision", "reload", "validate"].include? ARGV[0]
             activity = true
