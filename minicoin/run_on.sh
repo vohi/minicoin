@@ -187,7 +187,6 @@ function run_on_machine() {
   fi
   host_home=${home_share/\~/$HOME}
   host_home=${home_share/\$HOME/$HOME}
-  echo $host_home
 
   # job scripts can expect P0 to be home on host, and P1 PWD on host
   job_args=( "$host_home" )
