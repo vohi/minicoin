@@ -50,6 +50,7 @@ def mutagen_host_to_guest(box, name, alphas, betas)
         privileged: false
     sync = 0
     alphas.each do |alpha|
+        alpha = alpha.gsub("~", ENV['HOME'])
         beta = betas[sync]
         mutagen_create = lambda do |machine|
             ssh_info = machine.ssh_info
@@ -57,9 +58,15 @@ def mutagen_host_to_guest(box, name, alphas, betas)
                 machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
                 raise "Error setting up mutagen sync: no ssh info available for #{name}!"
             else
-                stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
+                stdout, stderr, status = Open3.capture3("mutagen sync list minicoin-#{name}")
+                if (status == 0)
+                    status = -1 unless stdout.include?(alpha)
+                end
                 if status != 0
-                    machine.ui.warn("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                    stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} --label minicoin=#{name} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
+                    if status != 0
+                        machine.ui.warn("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                    end
                 end
             end
         end
