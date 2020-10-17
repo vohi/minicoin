@@ -232,8 +232,12 @@ function run_on_machine() {
   start_seconds=$(date +%s)
 
   vagrant $communicator -c "$command" $machine < /dev/null \
-    2> >(while read -r line; do >&2 printf "${RED}%s\n${NOCOL}" "$line"; done) \
-    1> >(while read -r line; do >&1 printf "%s\n" "$line"; done)
+    1> >(while IFS= read -r line; do
+      >&1 printf "%s\n" "$line"
+    done) \
+    2> >(while IFS= read -r line; do
+      >&2 printf "${RED}%s\n${NOCOL}" "$line"
+    done)
   error=$?
 
   end_seconds=$(date +%s)
