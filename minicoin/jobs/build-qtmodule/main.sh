@@ -2,6 +2,12 @@
 
 . /minicoin/util/parse-opts.sh "$@"
 
+if [ -z $JOBDIR ]
+then
+  echo "Error: path to host clone of Qt is required!"
+  exit 1
+fi
+
 if [[ $XAUTH_FILE != "" ]]
 then
     # make sure we are logged in
@@ -9,17 +15,11 @@ then
     XAUTHORITY=$XAUTH_FILE sudo xdotool key --clearmodifiers Return
 fi
 
-
 # set defaults
 build=
 configure=
 generate_toollink=()
 target=
-
-if [[ $JOBDIR == "" ]]; then
-  echo "Error: path to host clone of Qt module is required!"
-  exit 1
-fi
 
 sources=$JOBDIR
 module=$(basename -s .pro $(ls $sources/*.pro))

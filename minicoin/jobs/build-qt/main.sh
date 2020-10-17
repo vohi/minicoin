@@ -1,115 +1,60 @@
 #!/usr/bin/env bash
 . /minicoin/util/parse-opts.sh "$@"
 
+if [ -z $JOBDIR ]
+then
+  echo "Error: path to host clone of Qt is required!"
+  exit 1
+fi
+
 # set defaults
-branch=
-modules=essential
-repo=git://code.qt.io/qt/qt5.git
-sources=../qt5 # location of sources relative to build dir
-build_dir=qt5-build
-configure=
-generate_qmake=false
+build_dir=${PARAM_build:-"qt-build"}
+target=$PARAM_target
+
 error=0
 
-
-if [[ $PARAM_branch != "" ]]; then
-  # branch implies cloning from upstream, a local clone can't be init'ed from
-  branch=$PARAM_branch
-elif [[ $JOBDIR != "" ]]; then
-  origin=$JOBDIR
-  if [[ -f $origin/qt.pro ]]; then
-    repo=
-    sources=$origin
-  else
-    echo "$origin is not a Qt5 super repo - ignoring"
-    exit 1
-  fi
-fi
-if [[ $PARAM_modules != "" ]]; then
-  modules=$PARAM_modules
-fi
-if [[ $PARAM_configure != "" ]]; then
-  configure=$PARAM_configure
-fi
-if [[ $PARAM_build != "" ]]; then
-  build_dir=$build_dir-$PARAM_build
+if [ ! -z $FLAG_clean ]
+then
+  echo "Cleaning existing build in '$build_dir'"
+  rm -rf $build_dir
 fi
 
-if [[ $repo != "" ]]; then
-  echo "Cloning from '$repo'"
-  if [[ $branch != "" ]]; then
-    echo "Checking out branch '$branch'"
-    branch="--branch $branch"
-  fi
-  git clone $branch $repo
-  error=$?
-  cd qt5
-
-  echo "Initializing repository for modules '$modules'"
-  ./init-repository --force --mirror=$repo/ --module-subset=$modules
-  error=$? || error
-
-  cd ..
-fi
-
-if [[ ! $error -eq 0 ]]; then
-  echo "Error cloning and initializing repo!"
-  exit $error
-fi
-
-if [[ $modules == "essential" ]]; then
-  modules=
-fi
-
-mkdir $build_dir
+[ -d $build_dir ] || mkdir -p $build_dir &> /dev/null
 cd $build_dir
+echo "Building $JOBDIR into $build_dir"
 
-if [[ $configure != "" ]]; then
-  if [[ -f "$HOME/$configure.opt" ]]; then
-    config_opt=$HOME/$configure.opt
-  fi
+if [ -f CMakeCache.txt ]
+then
+  echo "Already configured with cmake - run with --clean to reconfigure"
+elif [ -f Makefile ]
+then
+  echo "Already configured with qmake - run with --clean to reconfigure"
+elif [ -f $JOBDIR/CMakeLists.txt ]
+then
+  configure=${PARAM_configure:-"-GNinja -DFEATURE_developer_build=ON -DBUILD_EXAMPLES=OFF"}
+  echo "Configuring with cmake: $configure"
+  echo "Pass --configure \"configure options\" to override"
+  cmake $configure $JOBDIR
 else
-  config_opt=$HOME/config.opt
+  configure=${PARAM_configure:-"-developer-build -confirm-license -opensource -nomake examples"}
+  echo "Configuring with qmake: $configure"
+  echo "Pass --configure \"configure options\" to override"
+  $JOBDIR/configure $configure
 fi
+error=$?
 
-if [[ -f $config_opt ]]; then
-  cp $config_opt ./config.opt
-  configure="-redo"
-  echo "Using configure options from $config_opt:"
-  cat $config_opt
+if [[ -f build.ninja ]]
+then
+  echo "Building '$JOBDIR' using 'ninja $target'"
+  ninja $target
+  error=$?
+elif [[ -f Makefile ]]
+then
+  echo "Building '$JOBDIR' using 'make $target -j$(nproc)'"
+  make $target -j$(nproc)
+  error=$?
 else
-  configure="-confirm-license -developer-build -opensource -nomake examples -nomake tests $configure"
-fi
-echo "Configuring with options '$configure'"
-$sources/configure $configure
-
-if [[ $modules != "" ]]; then
-  module_array=()
-  IFS=',' read -r -a module_array <<< "$modules"
-  for module in "${module_array[@]}"; do
-    echo "Building $module"
-    make -j$(nproc) module-$module
-    error=$?
-    if [[ $error != 0 ]]; then
-      exit $error
-    fi
-    if [[ $module == "qtbase" ]]; then
-      generate_qmake=true
-    fi
-  done
-else
-  make -j$(nproc)
-  generate_qmake=true
+  >&2 echo "No build system generated, aborting"
 fi
 
-if [[ $generate_qmake == "true" ]]; then
-  qmake_name=qmake-latest
-  if [[ $PARAM_build != "" ]]; then
-    qmake_name=qmake-$PARAM_build
-  fi
-  rm ~/$qmake_name > /dev/null 2> /dev/null
-  echo "$PWD/qtbase/bin/qmake \"\$@\"" > ~/$qmake_name
-  chmod +x ~/$qmake_name
-  rm ~/qmake > /dev/null 2> /dev/null
-  ln -s -f ~/$qmake_name ~/qmake
-fi
+exit $error

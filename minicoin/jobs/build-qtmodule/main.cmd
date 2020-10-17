@@ -4,15 +4,15 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 call c:\minicoin\util\parse-opts.cmd %*
 call c:\minicoin\util\discover-make.cmd
 
+if NOT DEFINED !JOBDIR! (
+  echo Error: path to host clone of Qt module is required!
+  exit /B 1
+)
+
 set build=
 set generate_qmake=false
 set configure=
 set target=
-
-if "!JOBDIR!" == "" (
-  echo Error: path to host clone of Qt module is required!
-  exit /B 1
-)
 
 set "sources=!JOBDIR!"
 set module=
@@ -48,30 +48,36 @@ echo Building %module% from %sources%
 
 if exist CMakeCache.txt (
   echo '%module%' already configured with cmake
-) else if exist Makefile (
-  echo '%module%' already configured with qmake
-) else if "%module%" == "qtbase" (
-  set "generate_toollink=qmake"
-  set "configure=-confirm-license -developer-build -opensource -nomake examples -debug !configure!"
-  if exist %sources%\CMakeLists.txt (
-    set "generate_toollink=!generate_toollink! qt-cmake"
-    set "configure=!configure! -cmake -cmake-generator Ninja"
-  ) else (
-    set "configure=!configure! %QTCONFIGFLAGS%"
-  )
-  echo Calling '%sources%\configure !configure!'
-  call %sources%\configure.bat !configure!
-) else if exist %sources%\CMakeLists.txt (
-  echo Generating cmake build for '%module%' for '%MAKETOOL%'
-  set generator=
-  if not "%NINJA%" == "" (
-    set "generator=-GNinja"
-    set MAKETOOL=%NINJA%
-  )
-  call %USERPROFILE%\bin\qt-cmake %sources% !generator!
 ) else (
-  echo Generating qmake build for '%module%'
-  call %USERPROFILE%\bin\qmake %sources%
+  if exist Makefile (
+    echo '%module%' already configured with qmake
+  ) else (
+    if "%module%" == "qtbase" (
+      set "generate_toollink=qmake"
+      set "configure=-confirm-license -developer-build -opensource -nomake examples -debug !configure!"
+      if exist %sources%\CMakeLists.txt (
+        set "generate_toollink=!generate_toollink! qt-cmake"
+        set "configure=!configure! -cmake -cmake-generator Ninja"
+      ) else (
+        set "configure=!configure! %QTCONFIGFLAGS%"
+      )
+      echo Calling '%sources%\configure !configure!'
+      call %sources%\configure.bat !configure!
+    ) else (
+      if exist %sources%\CMakeLists.txt (
+        echo Generating cmake build for '%module%' for '%MAKETOOL%'
+        set generator=
+        if not "%NINJA%" == "" (
+          set "generator=-GNinja"
+          set MAKETOOL=%NINJA%
+        )
+        call %USERPROFILE%\bin\qt-cmake %sources% !generator!
+      ) else (
+        echo Generating qmake build for '%module%'
+        call %USERPROFILE%\bin\qmake %sources%
+      )
+    )
+  )
 )
 
 for %%T in ( %generate_toollink% ) do (
@@ -103,9 +109,14 @@ if exist build.ninja (
   )
   echo Building '!target!' using '!ninja!'
   call !ninja! !target!
-) else if exist Makefile (
-  if "%target%" == "" set "target=sub-src"
-  echo Building '!target!' using '!MAKETOOL!'
-  call !MAKETOOL! "!target!"
+) else (
+  if exist Makefile (
+    if "%target%" == "" set "target=sub-src"
+    echo Building '!target!' using '!MAKETOOL!'
+    call !MAKETOOL! "!target!"
+  ) else (
+    echo No build system geneated, aborting
+    EXIT /B 1
+  )
 )
 EXIT /B %ERRORLEVEL%
