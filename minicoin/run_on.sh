@@ -115,10 +115,7 @@ fi
 log_stamp=$(date "+%Y%m%d-%H%M%S")
 
 function log_progress() {
-  if [[ "$verbose" == "true" ]]
-  then
-    >&2 printf "${YELLOW}%s${NOCOL}\n" "$1"
-  fi
+  [ "$verbose" == "true" ] && >&2 printf "${YELLOW}%s${NOCOL}\n" "$1"
 }
 
 function clean_log() {
@@ -141,9 +138,7 @@ function run_on_machine() {
   then
     [ $communicator == "winssh" ] && communicator="ssh"
     ext="cmd"
-    if [ ! -f "$upload_source/main.cmd" ]; then
-      ext="ps1"
-    fi
+    [ ! -f "$upload_source/main.cmd" ] && ext="ps1"
   else
     ext="sh"
   fi
@@ -181,29 +176,20 @@ function run_on_machine() {
   fi
 
   home_share=$(echo $machine_info | awk {'print $5'})
-  if [[ $home_share == "" ]]
-  then
-    home_share=$HOME
-  fi
-  host_home=${home_share/\~/$HOME}
-  host_home=${home_share/\$HOME/$HOME}
+  [ -z $home_share ] && home_share=$HOME
 
   # job scripts can expect P0 to be home on host, and P1 PWD on host
-  job_args=( "$host_home" )
+  job_args=( "$home_share" )
 
   # quote arguments with spaces to make guests behave identically
   whitespace=" |'|,"
   for arg in "${script_args[@]}"; do
-    if [[ $arg =~ $whitespace ]]; then
-      arg=\"$arg\"
-    fi
+    [[ $arg =~ $whitespace ]] && arg=\"$arg\"
     job_args+=($arg)
   done
 
   # pass --verbose through to guest
-  if [[ $verbose == "true" ]]; then
-    job_args+=( "--verbose" )
-  fi
+  [ $verbose == "true" ] && job_args+=( "--verbose" )
 
   error=0
   run="true"
@@ -310,11 +296,7 @@ then
   log_progress "==> $machine: Running post-run script for $job"
   $jobroot/$job/post-run.sh "${script_args[@]}"
   post_error=$?
-  if [ $post_error -gt 0 ]
-  then
-    >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
-  fi
-
+  [ $post_error -gt 0 ] && >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
   [ $error -eq 0 ] && error=$post_error
 fi
 
