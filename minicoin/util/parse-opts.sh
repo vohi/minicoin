@@ -60,13 +60,16 @@ unset count
 
 _JOBDIR="${POSITIONAL[1]}"
 HOST_HOME="${POSITIONAL[0]}"
-MOUNTED_HOME="/home/host"
+HOST_USER=$(basename $HOST_HOME)
+[ -d /Users ] && MOUNTED_HOME="/Users" || MOUNTED_HOME="/home"
+[ -d "$MOUNTED_HOME/$HOST_USER" ] && MOUNTED_HOME="$MOUNTED_HOME/$HOST_USER" || MOUNTED_HOME="$MOUNTED_HOME/host"
 JOBDIR="${_JOBDIR/$HOST_HOME/$HOME}"
 if [ ! -d "$JOBDIR" ]
 then
   JOBDIR="${_JOBDIR/$HOST_HOME/$MOUNTED_HOME}"
 fi
 
+unset _JOBDIR
 unset _HOST_HOME
 unset HOST_HOME
 unset MOUNTED_HOME

@@ -9,14 +9,17 @@ on the host
 `minicoin` was run
 * the `minicoin/util` directory is available in `/minicoin/util` (or
 `C:\minicoin\util`), so utility scripts can be found there
-* the user's home directory (if not disabled) is available in a "host"
-subdirectory the platform's location for user directories (ie 
-`/home/host` for linux, `/Users/host` for macOS, `C:\Users\host` on Windows)
 
 Job scripts should combine the first and second arguments passed in to map
-directories on the host machine to directories on the box. The `parse-opts`
-scripts in minicoin/util do this automatically, setting a `JOBDIR` variable
-accordingly.
+directories on the host machine to directories on the VM. Note that users or
+minicoin may disable sharing of the home directory, and use other techniques
+to make files from the host available to the guest. In those cases, the files
+MUST be in an equivalent location of the `vagrant` home directory. Jobs should
+not assume that the users' home directory is mounted, but prioritise an
+equivalent location in the `vagrant` home.
+
+The `parse-opts` scripts in minicoin/util do this automatically, setting a
+`JOBDIR` variable accordingly.
 
 This means that running minicoin in your home directory will automatically
 set the `JOBDIR` variable to host's home directory mapped to the guest file
@@ -27,9 +30,9 @@ $ cd ~/qt
 $ minicoin run ubuntu1804 windows10 macos1013 test
 ```
 
-will make the test script print "Job works on '/home/host/qt'" on the
-Linux box, "Job works on 'C:\Users\host\qt'" on the Windows box, and
-"Job works on '/Users/host/qt'" on the macOS box. See the code in the
+will make the test script print "Job works on '/home/user/qt'" on the
+Linux box, "Job works on 'C:\Users\user\qt'" on the Windows box, and
+"Job works on '/Users/user/qt'" on the macOS box. See the code in the
 `parse-opts` scripts in `minicoin/util` for how to convert the arguments
 manually in your own scripts, if you don't want to use `parse-opts`.
 

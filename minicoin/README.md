@@ -231,15 +231,19 @@ Default rules are defined in the `settings` section of the `minicoin.yml` files.
 Unless folder-sharing is disabled, the minicoin directory with the Vagrantfile
 will be shared with the guest as a folder `/minicoin`; the home directory of
 the current user (or whatever the `home_share` attribute specifies) will be shared
-with the guest as a folder `host` (`/home/host` on Linux, `C:\Users\host` on
-Windows, `/Users/host` on Mac guests).
+with the guest as a home-folder in the respective home directory, ie (`/home/$USER`
+on Linux, `C:\Users\$USER` on Windows, `/Users/$USER` on Mac guests, with `$USER`
+being the user name on the host system).
 
 Folder sharing can be disabled for each box by setting the `shared_folders`
 attribute to `disabled`; the global `home_share` setting can be set to something
-else than `~`, or to `disabled` to only share the minicoin folder.
+else than `$HOME`, or to `disabled` to only share the minicoin folder.
 
-On cloud-hosted VMs, folder-sharing should be disabled. Use the `mutagen` role
-instead.
+On cloud-hosted VMs, folder-sharing should be disabled. Use the file syncing
+technologies, for instance `mutagen` through the available role, instead. When
+doing so, the location of the files on the guest MUST be in the same relative
+location to the `vagrant` user's home as it is on the host machine to the user's
+home.
 
 # Roles
 

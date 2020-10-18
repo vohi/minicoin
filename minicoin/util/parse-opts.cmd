@@ -120,12 +120,21 @@ set short=
 REM Interpret P0 and P1, set JOBDIR
 set "_JOBDIR=!POSITIONAL[1]!"
 set "HOST_HOME=!POSITIONAL[0]!"
-set "MOUNTED_HOME=C:\Users\host"
+call :get_username %HOST_HOME%
+set "MOUNTED_HOME=C:\Users\%HOST_USER%"
+if not exist %MOUNTED_HOME% SET "MOUNTED_HOME=C:\Users\host"
 set JOBDIR=!_JOBDIR:%HOST_HOME%=%USERPROFILE%!
 if not exist %JOBDIR% (
     set JOBDIR=!_JOBDIR:%HOST_HOME%=%MOUNTED_HOME%!
 )
+
 set _JOBDIR=
 set MOUNTED_HOME=
 set HOST_HOME=
 set JOBDIR=!JOBDIR:/=\!
+
+exit /b
+
+:get_username
+SET "HOST_USER=%~nx1"
+exit /b
