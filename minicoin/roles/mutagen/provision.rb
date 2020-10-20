@@ -3,7 +3,7 @@ require 'open3'
 
 $HOST_HAS_MUTAGEN = nil
 
-def mutagen_host_to_guest(box, name, alphas, betas)
+def mutagen_host_to_guest(box, name, alphas, betas, ignores)
     box.trigger.before :destroy do |trigger|
         trigger.name = "Shutting down mutagen sync to #{name} and removing from known hosts"
         trigger.ruby do |env, machine|
@@ -63,7 +63,13 @@ def mutagen_host_to_guest(box, name, alphas, betas)
                     status = -1 unless stdout.include?(alpha)
                 end
                 if status != 0
-                    stdout, stderr, status = Open3.capture3("echo yes | mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} --label minicoin=#{name} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
+                    command = "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} --label minicoin=#{name}"
+                    unless ignores.nil?
+                        ignores.each do |ignore|
+                            command += " -i #{ignore}"
+                        end
+                    end
+                    stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
                     if status != 0
                         machine.ui.warn("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
                     end
@@ -77,7 +83,7 @@ def mutagen_host_to_guest(box, name, alphas, betas)
     end
 end
 
-def mutagen_guest_to_host(box, name, alphas, betas)
+def mutagen_guest_to_host(box, name, alphas, betas, ignores)
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
     authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
@@ -176,8 +182,8 @@ def mutagen_provision(box, name, role_params)
     role_params["beta"] = betas
 
     if role_params["reverse"] == true
-        mutagen_guest_to_host(box, name, alphas, betas)
+        mutagen_guest_to_host(box, name, alphas, betas, role_params["ignores"])
     else
-        mutagen_host_to_guest(box, name, alphas, betas)
+        mutagen_host_to_guest(box, name, alphas, betas, role_params["ignores"])
     end
 end
