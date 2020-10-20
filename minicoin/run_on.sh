@@ -222,7 +222,7 @@ function run_on_machine() {
       >&1 printf "%s\n" "$line"
     done) \
     2> >(while IFS= read -r line; do
-      >&2 printf "${RED}%s\n${NOCOL}" "$line"
+      [[ "$line" =~ "^==> vagrant:" ]] || >&2 printf "${RED}%s\n${NOCOL}" "$line"
     done)
   error=$?
 
