@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 call c:\minicoin\util\parse-opts.cmd %*
 call c:\minicoin\util\discover-make.cmd
 
-if NOT DEFINED !JOBDIR! (
+if NOT DEFINED JOBDIR (
   echo Error: path to host clone of Qt module is required!
   exit /B 1
 )
@@ -44,7 +44,7 @@ if not exist %module%-build!build! (
 )
 cd %module%-build!build!
 
-echo Building %module% from %sources%
+echo Building '%module%' from '%sources%' into '%module%-build!build!'
 
 if exist CMakeCache.txt (
   echo '%module%' already configured with cmake
@@ -55,7 +55,7 @@ if exist CMakeCache.txt (
     if "%module%" == "qtbase" (
       set "generate_toollink=qmake"
       set "configure=-confirm-license -developer-build -opensource -nomake examples -debug !configure!"
-      if exist %sources%\CMakeLists.txt (
+      if exist %sources%\CMakeLists.txt if not defined FLAG_qmake (
         set "generate_toollink=!generate_toollink! qt-cmake"
         set "configure=!configure! -cmake -cmake-generator Ninja"
       ) else (

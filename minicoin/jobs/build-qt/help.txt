@@ -1,0 +1,41 @@
+Configures and builds Qt from toplevel sources in the current directory
+
+The job performs a top-level build of Qt, and supports Qt 5
+(using qmake/make) and Qt 6 (using cmake/ninja).
+
+The build directory on the guest is by default ~/qt-build
+
+By default, the job configures Qt with
+
+-confirm-license -developer-build -opensource -nomake examples
+
+and builds the default target (i.e. all).
+
+Supported job parameters:
+
+--configure "configure line \"with spaces\""
+
+  Overrides the default configuration options.
+
+--target target
+
+  Build a different target than the default, e.g.
+
+  $ minicoin run windows10 build-qt -- --target tst_qobject_check
+  $ minicoin run doc-server build-qt -- --target html_docs
+
+--build name
+
+  Override the default build tree:
+
+  $minicoin run ubuntu1804 build-qt -- --build qt-build-5.15
+
+--clean
+
+  Delete the build tree before configuring and building.
+
+--qmake
+
+  Use  qmake build system also if a cmake build system is present.
+  Ignored if the build is already configured with cmake, combine with
+  --clean or use a separate --build to switch build systems.

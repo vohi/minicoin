@@ -3,7 +3,7 @@
 
 if [ -z $JOBDIR ]
 then
-  echo "Error: path to host clone of Qt is required!"
+  >&2 echo "Error: path to host clone of Qt is required!"
   exit 1
 fi
 
@@ -21,7 +21,7 @@ fi
 
 [ -d $build_dir ] || mkdir -p $build_dir &> /dev/null
 cd $build_dir
-echo "Building $JOBDIR into $build_dir"
+echo "Building '$JOBDIR' into '$build_dir'"
 
 if [ -f CMakeCache.txt ]
 then
@@ -29,17 +29,21 @@ then
 elif [ -f Makefile ]
 then
   echo "Already configured with qmake - run with --clean to reconfigure"
-elif [ -f $JOBDIR/CMakeLists.txt ]
+elif [ -f $JOBDIR/CMakeLists.txt ] && [ -z $FLAG_qmake ]
 then
   configure=${PARAM_configure:-"-GNinja -DFEATURE_developer_build=ON -DBUILD_EXAMPLES=OFF"}
   echo "Configuring with cmake: $configure"
   echo "Pass --configure \"configure options\" to override"
   cmake $configure $JOBDIR
-else
+elif [ -f $JOBDIR/configure ]
+then
   configure=${PARAM_configure:-"-developer-build -confirm-license -opensource -nomake examples"}
   echo "Configuring with qmake: $configure"
   echo "Pass --configure \"configure options\" to override"
   $JOBDIR/configure $configure
+else
+  >&2 echo "No CMake or qmake build system found"
+  false
 fi
 error=$?
 

@@ -48,7 +48,7 @@ fi
 mkdir $module-build$build 2> /dev/null
 cd $module-build$build
 
-echo "Building '$module' from '$sources'"
+echo "Building '$module' from '$sources' into '$module-build$build'"
 
 if [ -f CMakeCache.txt ] && [ -z $configure ]
 then
@@ -60,7 +60,7 @@ elif [[ -f "$sources/configure" ]]
 then
   generate_toollink=( "qmake" )
   configure="-confirm-license -developer-build -opensource -nomake examples $configure"
-  if [ -f $sources/CMakeLists.txt ]
+  if [ -f $sources/CMakeLists.txt ] && [ -z $FLAG_qmake ]
   then
     generate_toollink=( $generate_toollink "qt-cmake" )
     configure="$configure -cmake -cmake-generator Ninja"
