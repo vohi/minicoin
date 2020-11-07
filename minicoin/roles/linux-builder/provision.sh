@@ -18,14 +18,15 @@ case $distro in
     export DEBIAN_FRONTEND=noninteractive
     apt-get update > /dev/null
 
-    packages=( "build-essential"
+    packages=(
+            "build-essential"
+            "gcc-8 g++-8"
             "python"
             "perl"
             "bison"
             "flex"
             "gperf"
             "ninja-build"
-            "qt5-default"
             "^libxcb.*-dev libx11-xcb-dev libxrender-dev libxi-dev"
             "libxkbcommon-dev libxkbcommon-x11-dev"
             "libglu1-mesa-dev freeglut3-dev mesa-common-dev"
@@ -35,10 +36,13 @@ case $distro in
             "pkg-config"
             "libwayland-.*"
             "libxcomposite-dev"
+            # print support
+            "libcups2-dev"
+            # virtual keyboard
             "hunspell libhunspell-dev"
-            # install dependencies for running tests
+            # running network tests
             "avahi-daemon"
-            "docker"
+            "docker docker-compose"
             # qdoc
             "clang-10" "libclang-10-dev" "llvm-10"
     )
