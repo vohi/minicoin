@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-declare -a args=( pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 )
+declare -a args=( pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 -- pass "pass through" --pass )
 declare -i errors=0
 
 function assert()
@@ -34,6 +34,7 @@ if [[ $debug == true ]]; then
     value="${!name}"
     echo "- $p: $value"
   done
+  echo "Pass-through: ${PASSTHROUGH}"
   exit 0
 fi
 
@@ -59,6 +60,11 @@ assert "${PARAM_array[*]}" "a 1 a 2 a3"
 assert "${PARAM_array[0]}" "a 1"
 assert "${PARAM_array[1]}" "a 2"
 assert "${PARAM_array[2]}" "a3"
+
+assert "${PASSTHROUGH[*]}" "pass pass through --pass"
+assert "${PASSTHROUGH[0]}" "pass"
+assert "${PASSTHROUGH[1]}" "pass through"
+assert "${PASSTHROUGH[2]}" "--pass"
 
 if [[ $errors -gt 0 ]]; then
   echo "$errors errors!"

@@ -3,6 +3,7 @@ args=()
 POSITIONAL=()
 FLAGS=()
 PARAMS=()
+PASSTHROUGH=()
 count=()
 index=0
 
@@ -10,7 +11,10 @@ for arg in "${@}"; do
   count+=($index)
   index=$(( index + 1 ))
 
-  if [[ "$arg" =~ ^--.*$ ]]; then
+  if [[ "$arg" == "--" ]]; then
+    PASSTHROUGH=( "${@:$(( index + 1 ))}" )
+    break
+  elif [[ "$arg" =~ ^--.*$ ]]; then
     if [[ ${#args[@]} < ${#names[@]} ]]; then
       args+=('""')
     fi

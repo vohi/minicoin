@@ -11,6 +11,7 @@ set posCount=0
 set FLAGS[@]=
 set flagCount=0
 set PARAMS[@]=
+set PASSTHROUGH[@]=
 
 :parseargs
   if /i "%~1" == "" goto endargs
@@ -22,6 +23,22 @@ set PARAMS[@]=
     set "short=true"
   )
 
+  if "!arg!" == "--" (
+    set "PASSTHROUGH[@]=%~2"
+    set "PASSTHROUGH[#]=1"
+    set "PASSTHROUGH[0]=%~2"
+    shift
+    goto :parseargs
+  )
+  if NOT "!PASSTHROUGH[@]!" == "" (
+    if NOT "%~2" == "" (
+      set "PASSTHROUGH[@]=!PASSTHROUGH[@]! %~2"
+      set "PASSTHROUGH[!PASSTHROUGH[#]!]=%~2"
+      set /A "PASSTHROUGH[#]+=1"
+    )
+    shift
+    goto :parseargs
+  )
   if "!arg:~0,2!" == "--" (
     if !argCount! LSS !nameCount! (
       set args[!argCount!]=""
