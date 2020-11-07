@@ -28,7 +28,7 @@ Supported job parameters:
 
   Override the default build tree:
 
-  $minicoin run ubuntu1804 build-qt -- --build qt-build-5.15
+  $ minicoin run ubuntu1804 build-qt -- --build qt-build-5.15
 
 --clean
 
@@ -39,3 +39,10 @@ Supported job parameters:
   Use  qmake build system also if a cmake build system is present.
   Ignored if the build is already configured with cmake, combine with
   --clean or use a separate --build to switch build systems.
+
+--cc path
+--cxx path
+
+  Use the C and C++ compiler at the specified path, e.g.
+
+  $ minicoin run ubuntu1804 build-qt -- -cc /usr/bin/clang-10 --cxx /usr/bin/clang++10

@@ -7,6 +7,23 @@ then
   exit 1
 fi
 
+# use highest installed version of gcc or clang, unless compilers are specified
+function search_highest
+{
+  [ -z $1 ] && return
+  local search_version=8
+  local highest_found=
+  while [[ -f "${1}-${search_version}" ]]
+  do
+    highest_found=$search_version
+    search_version=$(( $search_version + 1 ))
+  done
+  [ -z highest_found ] || echo ${1}-${highest_found}
+}
+
+export CC=${PARAM_cc:-$(search_highest "$(which gcc || which clang)")}
+export CXX=${PARAM_cxx:-$(search_highest "$(which g++ || which clang++)")}
+
 # set defaults
 build_dir=${PARAM_build:-"qt-build"}
 target=$PARAM_target
