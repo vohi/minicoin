@@ -2,7 +2,8 @@
 setlocal
 setlocal enabledelayedexpansion
 
-set args=pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 -- pass "pass through" --pass
+set PARSE_OPTS_FLAGS=flag4
+set args=pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 --flag4 pos5 -- pass "pass through" --pass
 set /A errors=0
 set debug=false
 
@@ -25,19 +26,21 @@ if "%debug%" == "true" (
   exit /B
 )
 
-call :assert "!POSITIONAL[@]!" "pos1 pos2 pos3 pos 4"
-call :assert "!POSITIONAL[#]!" 4
+call :assert "!POSITIONAL[@]!" "pos1 pos2 pos3 pos 4 pos5"
+call :assert "!POSITIONAL[#]!" 5
 call :assert "!POSITIONAL[0]!" pos1
 call :assert "!POSITIONAL[1]!" pos2
 call :assert "!POSITIONAL[2]!" pos3
 call :assert "!POSITIONAL[3]!" "pos 4"
+call :assert "!POSITIONAL[4]!" "pos5"
 
-call :assert "!FLAGS[@]!" "flag1 flag2 flag3"
-call :assert "!FLAGS[#]!" 3
+call :assert "!FLAGS[@]!" "flag1 flag2 flag3 flag4"
+call :assert "!FLAGS[#]!" 4
 call :assert "!FLAG_flag1!" true
 call :assert "!FLAG_flag2!" true
 call :assert "!FLAG_flag3!" true
-call :assert "!FLAG_flag4!" ""
+call :assert "!FLAG_flag4!" true
+call :assert "!FLAG_flag5!" ""
 
 call :assert "!PARAMS[@]!" "param1 param2 param3 array"
 call :assert "!PARAMS[#]!" 4
@@ -62,7 +65,7 @@ goto :result
 :assert
 
 @echo off
-echo verifying "%~1" == "%~2"
+REM echo verifying "%~1" == "%~2"
 if "%~1" == "%~2" (
   REM echo PASS "%~1" equals "%~2"
 ) else (

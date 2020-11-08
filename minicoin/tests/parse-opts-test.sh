@@ -1,6 +1,24 @@
 #!/usr/bin/env bash
 
-declare -a args=( pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 -- pass "pass through" --pass )
+PARSE_OPTS_FLAGS=(
+  flag4
+)
+args=( pos1
+  pos2
+  --param1 value1
+  --param2 value2
+  pos3
+  --flag1
+  --param3 value3
+  --array "a 1" --array "a 2"
+  --flag2
+  --array a3
+  "pos 4"
+  --flag3
+  --flag4
+  pos5
+  -- pass "pass through" --pass
+)
 declare -i errors=0
 
 function assert()
@@ -17,7 +35,7 @@ if [[ $1 == --debug ]]; then
   debug=true
   shift
   unset args
-  declare -a args=( "$@" )
+  args=( "$@" )
   echo "Testing ${args[*]}"
 fi
 
@@ -38,30 +56,37 @@ if [[ $debug == true ]]; then
   exit 0
 fi
 
-assert "${POSITIONAL[*]}" "pos1 pos2 pos3 pos 4"
+assert "${POSITIONAL[*]}" "pos1 pos2 pos3 pos 4 pos5"
+assert "${#POSITIONAL[@]}" 5
 assert ${POSITIONAL[0]} "pos1"
 assert ${POSITIONAL[1]} "pos2"
 assert ${POSITIONAL[2]} "pos3"
 assert "${POSITIONAL[3]}" "pos 4"
+assert "${POSITIONAL[4]}" "pos5"
 
-assert "${FLAGS[*]}" "flag1 flag2 flag3"
+assert "${FLAGS[*]}" "flag1 flag2 flag3 flag4"
+assert "${#FLAGS[@]}" 4
 assert "$FLAG_flag1" "true"
 assert "$FLAG_flag2" "true"
 assert "$FLAG_flag3" "true"
-assert "$FLAG_flag4" ""
+assert "$FLAG_flag4" "true"
+assert "$FLAG_flag5" ""
 
 assert "${PARAMS[*]}" "param1 param2 param3 array"
+assert "${#PARAMS[@]}" 4
 assert $PARAM_param1 "value1"
 assert $PARAM_param2 "value2"
 assert $PARAM_param3 "value3"
 assert "$PARAM_array" "a 1"
 
 assert "${PARAM_array[*]}" "a 1 a 2 a3"
+assert "${#PARAM_array[@]}" 3
 assert "${PARAM_array[0]}" "a 1"
 assert "${PARAM_array[1]}" "a 2"
 assert "${PARAM_array[2]}" "a3"
 
 assert "${PASSTHROUGH[*]}" "pass pass through --pass"
+assert "${#PASSTHROUGH[@]}" 3
 assert "${PASSTHROUGH[0]}" "pass"
 assert "${PASSTHROUGH[1]}" "pass through"
 assert "${PASSTHROUGH[2]}" "--pass"

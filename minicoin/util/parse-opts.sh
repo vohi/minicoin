@@ -44,6 +44,10 @@ for i in ${count[@]}; do
     if [[ "$arg" == '""' ]] || [[ $arg == "" ]]; then
       FLAGS+=("$name")
       declare "FLAG_$name"="true"
+    elif [[ "${PARSE_OPTS_FLAGS[@]}" =~ "$name" ]]; then
+      FLAGS+=("$name")
+      declare "FLAG_$name"="true"
+      POSITIONAL+=("$arg")
     else
       param="PARAM_$name";
       value=${!param}
