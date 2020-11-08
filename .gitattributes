@@ -1,2 +1,5 @@
 # all shell scripts keep unix line endings
-*.sh text eol=lf
+*.sh                    text eol=lf
+# all batch scripts keep Windows line endings
+*.bat                   text eol=crlf
+*.cmd                   text eol=crlf
