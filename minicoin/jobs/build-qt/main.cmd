@@ -9,6 +9,21 @@ if NOT DEFINED JOBDIR (
   exit /B 1
 )
 
+goto :main
+
+REM Creates a batch wrapper in ~/bin (which is in the PATH) for qmake or cmake
+:link_tool
+set "toolname=%~n1"
+set "toolext=%~x1"
+if EXIST "%CD%\qtbase\bin\%1" (
+  echo @echo off > %USERPROFILE%\bin\!toolname!.bat
+  echo SET PATH=%CD%\qtbase\bin;%%PATH%% >> %USERPROFILE%\bin\!toolname!.bat
+  echo %CD%\qtbase\bin\!toolname! "%%*" >> %USERPROFILE%\bin\!toolname!.bat
+)
+exit /B
+
+:main
+
 REM set defaults
 if "!PARAM_build!"=="" SET "PARAM_build=qt-build"
 SET "build_dir=!PARAM_build!"
@@ -65,5 +80,8 @@ if exist build.ninja (
     >&2 echo "No build system generated, aborting"
   )
 )
+
+call :link_tool qmake.exe
+call :link_tool qt-cmake.bat
 
 exit /B %error%

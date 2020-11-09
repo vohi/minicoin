@@ -24,6 +24,17 @@ function search_highest
 export CC=${PARAM_cc:-$(search_highest "$(which gcc || which clang)")}
 export CXX=${PARAM_cxx:-$(search_highest "$(which g++ || which clang++)")}
 
+# create a build tool wrapper script in ~
+function link_tool
+{
+  toolname="$1"
+  if [ -f "$PWD/qtbase/bin/${toolname}" ]
+  then
+    echo "$PWD/qtbase/bin/${toolname} \"\$@\"" > "$HOME/${toolname}"
+    chmod +x "$HOME/${toolname}"
+  fi
+}
+
 # set defaults
 build_dir=${PARAM_build:-"qt-build"}
 target=$PARAM_target
@@ -77,5 +88,8 @@ then
 else
   >&2 echo "No build system generated, aborting"
 fi
+
+link_tool qmake
+link_tool qt-cmake
 
 exit $error
