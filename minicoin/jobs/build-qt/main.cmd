@@ -49,6 +49,8 @@ if EXIST CMakeCache.txt (
     if EXIST %JOBDIR%/CMakeLists.txt (
       if NOT DEFINED FLAG_qmake (
         if "%PARAM_configure%"=="" SET "PARAM_configure=-GNinja -DFEATURE_developer_build=ON -DBUILD_EXAMPLES=OFF"
+        if NOT "!PARAM_cc==!" == "" SET "PARAM_configure=!PARAM_configure! -DCMAKE_C_COMPILER=!PARAM_cc!"
+        if NOT "!PARAM_cxx==!" == "" SET "PARAM_configure=!PARAM_configure! -DCMAKE_CXX_COMPILER=!PARAM_cxx!"
         echo Configuring !JOBDIR! with cmake: !PARAM_configure!
         echo Pass --configure "configure options" to override
         cmake !PARAM_configure! !JOBDIR!
