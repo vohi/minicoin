@@ -14,17 +14,21 @@ for arg in "${@}"; do
   if [[ "$arg" == "--" ]]; then
     PASSTHROUGH=( "${@:$(( index + 1 ))}" )
     break
-  elif [[ "$arg" =~ ^--.*$ ]]; then
+  fi
+  is_name=""
+  if [[ ! "$arg" =~ " " ]]; then
+    if [[ "$arg" =~ ^--.*$ ]]; then
+      name="${arg/--/}"
+      is_name="true"
+    elif [[ "$arg" =~ ^-.$ ]]; then
+      name="${arg/-/}"
+      is_name="true"
+    fi
+  fi
+  if [[ ! -z $is_name ]]; then
     if [[ ${#args[@]} < ${#names[@]} ]]; then
       args+=('""')
     fi
-    name="${arg/--/}"
-    names+=("$name")
-  elif [[ "$arg" =~ ^-.$ ]]; then
-    if [[ ${#args[@]} < ${#names[@]} ]]; then
-      args+=('""')
-    fi
-    name=${arg/-/}
     names+=("$name")
   else
     if [[ ${#names[@]} == ${#args[@]} ]]; then

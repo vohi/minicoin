@@ -18,11 +18,6 @@ set PASSTHROUGH[@]=
   
   set "arg=%~1"
 
-  set "short=false"
-  if "!arg:~0,1!" == "-" if "!arg:~2!" == "" (
-    set "short=true"
-  )
-
   if "!arg!" == "--" (
     set "PASSTHROUGH[@]=%~2"
     set "PASSTHROUGH[#]=1"
@@ -39,7 +34,17 @@ set PASSTHROUGH[@]=
     shift
     goto :parseargs
   )
-  if "!arg:~0,2!" == "--" (
+  set IS_NAME=
+  if "!arg!" == "!arg: =!" (
+    if "!arg:~0,2!" == "--" (
+      set IS_NAME=true
+    ) else (
+      if "!arg:~0,1!" == "-" if "!arg:~2!" == "" (
+        set IS_NAME=true
+      )
+    )
+  )
+  if DEFINED IS_NAME (
     if !argCount! LSS !nameCount! (
       set args[!argCount!]=""
       set /A argCount+=1
@@ -47,20 +52,11 @@ set PASSTHROUGH[@]=
     set names[!nameCount!]=!arg:~2!
     set /A nameCount+=1
   ) else (
-    if "!short!" == "true" (
-      if !argCount! LSS !nameCount! (
-        set args[!argCount!]=""
-        set /A argCount+=1
-      )
-      set names[!nameCount!]=!arg:~1!
-      set /A nameCount+=1
+    if !nameCount! EQU !argCount! (
+      call :add_positional !arg!
     ) else (
-      if !nameCount! EQU !argCount! (
-        call :add_positional !arg!
-      ) else (
-        set "args[!argCount!]=!arg!"
-        set /A argCount+=1
-      )
+      set "args[!argCount!]=!arg!"
+      set /A argCount+=1
     )
   )
   shift
@@ -86,6 +82,7 @@ for /L %%i in (0,1,%nameCount%) do (
       if defined FORCEFLAG (
         call :add_flag !name!
         call :add_positional !args[%%i]!
+        set FORCEFLAG=
       ) else (
         set "name=!name:-=_!"
         set "pname=PARAM_!name!"
@@ -127,7 +124,6 @@ set args=
 set argCount=
 set posCount=
 set flagCount=
-set short=
 
 REM Interpret P0 and P1, set JOBDIR
 set "_JOBDIR=!POSITIONAL[1]!"

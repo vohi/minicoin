@@ -3,14 +3,14 @@ setlocal
 setlocal enabledelayedexpansion
 
 set PARSE_OPTS_FLAGS=flag4
-set args=pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 --flag4 pos5 -- pass "pass through" --pass
+set args=pos1 pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 --flag4 pos5 --param4 "--value4 123 --value5" -- pass "pass through" --pass
 set /A errors=0
 set debug=false
 
 if "%1" == "--debug" (
   set debug=true
   shift
-  set args=%*
+  set "args=%*"
 )
 
 call ..\util\parse-opts.cmd %args%
@@ -42,12 +42,13 @@ call :assert "!FLAG_flag3!" true
 call :assert "!FLAG_flag4!" true
 call :assert "!FLAG_flag5!" ""
 
-call :assert "!PARAMS[@]!" "param1 param2 param3 array"
-call :assert "!PARAMS[#]!" 4
+call :assert "!PARAMS[@]!" "param1 param2 param3 array param4"
+call :assert "!PARAMS[#]!" 5
 call :assert "!PARAM_param1!" "value1"
 call :assert "!PARAM_param2!" "value2"
 call :assert "!PARAM_param3!" "value3"
 call :assert "!PARAM_array!" "a 1"
+call :assert "!PARAM_param4!" "--value4 123 --value5"
 
 call :assert "!PARAM_array[@]!" "a 1 a 2 a3"
 call :assert "!PARAM_array[0]!" "a 1"

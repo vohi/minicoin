@@ -17,6 +17,7 @@ args=( pos1
   --flag3
   --flag4
   pos5
+  --param4 "--value4 123 --value5"
   -- pass "pass through" --pass
 )
 declare -i errors=0
@@ -72,12 +73,13 @@ assert "$FLAG_flag3" "true"
 assert "$FLAG_flag4" "true"
 assert "$FLAG_flag5" ""
 
-assert "${PARAMS[*]}" "param1 param2 param3 array"
-assert "${#PARAMS[@]}" 4
+assert "${PARAMS[*]}" "param1 param2 param3 array param4"
+assert "${#PARAMS[@]}" 5
 assert $PARAM_param1 "value1"
 assert $PARAM_param2 "value2"
 assert $PARAM_param3 "value3"
 assert "$PARAM_array" "a 1"
+assert "$PARAM_param4" "--value4 123 --value5"
 
 assert "${PARAM_array[*]}" "a 1 a 2 a3"
 assert "${#PARAM_array[@]}" 3
