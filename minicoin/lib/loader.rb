@@ -21,6 +21,7 @@ def merge_yaml(first, second)
             result = first.clone
             result << second
         end
+        result = result.uniq
         return result
     end
 
@@ -76,21 +77,19 @@ def load_urls(yaml, user_yaml)
     yaml["urls"] = $urls
 end
 
-def load_boxes(yaml, user_yaml, include_defaults)
+def load_boxes(yaml, user_yaml)
     machines = yaml["machines"]
 
-    if include_defaults
-        defaults = yaml["settings"]["defaults"]
-        unless defaults.nil?
-            defaults.each do |setting, value|
-                # make deep copies
-                default_value = value.dup
-                machines.each do |machine|
-                    if machine[setting].nil?
-                        machine[setting] = default_value
-                    else
-                        machine[setting] = merge_yaml(default_value, machine[setting])
-                    end
+    defaults = $settings["defaults"]
+    unless defaults.nil?
+        defaults.each do |setting, value|
+            # make deep copies
+            default_value = value.dup
+            machines.each do |machine|
+                if machine[setting].nil?
+                    machine[setting] = default_value
+                else
+                    machine[setting] = merge_yaml(default_value, machine[setting])
                 end
             end
         end
@@ -167,11 +166,12 @@ end
 
 def load_minicoin()
     begin # see tests/autotest.rb
-        return load_testmachines()["machines"]
+        load_testmachines()
     rescue NoMethodError => error # Not running autotest, continue
     rescue => error
         raise
     end
+    
     global_file = File.join($PWD, 'minicoin.yml')
     yaml = YAML.load_file(global_file)
     
@@ -193,16 +193,17 @@ def load_minicoin()
     yaml = load_includes(yaml, $PWD)
     user_yaml = load_includes(user_yaml, $HOME)
     local_yaml = load_includes(local_yaml, project_dir)
-    
+
     load_settings(yaml, user_yaml)
     load_settings(yaml, local_yaml)
-    machines = load_boxes(yaml, user_yaml, true)
-    machines = load_boxes(yaml, local_yaml, false)
+    machines = load_boxes(yaml, user_yaml)
+    machines = load_boxes(yaml, local_yaml)
 
     merge_roles(machines)
 
     load_urls(yaml, user_yaml)
     load_urls(yaml, local_yaml)
 
+    $TEST_OUTPUT=yaml
     return machines
 end

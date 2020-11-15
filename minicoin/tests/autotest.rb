@@ -3,30 +3,9 @@ require_relative "../lib/mock.rb"
 Vagrant = MockVagrant.new
 
 def load_testmachines()
-  root = File.join($PWD, "tests")
-  test_file = File.join(root, "test.yml")
-  user_file = File.join(root, "user.yml")
-
-  test_output = YAML.load_file(test_file)
-  user_output = YAML.load_file(user_file)
-  if !test_output
-    test_output = nil
-  end
-  if !user_output
-    user_output = nil
-  end
-
-  test_output = load_includes(test_output, root)
-  user_output = load_includes(user_output, root)
-
-  load_settings(test_output, user_output)
-  machines = load_boxes(test_output, user_output, true)
-
-  merge_roles(machines)
-
-  load_urls(test_output, user_output)
-
-  return test_output
+  $PWD = File.join($PWD, "tests")
+  $HOME = File.join($PWD, "user")
+  ENV['MINICOIN_PROJECT_DIR'] = File.join($PWD, "local")
 end
 
 class Tester
@@ -95,7 +74,7 @@ class Tester
   end
 
   def test_loading()
-    test_output = load_testmachines()
+    test_output = $TEST_OUTPUT
     test_data = {
       "settings" => {
         "single" => "subsub",
@@ -103,8 +82,8 @@ class Tester
         "global" => "user",
         "list" => ["user1", "user2"],
         "home_share" => "$HOME",
+        "defaults" => { "shared_folders" => [{ "Host" => "Guest" }]},
         "newvalue" => "local_option",
-        "defaults" => {}
         },
       "urls" => {
         "domain" => ["domain1", "domain2", "subdomain1", "subdomain2", "leaf1", "leaf2", "userserver"],
@@ -112,20 +91,23 @@ class Tester
         },
       "includes" => ["include/sub.yml"],
       "machines" => [
-        {"name" => "machine1", "box" => "generic", "gui" => false },
-        {"name" => "machine2", "box" => "generic2"},
-        {"name" => "override", "gui" => true},
-        {"name" => "environment1", "box" => "$USER"},
-        {"name" => "environment2", "box" => "private/$minicoin_key/box"},
+        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "index" => 0, "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
+        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "index" => 1, "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
+        {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "index"=>2},
+        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>3, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
+        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>4, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
-                           "private_net" => "1.1.1.1"
+                           "shared_folders"=>[{"Host"=>"Guest"}],
+                           "private_net" => "1.1.1.1", "index"=>5, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
         {"name" => "merged_role", "box" => "generic",
-                                   "roles" => [{"role" => "mutagen", "paths" => ["path2", "path1"]}]
+                                   "roles" => [{"role" => "mutagen", "paths" => ["path2", "path1"]}],
+                                   "shared_folders"=>[{"Host"=>"Guest"}],
+                                   "index"=>6, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
-        {"name" => "submachine", "box" => "subgeneric"},
-        {"name" => "machine1", "box" => "duplicate", "gui" => true }
+        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>7, "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] },
+        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "index"=>8, "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] }
       ]
     }
 
@@ -216,10 +198,14 @@ class Tester
   end
 
   def run()
+    puts "=== Testing merge_yaml"
     test_merge_yaml()
-    test_loading()
+    puts "=== Testing vagrantfile"
     test_vagrantfile()
+    puts "=== Testing expand_env"
     test_expand_env()
+    puts "=== Testing loading"
+    test_loading()
   end
 end
 

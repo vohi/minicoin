@@ -6,6 +6,9 @@ settings:
   global: global1
   list: [global2, global3]
   home_share: $HOME
+  defaults:
+    shared_folders:
+      - "Host": "Guest"
 
 urls:
   domain:
