@@ -28,15 +28,20 @@ export CXX=${PARAM_cxx:-$(search_highest "$(which g++ || which clang++)")}
 function link_tool
 {
   toolname="$1"
-  if [ -f "$PWD/qtbase/bin/${toolname}" ]
+  binpath="$PWD/qtbase/bin"
+  [ -f "${binpath}/${toolname}" ] || binpath="$PWD/bin"
+  if [ -f "${binpath}/${toolname}" ]
   then
-    echo "$PWD/qtbase/bin/${toolname} \"\$@\"" > "$HOME/${toolname}"
+    echo "${binpath}/${toolname} \"\$@\"" > "$HOME/${toolname}"
     chmod +x "$HOME/${toolname}"
   fi
 }
 
+projectname="$(basename $JOBDIR)"
+
 # set defaults
-build_dir=${PARAM_build:-"qt-build"}
+[ -z $PARAM_build ] && PARAM_build="${projectname}-build"
+build_dir=$PARAM_build
 target=$PARAM_target
 
 error=0
@@ -49,26 +54,41 @@ fi
 
 [ -d $build_dir ] || mkdir -p $build_dir &> /dev/null
 cd $build_dir
-echo "Building '$JOBDIR' into '$build_dir'"
+echo "Building '$projectname' from '$JOBDIR' into '$build_dir'"
 
-if [ -f CMakeCache.txt ]
+if [ -f build.ninja ]
 then
   echo "Already configured with cmake - run with --clean to reconfigure"
 elif [ -f Makefile ]
 then
   echo "Already configured with qmake - run with --clean to reconfigure"
-elif [ -f $JOBDIR/CMakeLists.txt ] && [ -z $FLAG_qmake ]
-then
-  configure=${PARAM_configure:-"-GNinja -DFEATURE_developer_build=ON -DBUILD_EXAMPLES=OFF"}
-  echo "Configuring with cmake: $configure"
-  echo "Pass --configure \"configure options\" to override"
-  cmake $configure $JOBDIR
 elif [ -f $JOBDIR/configure ]
 then
   configure=${PARAM_configure:-"-developer-build -confirm-license -opensource -nomake examples"}
-  echo "Configuring with qmake: $configure"
+  # not setting CMAKE_C(XX)_COMPILER, using CC and CXX environment instead
+  echo "Configuring '$JOBDIR' with 'configure $configure'"
   echo "Pass --configure \"configure options\" to override"
   $JOBDIR/configure $configure
+elif [ -f $JOBDIR/CMakeLists.txt ]
+then
+  configure=${PARAM_configure:-"-GNinja"}
+  echo "Configuring '$JOBDIR' with 'qt-cmake ${configure}'"
+  if [ ! -f ~/qt-cmake ]
+  then
+    >&2 echo "qt-cmake wrapper not found in '$HOME', build qtbase first!"
+  else
+    ~/qt-cmake "${configure}" $JOBDIR
+  fi
+elif [ -f $JOBDIR/$projectname.pro ]
+then
+  configure=${PARAM_configure:-"-GNinja"}
+  echo "Configuring '$JOBDIR' with 'qmake ${configure}'"
+  if [ ! -f ~/qt-cmake ]
+  then
+    >&2 echo "qmake wrapper not found in '$HOME', build qtbase first!"
+  else
+    ~/qmake "${configure}" $JOBDIR
+  fi
 else
   >&2 echo "No CMake or qmake build system found"
   false

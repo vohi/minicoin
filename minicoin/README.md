@@ -105,21 +105,25 @@ step.
 
 ## Job documentation
 
+For a list of available jobs, run
+
+`$ minicoin jobs`
+
 To see the documentation for a given job, run
 
-`$ minicoin job-help job`
+`$ minicoin job-help [job]`
 
-The most important jobs are:
+To run a job, invoke
 
-`$ minicoin run [machines...] build-qtmodule`
+`$ minicoin run [machines...] [job]`
 
-Builds the Qt submodule in the local directory on the listed machines,
-using the Qt from the last build of qtbase.
+The most important job is:
 
-`$ minicoin run [machines...] build-project`
+`$ minicoin run [machines...] build`
 
-Build the project in the current working directory on the listed machines,
-using the Qt that was built last (via the build-qtmodule job).
+This job builds the local source tree on the listed machines. The local
+source tree can be a toplevel Qt repo, a single Qt module, or a Qt project.
+The Qt toolkit from the last build of qtbase will be used.
 
 # Machines
 

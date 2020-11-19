@@ -14,14 +14,14 @@ For basebox maintenance documentation, see the [basebox directory](basebox).
 
 ```
 $ cd ~/qt5/qtbase
-$ minicoin run ubuntu1804 build-qtmodule
+$ minicoin run ubuntu1804 build
 $ cd ~/my_project
-$ minicoin run ubuntu1804 build-project
+$ minicoin run ubuntu1804 build
 ```
 
 This will first build qtbase from the local ~/qt5/qtbase directory on the
 ubuntu1804 box, and then build the project in ~/my_project on the same box,
-using the qtbase that was just built before.
+using the qtbase that was built just before.
 
 # Setup
 
