@@ -19,7 +19,10 @@ Windows machines support WinRM and ssh, but only WinRM works reliably for
 provisioning. To be able to talk WinRM via Vagrant, install the ruby gem
 on the host:
 
-`$ sudo gem install winrm`
+```
+$ sudo gem install winrm
+$ sudo gem install winrm-elevated # needed only on some Linux distros
+```
 
 ## Mac
 
