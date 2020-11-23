@@ -1,0 +1,20 @@
+# This is an example of a user-specific minicoin.yml configuration
+# Drop the contents of this file into ~/minicoin/minicoin.yml
+settings:
+  # defaults are applied to all machines
+  defaults:
+    # all machines get the following roles
+    roles:
+      # upload your .gitconfig to all VMs
+      - role: upload
+        files:
+          $HOME/.gitconfig: ~/.gitconfig
+      # sync your local ~/qt/dev folder with all VMs using mutagen
+      - role: mutagen
+        paths:
+          # adjust this path based on your local file system
+          - ~/qt/dev
+          # you can add more entries here, e.g
+          # - ~/qt/6.0
+    # all machines are created with four virtual CPUs
+    cpus: 4
