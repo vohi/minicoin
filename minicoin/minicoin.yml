@@ -89,7 +89,7 @@ machines:
       - role: android-builder
 
   - name: doc-server
-    box: generic/ubuntu1804
+    box: generic/ubuntu2004
     roles:
       - linux-builder
       - doc-server
