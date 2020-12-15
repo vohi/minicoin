@@ -23,6 +23,11 @@ packages=( ${PARAM_packages:-$PARAM_install} )
 
 for package in "${packages[@]}"
 do
-    echo "Installing $package using $command"
-    $command $package
+    echo "Installing '$package' using '$command'"
+    if [[ $(uname) =~ "Darwin" ]]
+    then
+        su vagrant -c "$command $package"
+    else
+        $command $package
+    fi
 done
