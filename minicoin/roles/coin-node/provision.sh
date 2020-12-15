@@ -1,49 +1,38 @@
-set +ex
+. /minicoin/util/parse-opts.sh "$@"
 
-POSITIONAL=()
-while [[ $# -gt 0 ]]; do
-  key="$1"
-  case $key in
-    --coin-root)
-      COINROOT="$2"
-      shift
-      shift
-      ;;
-    --template)
-      TEMPLATE="$2"
-      shift
-      shift
-      ;;
-    *)
-      POSITIONAL+=("$1")
-      shift
-      ;;
-  esac
-done
-set -- "${POSITIONAL[@]}" # restore positional parameters
+cd /minicoin/roles/coin-node/coin/provisioning
 
-echo "Provisioning from '$COINROOT' using template '$TEMPLATE'"
-
-cd $COINROOT/provisioning
-error=$?
-
-if [[ $error != 0 ]]; then
-  echo "'$COINROOT/provisioning' does not exist"
-  exit $error
+if [ $? -gt 0 ]
+then
+    >&2 echo "Can't find coin provisioning scripts"
+    exit 1
 fi
 
-cd $TEMPLATE
-error=$?
+echo "Provisioning with template $PARAM_template"
+cd $PARAM_template
 
-if [[ $error != 0 ]]; then
-  echo "No coin template '$TEMPLATE' in $PWD"
-  exit 1
+if [ $? -gt 0 ]
+then
+    >&2 echo "Can't find coin template '$PARAM_template'"
+    exit 2
 fi
 
 SCRIPTS=( *.sh )
 
+[ -z ${ROLES[@]} ] && ROLES=( apt gcc libclang sccache fbx install-cmake version )
+
+echo "Executing provisioning for '${ROLES[@]}'"
+
 for script in ${SCRIPTS[@]}; do
   [ -e "$script" ] || continue
-  echo "++ Executing '$script $@'"
-  bash "./$script" $@ || true
+  step=$(echo ${script} | sed -e "s/^[0-9][0-9]-//" -e "s/\\.sh//")
+  if [[ " ${ROLES[@]} " =~ " ${step} " ]]
+  then
+    echo "++ Executing '$script'"
+    su vagrant -c "bash ./$script" || true
+  else
+    echo "-- Skipping '$script'"
+  fi
 done
+
+su vagrant -c "bash -c \"[ -f ~/.bash_profile ] && echo '. ~/.profile' >> ~/.bash_profile\""
