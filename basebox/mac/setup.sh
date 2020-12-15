@@ -8,3 +8,4 @@ echo "If this asks for a password, add the following via visudo"
 echo "vagrant ALL=(ALL) NOPASSWD: ALL
 sudo rm -rf /Library/Cache/*
 sudo diskutil secureErase freespace 0 /Volumes/Macintosh\ HD
+cat /dev/zero > wipeout; rm wipeout
