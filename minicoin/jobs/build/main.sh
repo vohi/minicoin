@@ -18,7 +18,7 @@ function search_highest
     highest_found=$search_version
     search_version=$(( $search_version + 1 ))
   done
-  [ -z highest_found ] || echo ${1}-${highest_found}
+  [ -z ${highest_found} ] && echo "$1" || echo "${1}-${highest_found}"
 }
 
 export CC=${PARAM_cc:-$(search_highest "$(which gcc || which clang)")}
