@@ -87,7 +87,7 @@ def virtualbox_setup(box, machine)
             trigger.name = "Workaround for VirtualBox bug"
             trigger.ruby do |env, machine|
                 if File.directory?(vboxdir)
-                    puts "#{vboxdir} still exists, deleting!"
+                    STDERR.puts "#{vboxdir} still exists, deleting!"
                     require 'fileutils'
                     FileUtils.remove_dir(vboxdir, true)
                 end

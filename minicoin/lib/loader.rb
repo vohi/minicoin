@@ -27,7 +27,7 @@ def merge_yaml(first, second)
 
     if first.is_a?(Hash)
         if second.is_a?(Array)
-            puts "Can't insert array #{second} into hash #{first}"
+            STDERR.puts "Can't insert array #{second} into hash #{first}"
             return first
         end
         if second.is_a?(Hash)
@@ -46,7 +46,7 @@ def merge_yaml(first, second)
             end
             return result;
         end
-        puts "Can't insert value #{second} into hash #{first}"
+        STDERR.puts "Can't insert value #{second} into hash #{first}"
         return first
     end
 
@@ -124,7 +124,7 @@ def load_includes(yaml, basedir)
                     yaml[section] = merge_yaml(yaml[section], data) unless section == "includes"
                 end
             rescue => error
-                puts "Error loading file #{include_file}: #{error}"
+                STDERR.puts "Error loading file #{include_file}: #{error}"
             end
         end
     end

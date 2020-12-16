@@ -5,7 +5,7 @@ def fetch_file(uri, local)
         downloader = Vagrant::Util::Downloader.new(uri, local)
         downloader.download!
     rescue => error
-        puts "Error downloading #{uri}: #{error}"
+        STDERR.puts "Error downloading #{uri}: #{error}"
         return false
     end
 end
@@ -40,7 +40,7 @@ def insert_disk(box, disk_filename, role_params)
                 end
             end
             if !File.file?("#{disk_cache}/#{disk_archive}")
-                puts "Failed to download '#{disk_archive}' from any of #{disk_urls}"
+                STDERR.puts "Failed to download '#{disk_archive}' from any of #{disk_urls}"
             else
                 puts "Extracting '#{disk_archive}'"
                 begin
@@ -52,7 +52,7 @@ def insert_disk(box, disk_filename, role_params)
             end
         end
         if !File.file?("#{disk_cache}/#{disk_file}")
-            puts "==> Disk file '#{disk_file}' not available"
+            STDERR.puts "==> Disk file '#{disk_file}' not available"
             return false
         end
         
@@ -155,7 +155,7 @@ def add_role(box, role, name)
         if value.is_a?(String)
             new_value = expand_env(value, box)
             if new_value.nil?
-                puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+                STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                 return
             end
             role_params[key] = new_value
@@ -164,7 +164,7 @@ def add_role(box, role, name)
             value.each do |entry|
                 new_entry = expand_env(entry, box)
                 if new_entry.nil?
-                    puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
+                    STDERR.puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
                     return
                 end
                 array << new_entry
@@ -177,7 +177,7 @@ def add_role(box, role, name)
                 new_key = expand_env(k, nil)
                 new_value = expand_env(v, box)
                 if new_key.nil? || new_value.nil?
-                    puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+                    STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                     return
                 end
                 new_hash[new_key] = new_value
@@ -237,7 +237,7 @@ def add_role(box, role, name)
         if ["up", "provision", "reload", "validate"].include? ARGV[0]
             activity = true
             if !insert_disk(box, "#{role_path}/disk.yml", role_params)
-                puts "==> #{name}: Attaching disk failed for role '#{role}'"
+                STDERR.puts "==> #{name}: Attaching disk failed for role '#{role}'"
             end
         end
     elsif File.file?("#{role_path}/Dockerfile")
@@ -272,7 +272,7 @@ def add_role(box, role, name)
             eval("#{role}_provision(box, name, role_params)")
             activity = true
         rescue => error
-            puts "==> #{name}: Error with #{role} role: #{error}"
+            STDERR.puts "==> #{name}: Error with #{role} role: #{error}"
         end
     end
     
@@ -351,6 +351,6 @@ def add_role(box, role, name)
             code: post_provision
     end
     if ! activity
-        puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!"
+        STDERR.puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!"
     end
 end

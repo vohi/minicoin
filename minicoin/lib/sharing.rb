@@ -173,7 +173,7 @@ def share_folders(box, machine, shares)
             end
             guest = expand_env(guest, box)
             if guest.nil? || host.nil?
-                puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
+                STDERR.puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
                 next
             end
             exp_shares << { host => guest }
