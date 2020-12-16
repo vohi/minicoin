@@ -80,6 +80,18 @@ end
 def load_boxes(yaml, user_yaml)
     machines = yaml["machines"]
 
+    user_machines = user_yaml["machines"] unless user_yaml.nil?
+    user_machines = [] if user_machines.nil?
+    user_machines.each do |user_machine|
+        idx = machines.find_index {|m| m["name"] == user_machine["name"] }
+        unless idx.nil?
+            new_machine = merge_yaml(machines[idx], user_machine)
+            machines[idx] = new_machine
+        else
+            machines << user_machine
+        end
+    end
+
     defaults = $settings["defaults"]
     unless defaults.nil?
         defaults.each do |setting, value|
@@ -95,18 +107,6 @@ def load_boxes(yaml, user_yaml)
         end
     end
 
-    user_machines = user_yaml["machines"] unless user_yaml.nil?
-    user_machines = [] if user_machines.nil?
-    user_machines.each do |user_machine|
-        idx = machines.find_index {|m| m["name"] == user_machine["name"] }
-        unless idx.nil?
-            new_machine = merge_yaml(machines[idx], user_machine)
-            machines[idx] = new_machine
-        else
-            machines << user_machine
-        end
-    end
-    
     yaml["machines"] = machines
     return machines
 end
