@@ -4,10 +4,11 @@ require 'open3'
 $HOST_HAS_MUTAGEN = nil
 
 def mutagen_host_to_guest(box, name, alphas, betas, ignores)
+    session_name = "minicoin-#{name.gsub('.', '')}"
     box.trigger.before :destroy do |trigger|
         trigger.name = "Shutting down mutagen sync to #{name} and removing from known hosts"
         trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("mutagen sync terminate minicoin-#{name}")
+            stdout, stderr, status = Open3.capture3("mutagen sync terminate #{session_name}")
             ssh_info = machine.ssh_info
             unless ssh_info.nil?
                 keyname = "[127.0.0.1]"
@@ -20,13 +21,13 @@ def mutagen_host_to_guest(box, name, alphas, betas, ignores)
     box.trigger.before [ :halt, :suspend ] do |trigger|
         trigger.name = "Pausing mutagen sync to #{name}"
         trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("mutagen sync pause minicoin-#{name}")
+            stdout, stderr, status = Open3.capture3("mutagen sync pause #{session_name}")
         end
     end
     box.trigger.after [ :up, :resume ] do |trigger|
         trigger.name = "Resuming mutagen sync to #{name}"
         trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("echo yes | mutagen sync resume minicoin-#{name}")
+            stdout, stderr, status = Open3.capture3("echo yes | mutagen sync resume #{session_name}")
         end
     end
 
@@ -58,12 +59,12 @@ def mutagen_host_to_guest(box, name, alphas, betas, ignores)
                 machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
                 raise "Error setting up mutagen sync: no ssh info available for #{name}!"
             else
-                stdout, stderr, status = Open3.capture3("mutagen sync list minicoin-#{name}")
+                stdout, stderr, status = Open3.capture3("mutagen sync list #{session_name}")
                 if (status == 0)
                     status = -1 unless stdout.include?(alpha)
                 end
                 if status != 0
-                    command = "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name minicoin-#{name} --label minicoin=#{name}"
+                    command = "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name #{session_name} --label minicoin=#{name}"
                     unless ignores.nil?
                         ignores.each do |ignore|
                             command += " -i #{ignore}"
