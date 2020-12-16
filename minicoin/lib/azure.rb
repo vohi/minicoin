@@ -39,22 +39,28 @@ def azure_setup(box, machine)
             if status != 0
                 $AZURE_PROFILE = {}
                 $AZURE_CREDENTIALS = {}
-                puts "Azure CLI installed, but failed to get azure account information."
-                puts "Make sure you are logged in with 'az login'"
+                STDERR.puts "Azure CLI installed, but failed to get azure account information."
+                STDERR.puts "Make sure you are logged in with 'az login'"
                 next
             end
             $AZURE_PROFILE = JSON.parse(stdout)
             stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
             if status != 0
-                stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
-                stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
+                unless stderr.start_with?("Please ensure you have network connection")
+                    stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
+                    stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
+                    if status != 0
+                        STDERR.puts "Failed to generate azure account credentials"
+                    end
+                end
             end
-            if status != 0
-                raise "Failed to generate azure account credentials"
+            if status == 0
+                $AZURE_CREDENTIALS = JSON.parse(stdout)
             end
-            $AZURE_CREDENTIALS = JSON.parse(stdout)
         end
-        
+
+        next if $AZURE_CREDENTIALS.nil?
+
         override.ssh.private_key_path = "~/.ssh/id_rsa"
 
         if machine["os"] == "windows"
