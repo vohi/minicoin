@@ -1,15 +1,16 @@
 . /minicoin/util/parse-opts.sh "$@"
 
-cd /minicoin/roles/coin-node/coin/provisioning
-
+cd /minicoin/roles/coin-node/coin
 if [ $? -gt 0 ]
 then
-    >&2 echo "Can't find coin provisioning scripts"
+    >&2 echo "Can't find coin scripts"
     exit 1
 fi
 
+cat hosts >> /etc/hosts
+
 echo "Provisioning with template $PARAM_template"
-cd $PARAM_template
+cd provisioning/$PARAM_template
 
 if [ $? -gt 0 ]
 then
@@ -54,7 +55,14 @@ for script in ${SCRIPTS[@]}; do
     fi
 
     echo "++ Executing '$script'"
-    su vagrant -c "bash ./$script" || true
+    output=$(su vagrant -c "bash ./$script" 2>&1)
+    if [ $? -eq 0 ]
+    then
+        echo "   Success"
+    else
+        >&2 echo "   FAIL"
+        >&2 echo $output
+    fi
 done
 
 su vagrant -c "bash -c \"[ -f ~/.bash_profile ] && echo '. ~/.profile' >> ~/.bash_profile\" || true"

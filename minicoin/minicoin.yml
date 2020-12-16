@@ -18,6 +18,13 @@ urls:
     - https://tqtcvagrantboxes-secondary.z16.web.core.windows.net
     - https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
 
+coin:
+  CentOS-8.1: generic/centos8
+  openSUSE-15.2: generic/opensuse15
+  Ubuntu-20.04: generic/ubuntu2004
+  macos-10.14: tqtc/$minicoin_key/macos1014
+  windows-10: tqtc/$minicoin_key/windows10
+
 # machine definitions
 machines:
 

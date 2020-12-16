@@ -164,6 +164,64 @@ def merge_roles(machines)
     end
 end
 
+def load_coinconfig(yaml)
+    return {} if yaml["coin"].nil?
+    return {} if !ENV['COIN_ROOT'] || !File.exist?(ENV['COIN_ROOT'])
+
+    coin_config_file = "#{ENV['COIN_ROOT']}/platform_configs/cmake_platforms.yaml"
+    coin_configs = YAML.load_file(coin_config_file)
+    coin_configs = coin_configs["Configurations"]
+
+    coin_machines = []
+    coin_configs.each do |coin_config|
+        coin_template = coin_config["Template"].split('-')
+        template = coin_template
+        if template[1] == "linux"
+            template = "#{template[2]}-#{template[3]}"
+            range = 4
+        else
+            template = "#{template[1]}-#{template[2]}"
+            range = 3
+        end
+
+        minicoin_box = yaml["coin"][template]
+        next if minicoin_box.nil?
+
+        template_file = coin_template[0]
+        (1..range).each do |i|
+            if coin_template[i]
+                template_file = template_file + "-"
+                template_file = template_file + coin_template[i]
+            end
+        end
+
+        coin_name = "coin-#{coin_config['Id'] || template}"
+        coin_name = coin_name.gsub("_", ".")
+        coin_machine = {}
+        coin_machine["name"] = coin_name
+        coin_machine["box"] = minicoin_box
+        coin_machine["roles"] = [
+            {
+                "role" => "coin-node",
+                "template" => template_file
+            }
+        ]
+        coin_machine["jobs"] = [
+            {
+                "job" => "build",
+                "features" => coin_config["Features"],
+                "compiler" => coin_config["Compiler"],
+                "configure" => coin_config["Configure arguments"],
+                "environment" => coin_config["Environment variables"]
+            }
+        ]
+        coin_machines << coin_machine
+    end
+    coin_config = {}
+    coin_config["machines"] = coin_machines
+    return coin_config
+end
+
 def load_minicoin()
     begin # see tests/autotest.rb
         load_testmachines()
@@ -198,6 +256,7 @@ def load_minicoin()
     load_settings(yaml, local_yaml)
     machines = load_boxes(yaml, user_yaml)
     machines = load_boxes(yaml, local_yaml)
+    machines = load_boxes(yaml, load_coinconfig(yaml))
 
     merge_roles(machines)
 

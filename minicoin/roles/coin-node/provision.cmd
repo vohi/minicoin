@@ -2,18 +2,20 @@
 setlocal ENABLEDELAYEDEXPANSION
 call C:\minicoin\util\parse-opts.cmd %*
 
-2>NUL cd /minicoin/roles/coin-node/coin/provisioning
+2>NUL cd /minicoin/roles/coin-node/coin
 if errorlevel 1 (
-    >&2 echo Can't find coin provisioning scripts
-    exit 1 /b
+    >&2 echo Can't find coin scripts
+    exit /b 1
 )
 
+type hosts >> C:\Windows\system32\drivers\etc\hosts
+
 echo Provisioning with template '!PARAM_template!'
-cd !PARAM_template!
+cd provisioning\!PARAM_template!
 
 if errorlevel 1 (
     >&2 echo Can't find coin template '!PARAM_template!'
-    exit 2 /b
+    exit /b 2
 )
 
 FOR /f %%s in ('dir *.ps1 /B /O:N') do set "PSSCRIPTS=!PSSCRIPTS! %%s"
@@ -45,6 +47,6 @@ FOR %%s IN (%PSSCRIPTS%) DO (
         echo -- Skipping '%%s'
     ) else (
         echo ++ Executing '%%s'
-        powershell -File "%%s" %ARGS%
+        powershell -File "%%s"
     )
 )
