@@ -19,20 +19,42 @@ fi
 
 SCRIPTS=( *.sh )
 
-[ -z ${ROLES[@]} ] && ROLES=( apt gcc libclang sccache fbx install-cmake version )
+RUNLIST=${PARAM_runlist[@]}
+SKIPLIST=${PARAM_skiplist[@]}
 
-echo "Executing provisioning for '${ROLES[@]}'"
+[[ -z "$RUNLIST" ]] && RUNLIST=(
+    enable-repos
+    apt zypperpackages install-packages
+    cmake install-cmake
+    )
+
+[[ -z "$SKIPLIST" ]] && SKIPLIST=(
+    install_telegraf
+    systemsetup
+    emsdk
+    qemu install_QemuGA
+    qnx660 qnx700
+    squish squish-coco
+    yocto yocto_ssh_configurations
+    android_linux openssl_for_android_linux
+    docker fix_msns_docker_resolution
+    )
 
 for script in ${SCRIPTS[@]}; do
-  [ -e "$script" ] || continue
-  step=$(echo ${script} | sed -e "s/^[0-9][0-9]-//" -e "s/\\.sh//")
-  if [[ " ${ROLES[@]} " =~ " ${step} " ]]
-  then
+    [ -e "$script" ] || continue
+    step=$(echo ${script} | sed -e "s/^[0-9][0-9]-//" -e "s/\\.sh//")
+    skip=0
+    [[ " ${SKIPLIST[@]} " =~ " ${step} " ]] && skip=1
+    [[ " ${RUNLIST[@]} " =~ " ${step} " ]] && skip=0
+
+    if [[ $skip -gt 0 ]]
+    then
+        echo "-- Skipping '$script'"
+        continue
+    fi
+
     echo "++ Executing '$script'"
     su vagrant -c "bash ./$script" || true
-  else
-    echo "-- Skipping '$script'"
-  fi
 done
 
-su vagrant -c "bash -c \"[ -f ~/.bash_profile ] && echo '. ~/.profile' >> ~/.bash_profile\""
+su vagrant -c "bash -c \"[ -f ~/.bash_profile ] && echo '. ~/.profile' >> ~/.bash_profile\" || true"

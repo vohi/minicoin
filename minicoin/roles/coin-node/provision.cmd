@@ -1,54 +1,50 @@
 @echo off
-setlocal ENABLEDELAYEDEXPANSION ENABLEEXTENSIONS
-set CURDIR=%CD%
-set ARGS=%*
-set POSITIONAL=
+setlocal ENABLEDELAYEDEXPANSION
+call C:\minicoin\util\parse-opts.cmd %*
 
-call :parseargs %ARGS%
-if errorlevel 1 exit /b
-set ARGS=%POSITIONAL%
-call :go
-cd %CURDIR%
-exit /b
+2>NUL cd /minicoin/roles/coin-node/coin/provisioning
+if errorlevel 1 (
+    >&2 echo Can't find coin provisioning scripts
+    exit 1 /b
+)
 
-:parseargs
-if /i "%~1" == "" exit /b
+echo Provisioning with template '!PARAM_template!'
+cd !PARAM_template!
 
-if /i "%~1" == "--coin-root" (
-    set COINROOT=%~2
-    shift
-) else if /i "%~1" == "--template" (
-    set TEMPLATE=%~2
-    shift
+if errorlevel 1 (
+    >&2 echo Can't find coin template '!PARAM_template!'
+    exit 2 /b
+)
+
+FOR /f %%s in ('dir *.ps1 /B /O:N') do set "PSSCRIPTS=!PSSCRIPTS! %%s"
+
+if defined PARAM_runlist (
+    set RUNLIST=!PARAM_runlist!
 ) else (
-    set POSITIONAL=!POSITIONAL! %~1
+    set RUNLIST=
 )
-
-:loopargs
-  shift
-  goto :parseargs
-
-REM End of parameter parsing
-
-:go
-
-echo Provisioning from '%COINROOT%' using template '%TEMPLATE%'
-
-2>NUL cd %COINROOT%/Provisioning
-if errorlevel 1 (
-    echo '%COINROOT%/provisioning' does not exist
-    exit /b
+if defined PARAM_skiplist (
+    set SKIPLIST=!PARAM_skiplist!
+) else (
+    set SKIPLIST=qnx_700 install_telegraf install-mcuxpresso install-virtualbox emsdk squish squish-coco
 )
-
-2>NUL cd %TEMPLATE%
-if errorlevel 1 (
-    echo No coin template '%TEMPLATE%'
-    exit /b
-)
-
-FOR /f %%s in ('dir *.ps1 /B /O:N') do set PSSCRIPTS=!PSSCRIPTS! %%s
 
 FOR %%s IN (%PSSCRIPTS%) DO (
-    echo ++ Executing '%%s %ARGS%'
-    powershell -File "%%s" %ARGS%
+    set "step=%%s"
+    set "step=!step:*-=!"
+    set "step=!step:.ps1=!"
+    set skip=
+    for %%a IN (%SKIPLIST%) DO (
+        if %%a==!step! set skip=1
+    )
+    for %%a IN (%RUNLIST%) DO (
+        if %%a==!step! set skip=
+    )
+
+    if defined skip (
+        echo -- Skipping '%%s'
+    ) else (
+        echo ++ Executing '%%s'
+        powershell -File "%%s" %ARGS%
+    )
 )
