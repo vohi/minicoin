@@ -66,12 +66,14 @@ elif [ -f $JOBDIR/configure ]
 then
   configure=${PARAM_configure:-"-developer-build -confirm-license -opensource -nomake examples"}
   # not setting CMAKE_C(XX)_COMPILER, using CC and CXX environment instead
+  [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'configure $configure'"
   echo "Pass --configure \"configure options\" to override"
   $JOBDIR/configure $configure
 elif [ -f $JOBDIR/CMakeLists.txt ]
 then
   configure=${PARAM_configure:-"-GNinja"}
+  [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'qt-cmake ${configure}'"
   if [ ! -f ~/qt-cmake ]
   then
