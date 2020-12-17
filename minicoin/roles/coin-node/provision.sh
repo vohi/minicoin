@@ -1,3 +1,9 @@
+if [[ $UID -eq 0 ]]
+then
+    cd /home/vagrant
+    exec su vagrant $0 -- $@
+fi
+
 . /minicoin/util/parse-opts.sh "$@"
 
 cd /minicoin/roles/coin-node/coin
@@ -7,7 +13,7 @@ then
     exit 1
 fi
 
-cat hosts >> /etc/hosts
+sudo bash -c "cat hosts >> /etc/hosts"
 
 echo "Provisioning with template $PARAM_template"
 cd provisioning/$PARAM_template
@@ -31,10 +37,11 @@ SKIPLIST=${PARAM_skiplist[@]}
 
 [[ -z "$SKIPLIST" ]] && SKIPLIST=(
     install_telegraf
-    systemsetup
+    # systemsetup
     emsdk
     qemu install_QemuGA
-    qnx660 qnx700
+    qnx660 qnx700 qnx_700
+    integrity
     squish squish-coco
     yocto yocto_ssh_configurations
     android_linux openssl_for_android_linux
@@ -55,7 +62,7 @@ for script in ${SCRIPTS[@]}; do
     fi
 
     echo "++ Executing '$script'"
-    output=$(su vagrant -c "bash ./$script" 2>&1)
+    output=$(bash ./$script 2>&1)
     if [ $? -eq 0 ]
     then
         echo "   Success"
@@ -65,4 +72,19 @@ for script in ${SCRIPTS[@]}; do
     fi
 done
 
-su vagrant -c "bash -c \"[ -f ~/.bash_profile ] && echo '. ~/.profile' >> ~/.bash_profile\" || true"
+## various work arounds for bad provisioning
+# some PATHS are written to .profile, others to .bash_profile,
+# and bash won't run .profile if there is a .bash_profile
+[ -f ~/.profile ] && echo '. ~/.profile' >> ~/.bash_profile || true
+. ~/.bash_profile
+. ~/.bashrc
+# some things are installed as sudo, so the vagrant user can't run them
+IFS=":"; for p in $PATH
+do
+    while true
+    do
+        sudo chmod 755 $p &> /dev/null || true
+        p=$(dirname $p)
+        [[ $p == "/" ]] && break
+    done
+done

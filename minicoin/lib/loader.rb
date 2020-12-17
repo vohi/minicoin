@@ -203,7 +203,8 @@ def load_coinconfig(yaml)
         coin_machine["roles"] = [
             {
                 "role" => "coin-node",
-                "template" => template_file
+                "template" => template_file,
+                "privileged" => false
             }
         ]
         coin_machine["jobs"] = [
