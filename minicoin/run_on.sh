@@ -78,6 +78,12 @@ for arg in "${@}"; do
       RED=
       YELLOW=
       NOCOL=
+    elif [[ "$arg" == "--jobconfig" ]]
+    then
+      jobconfig=1
+    elif [[ $jobconfig == 1 ]]
+    then
+      jobconfig="$arg"
     else
       machines+=("$arg")
     fi
@@ -150,8 +156,6 @@ function run_on_machine() {
     return -2
   fi
 
-  echo "==> $machine: running '$job' with arguments '${script_args[@]}'"
-
   log_progress "==> $machine: Uploading '$upload_source'..."
   if ! vagrant upload $upload_source $job $machine 2> /dev/null > /dev/null
   then
@@ -188,8 +192,15 @@ function run_on_machine() {
     job_args+=($arg)
   done
 
+  machine_args="$(minicoin jobconfig $job $machine)"
+  [[ ! -z $jobconfig ]] && machine_args=$(echo "$machine_args" | grep "$jobconfig")
+  machine_args=$(echo "$machine_args" | head -n 1)
+  job_args+=($machine_args)
+
   # pass --verbose through to guest
   [ $verbose == "true" ] && job_args+=( "--verbose" )
+
+  echo "==> $machine: running '$job' with arguments '${job_args[@]}'"
 
   error=0
   run="true"
