@@ -99,6 +99,22 @@ Vagrant.configure("2") do |config|
       next
     end
 
+    if ARGV[0] == "jobconfig"
+      jobname = ARGV[1]
+      unless machine["jobs"].nil?
+        machine["jobs"].each do |job|
+          next unless job["job"] == jobname
+          job.each do |attribute, value|
+            next if attribute == "job"
+            value = value.join(',') if value.is_a?(Array)
+            STDOUT.write("--#{attribute} \"#{value}\" ")
+          end
+          STDOUT.write("\n")
+        end
+      end
+      next
+    end
+
     config.vm.define name, autostart: false do |box|
       if !machine["provider"].nil?
         box.vm.provider machine["provider"]

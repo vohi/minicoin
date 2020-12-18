@@ -38,6 +38,10 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_info
     min_args=0
     shift
+  elif [ $1 == "jobconfig" ]; then
+    minicoin_command=minicoin_jobconfig
+    min_args=0
+    shift
   elif [ $1 == "describe" ]; then
     minicoin_command=minicoin_describe
     min_args=0
@@ -167,6 +171,15 @@ function minicoin_list()
 function minicoin_info()
 {
   run ruby lib/minicoin.rb info "${machines[@]}"
+  return $?
+}
+
+function minicoin_jobconfig()
+{
+  job="${machines[0]}"
+  unset "machines[0]"
+
+  run ruby lib/minicoin.rb jobconfig $job "${machines[@]}"
   return $?
 }
 
