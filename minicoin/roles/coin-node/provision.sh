@@ -6,17 +6,22 @@ fi
 
 . /minicoin/util/parse-opts.sh "$@"
 
-cd /minicoin/roles/coin-node/coin
+if [ -f /minicoin/roles/coin-node/.hosts ]
+then
+    echo "Adding coin hosts"
+    sudo bash -c "cat /minicoin/roles/coin-node/.hosts >> /etc/hosts"
+fi
+
+cd coin/provisioning
 if [ $? -gt 0 ]
 then
     >&2 echo "Can't find coin scripts"
     exit 1
 fi
 
-sudo bash -c "cat hosts >> /etc/hosts"
 
 echo "Provisioning with template $PARAM_template"
-cd provisioning/$PARAM_template
+cd $PARAM_template
 
 if [ $? -gt 0 ]
 then

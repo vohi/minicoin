@@ -13,6 +13,7 @@ param (
         "install-virtualbox",
         "openssl_for_android",
         "qnx_700",
+        "android",
         "emsdk",
         "squish", "squish-coco"
         )
@@ -27,18 +28,24 @@ if ( $skiplist.Length -eq 1 ) {
     $skiplist = $skiplist.Split(",")
 }
 
+# provisioning scripts run as Administrator, so $PWD is C:\Windows\system32
+Set-Location -Path $env:USERPROFILE
+
+if ( Test-Path C:\minicoin\roles\coin-node\.hosts -PathType Leaf ) {
+    Write-Output "Adding hosts"
+    Get-Content c:\minicoin\roles\coin-node\.hosts | Add-Content -Path C:\Windows\system32\drivers\etc\hosts
+}
+
 try {
-    Set-Location -Path C:\minicoin\roles\coin-node\coin
+    cd Documents\coin\provisioning
 }
 catch {
     Write-Error "Can't find coin scripts"
     exit 1
 }
 
-Get-Content hosts | Add-Content -Path C:\Windows\system32\drivers\etc\hosts
-
 try {
-    cd provisioning/$template
+    cd $template
 }
 catch {
     Write-Error "Can't find template '$template'"
@@ -58,6 +65,7 @@ ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Prope
         }
         catch {
             [Console]::Error.WriteLine("   FAIL")
+            $_
         }
     }
     Start-Sleep -Seconds 1 # better ordering of stdout and stderr
