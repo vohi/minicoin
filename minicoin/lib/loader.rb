@@ -205,7 +205,7 @@ def load_coinconfig(yaml)
             end
         end
 
-        coin_name = "coin-#{coin_config['Id'] || template}"
+        coin_name = "coin-#{template}"
         coin_name = coin_name.gsub("_", ".")
         coin_machine = {}
         coin_machine["name"] = coin_name
