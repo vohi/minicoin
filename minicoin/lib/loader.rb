@@ -112,7 +112,7 @@ def load_boxes(yaml, user_yaml)
 end
 
 def load_includes(yaml, basedir)
-    includes = yaml["includes"] unless yaml.nil?
+    includes = yaml["includes"] || yaml["Include"] unless yaml.nil?
     
     unless includes.nil?
         includes.each do |include|
@@ -168,8 +168,18 @@ def load_coinconfig(yaml)
     return {} if yaml["coin"].nil?
     return {} if !ENV['COIN_ROOT'] || !File.exist?(ENV['COIN_ROOT'])
 
-    coin_config_file = "#{ENV['COIN_ROOT']}/platform_configs/cmake_platforms.yaml"
+    # do we have a project specific config file for coin?
+    coin_config_root = "#{ENV['COIN_ROOT']}/platform_configs"
+    config_name = File.basename(ENV['MINICOIN_PROJECT_DIR'])
+    if File.exist?("#{coin_config_root}/#{config_name}.yaml")
+        coin_config_file = "#{coin_config_root}/#{config_name}.yaml"
+    else # if not, use the default for Qt
+        coin_config_file = "#{coin_config_root}/qt5.yaml"
+    end
+    puts "Coin config from: #{coin_config_file}"
+
     coin_configs = YAML.load_file(coin_config_file)
+    coin_configs = load_includes(coin_configs, coin_config_root)
     coin_configs = coin_configs["Configurations"]
 
     coin_machines = []
