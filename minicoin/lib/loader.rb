@@ -212,6 +212,12 @@ def load_coinconfig(yaml)
         coin_machine["box"] = minicoin_box
         coin_machine["roles"] = [
             {
+                "role" => "upload",
+                "files" => {
+                    "#{ENV['COIN_ROOT']}/provisioning" => "coin/provisioning"
+                }
+            },
+            {
                 "role" => "coin-node",
                 "template" => template_file,
                 "privileged" => false
