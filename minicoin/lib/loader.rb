@@ -265,9 +265,9 @@ def load_minicoin()
 
     load_settings(yaml, user_yaml)
     load_settings(yaml, local_yaml)
+    machines = load_boxes(yaml, load_coinconfig(yaml))
     machines = load_boxes(yaml, user_yaml)
     machines = load_boxes(yaml, local_yaml)
-    machines = load_boxes(yaml, load_coinconfig(yaml))
 
     merge_roles(machines)
 
