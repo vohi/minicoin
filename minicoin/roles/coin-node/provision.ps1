@@ -50,6 +50,8 @@ catch {
     exit 2
 }
 
+$error_count = 0
+
 ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Property Name ) {
     [string]$scriptfile = Split-Path $script -leaf
     [string]$scriptindex = $scriptfile.SubString(0, 2)
@@ -58,16 +60,24 @@ ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Prope
         Write-Output "-- Skipping '$scriptfile'"
     } else {
         Write-Output "++ Executing '$scriptfile'"
+
+        $output = [System.Collections.ArrayList]@()
         try {
-            & $script 6>&1 | ForEach-Object {
-                Write-Output "   ${scriptindex}: $_"
+            $out = & $script 6>&1 | ForEach-Object {
+                $output.Add($_)
             }
-            Write-Output " + ${scriptindex}: Success"
+            Write-Output "   Success"
         }
         catch {
+            $error_count++
+            ForEach ($outline in $output) {
+                Write-Output "   ${scriptindex}: $outline"
+            }
             [Console]::Error.WriteLine(" - ${scriptindex}: FAIL")
             [Console]::Error.WriteLine(" - ${scriptindex}: $_")
+            Start-Sleep -Seconds 1 # let stream sync catch up
         }
     }
-    Start-Sleep -Seconds 1 # better ordering of stdout and stderr
 }
+
+exit $error_count
