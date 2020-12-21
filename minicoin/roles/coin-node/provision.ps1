@@ -19,8 +19,6 @@ param (
         )
 )
 
-. "c:\minicoin\util\install_helper.ps1"
-
 if ( $runlist.Length -eq 1 ) {
     $runlist = $runlist[0].Split(",")
 }
@@ -54,18 +52,21 @@ catch {
 
 ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Property Name ) {
     [string]$scriptfile = Split-Path $script -leaf
+    [string]$scriptindex = $scriptfile.SubString(0, 2)
     [string]$scriptname = $scriptfile.SubString(3, $scriptfile.Length-7)
     if ( $skiplist.Contains($scriptname) -and ( -not $runlist.Contains($scriptname) ) ) {
         Write-Output "-- Skipping '$scriptfile'"
     } else {
         Write-Output "++ Executing '$scriptfile'"
         try {
-            & $script | Out-Default
-            Write-Output "   Success"
+            & $script 6>&1 | ForEach-Object {
+                Write-Output "   ${scriptindex}: $_"
+            }
+            Write-Output " + ${scriptindex}: Success"
         }
         catch {
-            [Console]::Error.WriteLine("   FAIL")
-            $_
+            [Console]::Error.WriteLine(" - ${scriptindex}: FAIL")
+            [Console]::Error.WriteLine(" - ${scriptindex}: $_")
         }
     }
     Start-Sleep -Seconds 1 # better ordering of stdout and stderr
