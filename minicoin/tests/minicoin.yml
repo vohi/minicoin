@@ -36,6 +36,10 @@ machines:
   - name: merged_role
     box: generic
     roles:
+      - role: upload
+        files:
+          "source": "target"
+      - merge_test
       - role: mutagen
         paths:
           - path2

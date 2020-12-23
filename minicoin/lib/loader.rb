@@ -143,17 +143,15 @@ def merge_roles(machines)
             roles.each do |role|
                 if role.is_a?(Hash)
                     rolename = role["role"]
-                    if role_indices.has_key?(rolename)
-                        index = role_indices[rolename]
-                        role_set[index] = merge_yaml(role_set[index], role)
-                    else
-                        role_indices[rolename] = index
-                        role_set << role
-                        index += 1
-                    end
                 else
-                    role_set << role
+                    rolename = role
+                end
+                if role_indices.has_key?(rolename)
+                    oldindex = role_indices[rolename]
+                    role_set[oldindex] = merge_yaml(role_set[oldindex], role)
+                else
                     role_indices[rolename] = index
+                    role_set << role
                     index += 1
                 end
             end

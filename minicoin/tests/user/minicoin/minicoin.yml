@@ -26,3 +26,8 @@ machines:
       - role: mutagen
         paths:
           - path1
+      - role: merge_test
+        attribute: value
+      - role: upload
+        files:
+          source2: target2

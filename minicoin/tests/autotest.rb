@@ -102,7 +102,23 @@ class Tester
                            "private_net" => "1.1.1.1", "index"=>5, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
         {"name" => "merged_role", "box" => "generic",
-                                   "roles" => [{"role" => "mutagen", "paths" => ["path2", "path1"]}],
+                                   "roles" => [
+                                    {
+                                      "role" => "upload",
+                                      "files" => {
+                                        "source" => "target",
+                                        "source2" => "target2"
+                                      }
+                                    },
+                                    {
+                                      "role" => "merge_test",
+                                      "attribute" => "value"
+                                    },
+                                    {
+                                      "role" => "mutagen",
+                                      "paths" => ["path2", "path1"]
+                                    }
+                                  ],
                                    "shared_folders"=>[{"Host"=>"Guest"}],
                                    "index"=>6, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
