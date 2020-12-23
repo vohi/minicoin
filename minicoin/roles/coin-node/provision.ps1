@@ -64,6 +64,9 @@ ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Prope
         $output = [System.Collections.ArrayList]@()
         try {
             $out = & $script 6>&1 | ForEach-Object {
+                if ( $scriptfile -eq "99-version.ps1" ) {
+                    Write-Output $_
+                }
                 $output.Add($_)
             }
             Write-Output "   Success"
@@ -73,7 +76,7 @@ ForEach ( $script in Get-ChildItem -Path .\* -Include *.ps1 | Sort-Object -Prope
             ForEach ($outline in $output) {
                 Write-Output "   ${scriptindex}: $outline"
             }
-            [Console]::Error.WriteLine(" - ${scriptindex}: FAIL")
+            [Console]::Error.WriteLine(" - ${scriptindex}: FAIL ($scriptfile)")
             [Console]::Error.WriteLine(" - ${scriptindex}: $_")
             Start-Sleep -Seconds 1 # let stream sync catch up
         }

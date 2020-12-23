@@ -53,27 +53,27 @@ SKIPLIST=${PARAM_skiplist[@]}
     docker fix_msns_docker_resolution
     )
 
+error_count=0
 for script in ${SCRIPTS[@]}; do
     [ -e "$script" ] || continue
     step=$(echo ${script} | sed -e "s/^[0-9][0-9]-//" -e "s/\\.sh//")
-    skip=0
-    [[ " ${SKIPLIST[@]} " =~ " ${step} " ]] && skip=1
-    [[ " ${RUNLIST[@]} " =~ " ${step} " ]] && skip=0
-
-    if [[ $skip -gt 0 ]]
+ 
+    if [[ " ${SKIPLIST[@]} " =~ " ${step} " ]] && [[ ! " ${RUNLIST[@]} " =~ " ${step} " ]]
     then
         echo "-- Skipping '$script'"
         continue
     fi
 
     echo "++ Executing '$script'"
-    output=$(bash ./$script 2>&1)
+    output="$(bash ./$script 2>&1)"
     if [ $? -eq 0 ]
     then
+        [[ $script == "99-version.sh" ]] && echo "$output"
         echo "   Success"
     else
-        >&2 echo "   FAIL"
-        >&2 echo $output
+        error_count=$(( $error_count+1 ))
+        >&2 echo "   FAIL ($script)"
+        >&2 echo "$output"
     fi
 done
 
@@ -93,3 +93,5 @@ do
         [[ $p == "/" ]] && break
     done
 done
+
+exit $error_count
