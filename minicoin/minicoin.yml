@@ -58,7 +58,7 @@ machines:
     box: tqtc/$minicoin_key/windows7
     roles:
       - windows-tools
-      - mingw32
+      - mingw
     memory: 1024
     gui: false
   - name: windows10
