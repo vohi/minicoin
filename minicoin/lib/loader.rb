@@ -163,6 +163,7 @@ def merge_roles(machines)
 end
 
 def load_coinconfig(yaml)
+    return if ENV['MINICOIN_PROJECT_DIR'].nil?
     def find_coin()
         coin_root=ENV['MINICOIN_PROJECT_DIR']
         while !Dir.exist?("#{coin_root}/coin") do
