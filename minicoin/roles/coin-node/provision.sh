@@ -1,7 +1,17 @@
+#!/bin/bash
 if [[ $UID -eq 0 ]]
 then
-    cd /home/vagrant
-    exec su vagrant $0 -- $@
+    if [[ -d /home/vagrant ]]
+    then
+        cd /home/vagrant
+        exec su vagrant "$0" -- "$@"
+    elif [[ -d /Users/vagrant ]]
+    then
+        cd /Users/vagrant
+        exec su vagrant "$0" "$@"
+    else
+        >&2 echo "Don't know where vagrant's home is, running provisioning as root!"
+    fi
 fi
 
 . /minicoin/util/parse-opts.sh "$@"
@@ -80,9 +90,12 @@ done
 ## various work arounds for bad provisioning
 # some PATHS are written to .profile, others to .bash_profile,
 # and bash won't run .profile if there is a .bash_profile
-[ -f ~/.profile ] && echo '. ~/.profile' >> ~/.bash_profile || true
-. ~/.bash_profile
-. ~/.bashrc
+if [ -f ~/.bash_profile ]
+then
+    [ -f ~/.profile ] && echo '. ~/.profile' >> ~/.bash_profile || true
+    . ~/.bash_profile
+    . ~/.bashrc
+fi
 # some things are installed as sudo, so the vagrant user can't run them
 IFS=":"; for p in $PATH
 do
