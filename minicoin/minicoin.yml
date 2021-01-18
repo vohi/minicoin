@@ -19,11 +19,29 @@ urls:
     - https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
 
 coin:
-  CentOS-8.1: generic/centos8
-  openSUSE-15.2: generic/opensuse15
-  Ubuntu-20.04: generic/ubuntu2004
-  macos-10.14: tqtc/$minicoin_key/macos1014
-  windows-10: tqtc/$minicoin_key/windows10
+  CentOS-8.1:
+    box: generic/centos8
+    roles:
+      - role: linux-desktop
+        desktop: gnome
+  openSUSE-15.2:
+    box: generic/opensuse15
+    roles:
+      - role: linux-desktop
+        desktop: kde
+  Ubuntu-20.04:
+    box: generic/ubuntu2004
+    roles:
+      - role: linux-desktop
+        desktop: kde
+  macos-10.14:
+    box: tqtc/$minicoin_key/macos1014
+  macos-10.15:
+    box: tqtc/$minicoin_key/macos1015
+  windows-10:
+    box: tqtc/$minicoin_key/windows10
+    roles:
+      - role: msvc2019
 
 # machine definitions
 machines:

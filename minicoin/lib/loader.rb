@@ -221,8 +221,9 @@ def load_coinconfig(yaml)
         coin_name = coin_name.gsub("_", ".")
         coin_machine = {}
         coin_machine["name"] = coin_name
-        coin_machine["box"] = minicoin_box
-        coin_machine["roles"] = [
+        coin_machine["box"] = minicoin_box["box"]
+        coin_machine["roles"] = minicoin_box["roles"] || []
+        coin_machine["roles"] += [
             {
                 "role" => "upload",
                 "files" => {
