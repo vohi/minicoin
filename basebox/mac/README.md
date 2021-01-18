@@ -22,6 +22,8 @@ up again from scratch.
         * VMware Tools
 * macOS 10.15 - only for VirtualBox
     * echo -e 'minicoin\t/System/Volumes/Data/private/tmp/vagrant-minicoin' | sudo tee -a /etc/synthetic.conf
+* macOS 11
+    * adjust /Volumes/EFI/startup.nsh to run boot.efi from correct volume
 
 
 ## Reducing VM Size
