@@ -15,6 +15,16 @@
                     "url": "https://$server/$minicoin_key/vmware_desktop/macos1015-0.0.1.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.2",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "https://$server/$minicoin_key/virtualbox/macos1015-0.0.2.box"
+                }
+            ]
         }
     ]
 }
