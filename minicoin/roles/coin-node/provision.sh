@@ -75,7 +75,7 @@ for script in ${SCRIPTS[@]}; do
     output="$(bash ./$script 2>&1)"
     if [ $? -eq 0 ]
     then
-        [[ $script == "99-version.sh" ]] && echo "$output"
+        [[ $script =~ ^99-.*version.sh$ ]] && echo "$output"
         echo "   Success"
     else
         error_count=$(( $error_count+1 ))
