@@ -4,14 +4,11 @@ then
     if [[ -d /home/vagrant ]]
     then
         cd /home/vagrant
-        exec su vagrant "$0" -- "$@"
     elif [[ -d /Users/vagrant ]]
     then
         cd /Users/vagrant
-        exec su vagrant "$0" "$@"
-    else
-        >&2 echo "Don't know where vagrant's home is, running provisioning as root!"
     fi
+    exec sudo -u vagrant -H /bin/bash "$0" "$@"
 fi
 
 . /minicoin/util/parse-opts.sh "$@"
@@ -30,7 +27,7 @@ then
 fi
 
 
-echo "Provisioning with template $PARAM_template"
+echo "Provisioning with template $PARAM_template as $(whoami)"
 cd $PARAM_template
 
 if [ $? -gt 0 ]
