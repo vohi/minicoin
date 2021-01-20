@@ -41,25 +41,6 @@ SCRIPTS=( *.sh )
 RUNLIST=${PARAM_runlist[@]}
 SKIPLIST=${PARAM_skiplist[@]}
 
-[[ -z "$RUNLIST" ]] && RUNLIST=(
-    enable-repos
-    apt zypperpackages install-packages
-    cmake install-cmake
-    )
-
-[[ -z "$SKIPLIST" ]] && SKIPLIST=(
-    install_telegraf
-    # systemsetup
-    emsdk
-    qemu install_QemuGA
-    qnx660 qnx700 qnx_700
-    integrity
-    squish squish-coco
-    yocto yocto_ssh_configurations
-    android_linux openssl_for_android_linux
-    docker fix_msns_docker_resolution
-    )
-
 error_count=0
 for script in ${SCRIPTS[@]}; do
     [ -e "$script" ] || continue
