@@ -1,0 +1,70 @@
+coin:
+  macos: &macosroles
+    - role: script
+      script: |
+        echo "Fixing ownership in /usr/local"
+        sudo chown -R vagrant /usr/local/lib
+        sudo chown -R vagrant /usr/local/include
+        sudo chown -R vagrant /usr/local/bin
+        echo "Installing wget"
+        brew install wget
+      
+      privileged: false
+    - role: coin-node
+      skiplist:
+        - xcode
+        - squish
+        - qnx700
+        - emsdk
+        - android
+      privileged: false
+
+  linux: &linuxroles
+    - role: linux-desktop
+    - role: coin-node
+      runlist:
+        - enable-repos
+        - apt
+        - zypperpackages
+        - install-packages
+        - cmake
+        - install-cmake
+
+      skiplist:
+        - install_telegraf
+        - emsdk
+        - qemu
+        - install_QemuGA
+        - qnx660
+        - qnx700
+        - qnx_700
+        - integrity
+        - squish
+        - squish-coco
+        - yocto
+        - yocto_ssh_configurations
+        - android_linux
+        - openssl_for_android_linux
+        - docker
+        - fix_msns_docker_resolution
+
+  CentOS-8.1:
+    box: generic/centos8
+    roles: *linuxroles
+  openSUSE-15.2:
+    box: generic/opensuse15
+    roles: *linuxroles
+  Ubuntu-20.04:
+    box: generic/ubuntu2004
+    roles: *linuxroles
+  macos-10.14:
+    box: tqtc/$minicoin_key/macos1014
+    roles: *macosroles
+  macos-10.15:
+    box: tqtc/$minicoin_key/macos1015
+    roles: *macosroles
+    
+  windows-10:
+    box: tqtc/$minicoin_key/windows10
+    roles:
+      - role: msvc2019
