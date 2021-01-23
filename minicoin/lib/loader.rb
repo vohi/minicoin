@@ -164,8 +164,7 @@ end
 
 def load_coinconfig(yaml)
     return if ENV['MINICOIN_PROJECT_DIR'].nil?
-    def find_coin()
-        coin_root=ENV['MINICOIN_PROJECT_DIR']
+    def find_coin(coin_root)
         while !Dir.exist?("#{coin_root}/coin") do
             old_coin_root = coin_root
             coin_root = File.dirname(coin_root)
@@ -174,78 +173,83 @@ def load_coinconfig(yaml)
                 break
             end
         end
-        coin_root = File.join(coin_root, "coin") unless coin_root.nil?
+        return coin_root
     end
-
-    return {} if yaml["coin"].nil?
-    coin_root = ENV["COIN_ROOT"] || find_coin()
-    return {} if coin_root.nil? || !Dir.exist?(coin_root)
-
-    # do we have a project specific config file for coin?
-    coin_config_root = "#{coin_root}/platform_configs"
-    config_name = File.basename(ENV['MINICOIN_PROJECT_DIR'])
-    if File.exist?("#{coin_config_root}/#{config_name}.yaml")
-        coin_config_file = "#{coin_config_root}/#{config_name}.yaml"
-    else # if not, use the default for Qt
-        coin_config_file = "#{coin_config_root}/qt5.yaml"
-    end
-
-    coin_configs = YAML.load_file(coin_config_file)
-    coin_configs = load_includes(coin_configs, coin_config_root)
-    coin_configs = coin_configs["Configurations"]
 
     coin_machines = []
-    coin_configs.each do |coin_config|
-        coin_template = coin_config["Template"].split('-')
-        template = coin_template
-        if template[1] == "linux"
-            template = "#{template[2]}-#{template[3]}"
-            range = 4
-        else
-            template = "#{template[1]}-#{template[2]}"
-            range = 3
+
+    return {} if yaml["coin"].nil?
+    coin_root = ENV["COIN_ROOT"] || find_coin(ENV['MINICOIN_PROJECT_DIR'])
+    while coin_root && Dir.exists?(coin_root)
+        # do we have a project specific config file for coin?
+        coin_config_root = "#{coin_root}/coin/platform_configs"
+        config_name = File.basename(coin_root)
+        if File.exist?("#{coin_config_root}/#{config_name}.yaml")
+            coin_config_file = "#{coin_config_root}/#{config_name}.yaml"
+        else # if not, use the default for Qt
+            coin_config_file = "#{coin_config_root}/qt5.yaml"
         end
 
-        minicoin_box = yaml["coin"][template]
-        next if minicoin_box.nil?
-
-        template_file = coin_template[0]
-        (1..range).each do |i|
-            if coin_template[i]
-                template_file = template_file + "-"
-                template_file = template_file + coin_template[i]
+        begin
+            coin_configs = YAML.load_file(coin_config_file)
+            coin_configs = load_includes(coin_configs, coin_config_root)
+            coin_configs = coin_configs["Configurations"]
+        rescue
+            coin_configs = []
+        end
+        coin_configs.each do |coin_config|
+            coin_template = coin_config["Template"].split('-')
+            template = coin_template
+            if template[1] == "linux"
+                template = "#{template[2]}-#{template[3]}"
+                range = 4
+            else
+                template = "#{template[1]}-#{template[2]}"
+                range = 3
             end
-        end
 
-        coin_name = "coin-#{template}"
-        coin_name = coin_name.gsub("_", ".")
-        coin_machine = {}
-        coin_machine["name"] = coin_name
-        coin_machine["box"] = minicoin_box["box"]
-        coin_machine["roles"] = minicoin_box["roles"] || []
-        coin_machine["roles"] += [
-            {
-                "role" => "upload",
-                "files" => {
-                    "#{ENV['COIN_ROOT']}/provisioning" => "coin/provisioning"
+            minicoin_box = yaml["coin"][template]
+            next if minicoin_box.nil?
+
+            template_file = coin_template[0]
+            (1..range).each do |i|
+                if coin_template[i]
+                    template_file = template_file + "-"
+                    template_file = template_file + coin_template[i]
+                end
+            end
+
+            coin_name = "coin-#{template}"
+            coin_name = coin_name.gsub("_", ".")
+            coin_machine = {}
+            coin_machine["name"] = coin_name
+            coin_machine["box"] = minicoin_box["box"]
+            coin_machine["roles"] = minicoin_box["roles"] || []
+            coin_machine["roles"] += [
+                {
+                    "role" => "upload",
+                    "files" => {
+                        "#{ENV['COIN_ROOT']}/provisioning" => "coin/provisioning"
+                    }
+                },
+                {
+                    "role" => "coin-node",
+                    "template" => template_file,
+                    "privileged" => false
                 }
-            },
-            {
-                "role" => "coin-node",
-                "template" => template_file,
-                "privileged" => false
-            }
-        ]
-        coin_machine["jobs"] = [
-            {
-                "job" => "build",
-                "features" => coin_config["Features"],
-                "compiler" => coin_config["Compiler"],
-                "configure" => coin_config["Configure arguments"],
-                "environment" => coin_config["Environment variables"]
-            }
-        ]
-        coin_machines << coin_machine
+            ]
+            coin_machine["jobs"] = [
+                {
+                    "job" => "build",
+                    "features" => coin_config["Features"],
+                    "compiler" => coin_config["Compiler"],
+                    "configure" => coin_config["Configure arguments"],
+                    "environment" => coin_config["Environment variables"]
+                }
+            ]
+            coin_machines << coin_machine
+        end
+        coin_root = find_coin(File.dirname(coin_root))
     end
     coin_config = {}
     coin_config["machines"] = coin_machines
