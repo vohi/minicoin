@@ -162,25 +162,27 @@ def merge_roles(machines)
     end
 end
 
+def find_config(root, config_name)
+    while !Dir.exist?("#{root}/#{config_name}") do
+        old_root = root
+        root = File.dirname(root)
+        if File.identical?(root, old_root)
+            root = nil
+            break
+        end
+    end
+    root = nil unless root.nil? || Dir.exists?(root)
+    return root
+end
+
 def load_coinconfig(yaml)
     return if ENV['MINICOIN_PROJECT_DIR'].nil?
-    def find_coin(coin_root)
-        while !Dir.exist?("#{coin_root}/coin") do
-            old_coin_root = coin_root
-            coin_root = File.dirname(coin_root)
-            if File.identical?(coin_root, old_coin_root)
-                coin_root = nil
-                break
-            end
-        end
-        return coin_root
-    end
 
     coin_machines = []
 
     return {} if yaml["coin"].nil?
-    coin_root = ENV["COIN_ROOT"] || find_coin(ENV['MINICOIN_PROJECT_DIR'])
-    while coin_root && Dir.exists?(coin_root)
+    coin_root = ENV["COIN_ROOT"] || find_config(ENV['MINICOIN_PROJECT_DIR'], "coin")
+    while coin_root
         # do we have a project specific config file for coin?
         coin_config_root = "#{coin_root}/coin/platform_configs"
         config_name = File.basename(coin_root)
@@ -249,7 +251,7 @@ def load_coinconfig(yaml)
             ]
             coin_machines << coin_machine
         end
-        coin_root = find_coin(File.dirname(coin_root))
+        coin_root = find_config(File.dirname(coin_root), "coin")
     end
     coin_config = {}
     coin_config["machines"] = coin_machines
