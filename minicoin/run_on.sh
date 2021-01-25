@@ -131,6 +131,12 @@ function clean_log() {
   done
 }
 
+function get_yaml_value() {
+  script=$1
+  shift
+  echo "$script" | ruby util/get_yaml_value.rb "$@"
+}
+
 function run_on_machine() {
   local machine="$1"
   run_file=".logs/${job}-${machine}-${log_stamp}"
@@ -152,19 +158,22 @@ function run_on_machine() {
 
   scriptfile=$job/main.$ext
 
-  machine_args="$(minicoin jobconfig $job $machine)"
+  jobconfig_yaml=("$(minicoin jobconfig $job $machine)")
   [[ ! -z $jobconfig ]] && machine_args=$(echo "$machine_args" | grep "$jobconfig")
-  if [ "${machine_args:0:5}" == "--raw" ]
-  then
-    machine_args="${machine_args:7}"
-    machine_args="${machine_args#\"}"
-    machine_args="${machine_args%\"*}"
-    echo "${machine_args}" > jobs/$job/raw.$ext
-    chmod +x jobs/$job/raw.$ext
-    machine_args="--command ./raw.$ext"
-  else
-    machine_args=$(echo "$machine_args" | head -n 1)
-  fi
+
+  jobconfig=()
+  jobconfig_keys=( $(get_yaml_value "$jobconfig_yaml") )
+  for jobconfig_key in "${jobconfig_keys[@]}"
+  do
+    jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key)
+    if [[ $jobconfig_key == "script" ]]
+    then
+      jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key --raw)
+      echo "$jobconfig_value" > jobs/$job/script.$ext
+      jobconfig_value="script.$ext"
+    fi
+    jobconfig+=( "--${jobconfig_key}" "\"${jobconfig_value}\"" )
+  done
 
   if [ ! -f "$jobroot/$scriptfile" ]
   then
@@ -210,7 +219,7 @@ function run_on_machine() {
     job_args+=($arg)
   done
 
-  job_args+=($machine_args)
+  job_args+=( ${jobconfig[@]} )
 
   # pass --verbose through to guest
   [ $verbose == "true" ] && job_args+=( "--verbose" )
