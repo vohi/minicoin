@@ -12,7 +12,7 @@ fi
 
 minicoin_dir=$(dirname $source)
 project_dir="$PWD"
-export MINICOIN_PROJECT_DIR="$PWD"
+[[ -z $MINICOIN_PROJECT_DIR ]] && export MINICOIN_PROJECT_DIR="$PWD"
 
 function run() {
   cd $minicoin_dir
