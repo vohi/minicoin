@@ -173,7 +173,8 @@ function run_on_machine() {
   fi
 
   log_progress "==> $machine: Uploading '$upload_source'..."
-  if ! vagrant upload $upload_source $job $machine 2> /dev/null > /dev/null
+  $(vagrant upload $upload_source $job $machine 2> /dev/null > /dev/null)
+  if [[ $? -gt 0 ]]
   then
     log_progress "==> $machine: Upload failed, trying to set up machine"
   
@@ -188,7 +189,8 @@ function run_on_machine() {
     fi
 
     log_progress "==> $machine: Retrying uploading '$upload_source'..."
-    if ! vagrant upload $upload_source $job $machine > /dev/null
+    $(vagrant upload $upload_source $job $machine > /dev/null)
+    if [[ $? -gt 0 ]]
     then
       >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
       return -3
