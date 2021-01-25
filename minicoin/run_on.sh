@@ -152,7 +152,22 @@ function run_on_machine() {
 
   scriptfile=$job/main.$ext
 
-  if [ ! -f "$jobroot/$scriptfile" ]; then
+  machine_args="$(minicoin jobconfig $job $machine)"
+  [[ ! -z $jobconfig ]] && machine_args=$(echo "$machine_args" | grep "$jobconfig")
+  if [ "${machine_args:0:5}" == "--raw" ]
+  then
+    machine_args="${machine_args:7}"
+    machine_args="${machine_args#\"}"
+    machine_args="${machine_args%\"*}"
+    echo "${machine_args}" > jobs/$job/raw.$ext
+    chmod +x jobs/$job/raw.$ext
+    machine_args="--command ./raw.$ext"
+  else
+    machine_args=$(echo "$machine_args" | head -n 1)
+  fi
+
+  if [ ! -f "$jobroot/$scriptfile" ]
+  then
     >&2 printf "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}\n"
     return -2
   fi
@@ -193,9 +208,6 @@ function run_on_machine() {
     job_args+=($arg)
   done
 
-  machine_args="$(minicoin jobconfig $job $machine)"
-  [[ ! -z $jobconfig ]] && machine_args=$(echo "$machine_args" | grep "$jobconfig")
-  machine_args=$(echo "$machine_args" | head -n 1)
   job_args+=($machine_args)
 
   # pass --verbose through to guest
