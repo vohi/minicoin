@@ -146,7 +146,10 @@ def merge_roles(machines)
                 else
                     rolename = role
                 end
-                if role_indices.has_key?(rolename)
+                if rolename == "script" || rolename == "install"
+                    role_set << role
+                    index += 1
+                elsif role_indices.has_key?(rolename)
                     oldindex = role_indices[rolename]
                     role_set[oldindex] = merge_yaml(role_set[oldindex], role)
                 else
