@@ -139,6 +139,7 @@ function run_on_machine() {
   upload_source="$jobroot/$job"
 
   machine_info=$(minicoin info $machine)
+  log_progress "==> $machine: Machine info retrieved: '$machine_info'"
   communicator=$(echo $machine_info | awk {'print $3'})
   if [[ $communicator == "winrm" || $communicator == "winssh" ]]
   then
@@ -200,7 +201,7 @@ function run_on_machine() {
   # pass --verbose through to guest
   [ $verbose == "true" ] && job_args+=( "--verbose" )
 
-  echo "==> $machine: running '$job' with arguments '${job_args[@]}'"
+  echo "==> $machine: running '$job' with arguments '${job_args[@]}' via '$communicator'"
 
   error=0
   run="true"
