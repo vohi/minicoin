@@ -3,28 +3,36 @@
 
 if [[ $(uname) =~ "Darwin" ]]
 then
-    command="brew install"
+    distro="darwin"
 else
     . /etc/os-release
     distro=${ID}${VERSION_ID}
-    case $distro in
-        ubuntu*)
-            command="apt-get -qq -y install"
-        ;;
-
-        centos*)
-            command="yum install -y"
-        ;;
-
-    esac
 fi
 
-packages=( ${PARAM_packages:-$PARAM_install} )
+case $distro in
+    ubuntu*)
+        apt-get update
+        command="apt-get -qq -y install"
+    ;;
 
+    centos*)
+        yum update -y
+        command="yum install -y"
+    ;;
+
+    darwin*)
+        brew update
+        command="brew install"
+    ;;
+esac
+
+packages=( ${PARAM_packages[@]:-${PARAM_install[@]}} )
+
+echo "Installing '${packages[@]}' using '$command'"
 for package in "${packages[@]}"
 do
-    echo "Installing '$package' using '$command'"
-    if [[ $(uname) =~ "Darwin" ]]
+    echo "Installing '$package'"
+    if [[ $distro == "darwin" ]]
     then
         su vagrant -c "$command $package"
     else
