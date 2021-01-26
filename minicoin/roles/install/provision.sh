@@ -21,7 +21,7 @@ case $distro in
     ;;
 
     darwin*)
-        brew update
+        su vagrant -c "brew update"
         command="brew install"
     ;;
 esac
