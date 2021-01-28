@@ -11,8 +11,10 @@ if ARGV.count < 1
 else
     value = yaml[ARGV[0]]
     unless ARGV[1] == "--raw"
-        value.gsub!("\\", "\\\\")
-        value.gsub!("\"", "\\\"")
+        if value.is_a?(String)
+            value.gsub!("\\", "\\\\")
+            value.gsub!("\"", "\\\"")
+        end
     end
     puts value
 end
