@@ -73,6 +73,15 @@ class Tester
     end
   end
 
+  def compare(name, actual, expected)
+    if actual != expected
+      puts "Fail for '#{name}'!"
+      puts "=> produced: '#{actual}'"
+      puts "=> expected: '#{expected}'"
+      @error_count += 1
+    end
+  end
+
   def test_loading()
     test_output = $TEST_OUTPUT
     test_data = {
@@ -91,15 +100,15 @@ class Tester
         },
       "includes" => ["include/sub.yml"],
       "machines" => [
-        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "index" => 0, "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
-        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "index" => 1, "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
-        {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "index"=>2},
-        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>3, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
-        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>4, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
+        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
+        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
+        {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}]},
+        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
+        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
                            "shared_folders"=>[{"Host"=>"Guest"}],
-                           "private_net" => "1.1.1.1", "index"=>5, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
+                           "private_net" => "1.1.1.1", "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
         {"name" => "merged_role", "box" => "generic",
                                    "roles" => [
@@ -120,21 +129,29 @@ class Tester
                                     }
                                   ],
                                    "shared_folders"=>[{"Host"=>"Guest"}],
-                                   "index"=>6, "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
+                                   "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
         },
-        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "index"=>7, "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] },
-        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "index"=>8, "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] }
+        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] },
+        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] }
       ]
     }
 
     test_data.each do |name, data|
       @data_count += 1
       result = test_output[name]
-      if result != data
-        puts "Fail for '#{name}'!"
-        puts "=> produced: '#{result}'"
-        puts "=> expected: '#{data}'"
-        @error_count += 1
+      if result.is_a?(Array)
+        index = 0
+        result.each do |result_entry|
+          result_entry.delete("hash") if result_entry.is_a?(Hash)
+          compare(name, result_entry, data[index])
+          index += 1
+        end
+      elsif result.is_a?(Hash)
+        result.each do |result_key, result_value|
+          compare(name, result_value, data[result_key])
+        end
+      else
+        compare(name, result_entry, data)
       end
     end
   end

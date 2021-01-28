@@ -45,15 +45,8 @@ Vagrant.configure("2") do |config|
     puts
   end
 
-  machine_index = 0
   machines.each do |machine|
     name = machine["name"]
-    # Give each defined machine a well-defined port number for ssh forwarding.
-    # If we don't do that, then the port of a suspended or halted machine might
-    # be re-used by vagrant, and then resuming the suspended machine will fail,
-    # or result in traffic going the wrong way (ie with mutagen synching).
-    machine["index"] = machine_index
-    machine_index = machine_index + 1
     if name.nil?
       puts "==> Machine without name: #{machine}"
       next
@@ -203,7 +196,7 @@ Vagrant.configure("2") do |config|
       # port forwarding
       box.vm.network "forwarded_port", id: "ssh", # id must be ssh
         guest: 22,
-        host: 2200 + machine["index"],
+        host: 2200 + machine["hash"],
         auto_correct: true
       ports = machine["ports"]
       if !ports.nil?
@@ -228,7 +221,7 @@ Vagrant.configure("2") do |config|
               # turn on local hypervisor's RDP server, if supported
               machine["rdp"] = true
             end
-            attributes[:host] = attributes[:guest] * 10 + machine["index"] if attributes[:host].nil?
+            attributes[:host] = attributes[:guest] * 10 + machine["hash"] if attributes[:host].nil?
             box.vm.network "forwarded_port", attributes
           end
         rescue
