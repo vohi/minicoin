@@ -166,13 +166,15 @@ function run_on_machine() {
   for jobconfig_key in "${jobconfig_keys[@]}"
   do
     jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key)
-    if [[ $jobconfig_key == "script" ]]
+    if [[ $jobconfig_key == "workflow" ]]
     then
       jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key --raw)
-      echo "$jobconfig_value" > jobs/$job/script.$ext
-      jobconfig_value="script.$ext"
+      echo "$jobconfig_value" > jobs/$job/workflow.script
+      jobconfig_value="workflow.script"
     fi
-    jobconfig+=( "--${jobconfig_key}" "\"${jobconfig_value}\"" )
+    [[ "$jobconfig_value" =~ " " ]] && jobconfig_value="\"$jobconfig_value\""
+    [[ "$ext" == "ps1" ]] && jobconfig_key="-${jobconfig_key}" || jobconfig_key="--${jobconfig_key}"
+    jobconfig+=( "${jobconfig_key}" "${jobconfig_value}" )
   done
 
   if [ ! -f "$jobroot/$scriptfile" ]
@@ -205,6 +207,8 @@ function run_on_machine() {
       return -3
     fi
   fi
+
+  [[ -f jobs/$job/workflow.script ]] && rm jobs/$job/workflow.script
 
   home_share=$(echo $machine_info | awk {'print $5'})
   [ -z $home_share ] && home_share=$HOME
