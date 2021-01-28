@@ -222,7 +222,10 @@ function run_on_machine() {
   job_args+=( ${jobconfig[@]} )
 
   # pass --verbose through to guest
-  [ $verbose == "true" ] && job_args+=( "--verbose" )
+  if [ $verbose == "true" ]
+  then
+    [ $ext == "ps1" ] && job_args+=( "-verbose" ) || job_args+=( "--verbose" )
+  fi
 
   echo "==> $machine: running '$job' with arguments '${job_args[@]}' via '$communicator'"
 

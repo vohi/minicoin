@@ -1,8 +1,8 @@
 param (
-   [string]$script
+    [string]$script,
+    [switch]$privileged,
+    [switch]$verbose
 )
-
-[bool]$verbose = $false
 
 function Write-StdErr {
     param ([PSObject] $InputObject)
@@ -51,9 +51,6 @@ ForEach ($arg in $args) {
     } else {
         $cmdargs += $arg
     }
-    if ($arg -eq "--verbose") {
-        $verbose = $true
-    }
 }
 
 $admin_password = "vagrant"
@@ -86,8 +83,11 @@ try {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
 }
 
+if ($privileged) {
+    $jobargs += @("-s")
+}
 $jobargs += @(
-    "-w", "$env:USERPROFILE",
+    "-w", "$env:USERPROFILE"
     "cmd.exe", "/C"
 )
 
