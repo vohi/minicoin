@@ -51,6 +51,9 @@ ForEach ($arg in $args) {
     } else {
         $cmdargs += $arg
     }
+    if ($arg -eq "--privileged") {
+        $privileged = $True
+    }
 }
 
 $admin_password = "vagrant"
@@ -84,7 +87,7 @@ try {
 }
 
 if ($privileged) {
-    $jobargs += @("-s")
+    $jobargs += @("-h")
 }
 $jobargs += @(
     "-w", "$env:USERPROFILE"
