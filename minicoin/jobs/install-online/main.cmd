@@ -14,6 +14,9 @@ if exist "%dirname%\qtaccount.ini" (
     exit /b 3
 )
 
+set "INSTALL_ROOT=!PARAM_install_root!"
+if not defined INSTALL_ROOT set "INSTALL_ROOT=Qt"
+
 cmake -DINSTALL_ROOT=!PARAM_install_root! -DPACKAGE=!PARAM_package! -P "%dirname%\install-online.cmake"
 
 if %errorlevel% NEQ 0 (
@@ -21,21 +24,27 @@ if %errorlevel% NEQ 0 (
     exit /b 4
 )
 
-cd Qt\6.0.0
+cd %INSTALL_ROOT%
 
-for /D %%D in (*) do (
-    if not "%%D" == "Src" (
-        cd %%D
-        echo "Using Qt in %cd%"
-        set PATH="%CD%\bin;%PATH%"
-        goto :RUNTEST
+for /f "tokens=*" %%Q in ('dir /b /s /od moc.exe') do set "qtinstall=%%Q"
+for %%Q in ("%qtinstall%") do set "qtinstall=%%~dpQ"
 
-    )
+if not defined qtinstall (
+    >&2 echo moc not found, installation failed!
+    exit 5
 )
 
-:RUNTEST
+cd !qtinstall!
+:GOUP
+if not exist "%CD%\bin" (
+    cd ..
+    goto :GOUP
+)
 
-qtdiag
-uic --version
-moc --version
-qmake --query
+echo "Using Qt in %cd%"
+set PATH="%CD%\bin;%PATH%"
+
+bin\qtdiag
+bin\uic --version
+bin\moc --version
+bin\qmake -query

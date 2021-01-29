@@ -26,17 +26,24 @@ else
     exit 3
 fi
 
-cmake -DINSTALL_ROOT=$PARAM_install_root -DPACKAGE=$PARAM_package -P $jobpath/install-online.cmake
+INSTALL_ROOT=${PARAM_install_root:-"Qt"}
+
+cmake -DINSTALL_ROOT=${INSTALL_ROOT} -DPACKAGE=$PARAM_package -P $jobpath/install-online.cmake
 if [ $? -gt 0 ]
 then
     >&2 echo "Installation failed, aborting"
     exit 4
 fi
 
-cd Qt
+cd ${INSTALL_ROOT}
 
 qtinstall=$(find . -wholename */bin/moc | sort -z | head -n 1)
-echo "Found Qt in ${qtinstall}"
+if [[ -z $qtinstall ]]
+then
+    >&2 echo "moc not found, installation failed!"
+    exit 5
+fi
+
 qtinstall=$(dirname $(dirname ${qtinstall}))
 
 cd ${qtinstall}
