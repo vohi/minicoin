@@ -15,7 +15,7 @@ $shell = $shell -replace "bash", "c:\program files\git\usr\bin\bash.exe"
 
 $hosthome = $args[0]
 $jobdir = $args[1]
-$jobdir = $jobdir -replace $hosthome, "C:\Users\vagrant"
+$jobdir = $jobdir -replace $hosthome, $env:USERPROFILE
 $jobdir = $jobdir -replace "/", "\"
 
 cd C:\Users\vagrant
