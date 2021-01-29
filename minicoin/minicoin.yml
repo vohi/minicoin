@@ -20,6 +20,7 @@ urls:
 
 includes:
   - lib/coin.yml
+  - lib/github.yml
 
 # machine definitions
 machines:
