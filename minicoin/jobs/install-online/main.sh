@@ -26,24 +26,22 @@ else
     exit 3
 fi
 
-cmake -DINSTALL_ROOT=Qt "$@" -P $jobpath/install-online.cmake
-
-if [ ! -d "Qt/6.0.0" ]
+cmake -DINSTALL_ROOT=$PARAM_install_root -DPACKAGE=$PARAM_package -P $jobpath/install-online.cmake
+if [ $? -gt 0 ]
 then
     >&2 echo "Installation failed, aborting"
     exit 4
 fi
 
-cd Qt/6.0.0
+cd Qt
 
-platforms=$(find . -maxdepth 1 -mindepth 1 -type d ! -name Src)
-for p in "$platforms"
-do
-    cd $p
-    echo "Using Qt in $PWD"
-    export LD_LIBRARY_PATH=$PWD/lib
-    break
-done
+qtinstall=$(find . -wholename */bin/moc | sort -z | head -n 1)
+echo "Found Qt in ${qtinstall}"
+qtinstall=$(dirname $(dirname ${qtinstall}))
+
+cd ${qtinstall}
+echo "Using Qt in $PWD"
+export LD_LIBRARY_PATH=$PWD/lib
 
 bin/qtdiag
 bin/uic --version
