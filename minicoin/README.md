@@ -15,13 +15,14 @@ To list them together with their status, run
 
 `$ minicoin status`
 
-To check a single machine, run e.g.
+This can take a long time, as vagrant needs to query each provider. It's
+often enough to check a single machine, e.g.:
 
-`$ minicoin status ubuntu1804`
+`$ minicoin status ubuntu2004`
 
 To start a machine, run
 
-`$ minicoin up ubuntu1804`
+`$ minicoin up [machine-name]`
 
 This will download the virtual machine image if needed, boot up the machine,
 and run provisioning actions.
@@ -33,21 +34,21 @@ boxes.
 
 To run a job on the machine, execute
 
-`$ minicoin run ubuntu1804 [job]`
+`$ minicoin run ubuntu2004 [job]`
 
 This will also start the machine if it's not running yet. To sign into a
 machine using ssh, use
 
-`$ minicoin ssh ubuntu1804`
+`$ minicoin ssh ubuntu2004`
 
-To use the machine interactively, use the VirtualBox UI to attach a GUI, or
-e.g.
+To use the machine interactively, use your provider's UI to attach a GUI, or
+use remote desktop protocol integration e.g.
 
 `$ minicoin rdb windows10`
 
 To destroy the machine after usage (without confirmation prompt), run
 
-`$ minicoin destroy -f ubuntu1804`
+`$ minicoin destroy -f ubuntu2004`
 
 *Note:* Any data that lives only on the machine will be lost.
 
@@ -57,12 +58,12 @@ and the `snapshot` sub-commands to save known good states of machines
 (for instance, after provisioning or cloning). For a full list of commands,
 see `help`.
 
-To destroy all (!) machines without prompting
+To destroy all (!) machines without prompting, run
 
 `$ minicoin destroy -f`
 
-You can operate on multiple machines if you provide the machine name as a
-ruby-style regular expression, i.e. the following would shut down all Windows
+You can apply operations to multiple machines if you provide the machine name
+as a ruby-style regular expression, i.e. the following would shut down all Windows
 machines:
 
 `$ minicoin halt -f /windows/`
@@ -90,9 +91,9 @@ See [Defining Jobs](jobs/jobs#defining-jobs) for documentation on how to impleme
 
 Jobs are executed using the `minicoin run` command.
 
-`$ minicoin run ubuntu1804 test --  --flag --param1 value1 arg`
+`$ minicoin run ubuntu2004 test --  --flag --param1 value1 arg`
 
-This starts the `ubuntu1804` machine if it's not already running, uploads the
+This starts the `ubuntu2004` machine if it's not already running, uploads the
 `jobs/test` subdirectory to the machine, and then runs the `main.sh` script
 (if the guest is Linux or Mac; on Windows the `main.cmd` script).
 
@@ -100,8 +101,12 @@ The host-users's home directory, the current directory, and any parameters
 after the double dash `--` will be passed on to the `main` script.
 
 Jobs are executed on the guest as the `vagrant` user. If your script requires
-root privileges, use `sudo` etc, or consider making your job a provisioning
-step.
+root privileges, use `--privileged` as a parameter (before the --):
+
+`$ minicoin run --privileged windows10 [jobname]`
+
+Alternatively, use `sudo` etc in your script, or consider making your job a
+provisioning step.
 
 ## Job documentation
 
@@ -158,6 +163,12 @@ The following parameters are available:
         key1: value1
         key2: value2
 
+# Implicit job parameters
+
+    jobs:
+      - job: job-name
+        key: value # will be passed to the job as "--key value"
+
 # Optional virtual machine configurations
 
     private_net: optional # IP address, or "disabled"; use dhcp otherwise
@@ -183,6 +194,25 @@ code, takes care of setting appropriate defaults, works around limitations,
 and runs the provisioning steps from the machine's definition. You will
 probably never have to change this file, unless you want to
 [contribute](docs/contributing.md) to minicoin.
+
+### Debugging machines
+
+If something goes wrong, the following commands might be useful:
+
+`$ minicoin runinfo [machine]`
+
+This prints information that minicoin uses to determine how jobs should be run on
+the machine.
+
+`$ minicoin describe [machine]`
+
+This prints the entire YAML for the machine, after merging global, user, and project
+specific `minicoin.yml` files, and interpreting roles and jobs.
+
+`$ minicoin jobconfig [job] [machine]`
+
+This prints the YAML with the machine's implicit configuration for the specified
+job.
 
 ## Vagrant boxes
 

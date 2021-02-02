@@ -144,9 +144,9 @@ function run_on_machine() {
 
   upload_source="$jobroot/$job"
 
-  machine_info=$(minicoin info $machine)
-  log_progress "==> $machine: Machine info retrieved: '$machine_info'"
-  communicator=$(echo $machine_info | awk {'print $3'})
+  machine_runinfo=$(minicoin runinfo $machine)
+  log_progress "==> $machine: Machine runinfo retrieved: '$machine_runinfo'"
+  communicator=$(echo $machine_runinfo | awk {'print $3'})
   if [[ $communicator == "winrm" || $communicator == "winssh" ]]
   then
     [ $communicator == "winssh" ] && communicator="ssh"
@@ -210,7 +210,7 @@ function run_on_machine() {
 
   [[ -f jobs/$job/workflow.script ]] && rm jobs/$job/workflow.script
 
-  home_share=$(echo $machine_info | awk {'print $5'})
+  home_share=$(echo $machine_runinfo | awk {'print $5'})
   [ -z $home_share ] && home_share=$HOME
 
   # job scripts can expect P0 to be home on host, and P1 PWD on host
