@@ -85,7 +85,7 @@ elif [ -f $JOBDIR/$projectname.pro ]
 then
   configure=${PARAM_configure:-"-GNinja"}
   echo "Configuring '$JOBDIR' with 'qmake ${configure}'"
-  if [ ! -f ~/qt-cmake ]
+  if [ ! -f ~/qmake ]
   then
     >&2 echo "qmake wrapper not found in '$HOME', build qtbase first!"
   else
