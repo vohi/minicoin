@@ -92,17 +92,23 @@ def load_boxes(yaml, user_yaml)
         end
     end
 
-    defaults = $settings["defaults"]
-    unless defaults.nil?
+    machines.each do |machine|
+        machine_name = machine["name"]
+        defaults = $settings["defaults"].dup
+        $settings.each do |machine_exp, machine_settings|
+            if machine_exp.start_with?("/") && machine_exp.end_with?("/")
+                if machine_name.match?(machine_exp[1..-2])
+                    defaults = merge_yaml(defaults, machine_settings)
+                end
+            end
+        end
         defaults.each do |setting, value|
             # make deep copies
             default_value = value.dup
-            machines.each do |machine|
-                if machine[setting].nil?
-                    machine[setting] = default_value
-                else
-                    machine[setting] = merge_yaml(default_value, machine[setting])
-                end
+            if machine[setting].nil?
+                machine[setting] = default_value
+            else
+                machine[setting] = merge_yaml(default_value, machine[setting])
             end
         end
     end

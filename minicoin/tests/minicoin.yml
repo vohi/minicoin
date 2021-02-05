@@ -9,6 +9,8 @@ settings:
   defaults:
     shared_folders:
       - "Host": "Guest"
+  /^.*\d$/:
+    matched: global
 
 urls:
   domain:

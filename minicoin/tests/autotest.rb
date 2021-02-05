@@ -96,6 +96,8 @@ class Tester
         "home_share" => "$HOME",
         "defaults" => { "shared_folders" => [{ "Host" => "Guest" }]},
         "newvalue" => "local_option",
+        "/^.*\\d$/" => { "matched" => "global" },
+        "/machine\\d/" => { "matched" => "user" }
         },
       "urls" => {
         "domain" => ["domain1", "domain2", "subdomain1", "subdomain2", "leaf1", "leaf2", "userserver"],
@@ -103,11 +105,11 @@ class Tester
         },
       "includes" => ["include/sub.yml"],
       "machines" => [
-        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
-        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
+        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
+        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}]},
-        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil },
-        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil },
+        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux", "nictype2"=>nil },
+        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux", "nictype2"=>nil },
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
                            "shared_folders"=>[{"Host"=>"Guest"}],
@@ -135,7 +137,7 @@ class Tester
                                    "os"=>"linux", "nictype2"=>nil
         },
         {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" },
-        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
+        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
     }
 
