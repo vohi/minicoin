@@ -54,7 +54,7 @@ def load_coin(yaml)
                 {
                     "role" => "upload",
                     "files" => {
-                        "#{coin_root}/provisioning" => "coin/provisioning"
+                        "#{coin_root}/coin/provisioning" => "coin/provisioning"
                     }
                 },
                 {
