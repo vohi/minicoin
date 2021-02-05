@@ -81,6 +81,11 @@ then
   JOBDIR="${_JOBDIR/$HOST_HOME/$MOUNTED_HOME}"
 fi
 
+if [ ! -d "$JOBDIR" ]
+then
+  >&2 echo "Folder '$JOBDIR' does not exist on this guest - couldn't map to a shared folder"
+fi
+
 unset _JOBDIR
 unset _HOST_HOME
 unset HOST_HOME

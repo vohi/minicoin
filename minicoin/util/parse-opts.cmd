@@ -136,6 +136,10 @@ if not exist %JOBDIR% (
     set JOBDIR=!_JOBDIR:%HOST_HOME%=%MOUNTED_HOME%!
 )
 
+if not exist %JOBDIR% (
+  >&2 echo Folder '%JOBDIR%' does not exist on this guest - couldn't map to a shared folder
+)
+
 set _JOBDIR=
 set MOUNTED_HOME=
 set HOST_HOME=
