@@ -74,6 +74,7 @@ class Tester
   end
 
   def compare(name, actual, expected)
+    actual.delete("fs_mappings")
     actual.delete("actual_shared_folders")
 
     if actual != expected
