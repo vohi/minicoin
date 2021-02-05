@@ -180,7 +180,7 @@ def share_folders(box, machine, shares)
         end
     end
 
-    machine["actual_shared_folders"] = []
+    machine["actual_shared_folders"] = {}
     
     if box.vm.guest == :darwin
         mac_setup_sshfs(box, machine)
@@ -201,7 +201,7 @@ def share_folders(box, machine, shares)
                 win_links << { guest => win_guest }
                 guest = "/#{guest}"
             end
-            machine["actual_shared_folders"] << { host => guest }
+            machine["actual_shared_folders"][host] = guest
             box.vm.synced_folder host, guest
         end
     end

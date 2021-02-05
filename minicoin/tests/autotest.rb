@@ -74,6 +74,8 @@ class Tester
   end
 
   def compare(name, actual, expected)
+    actual.delete("actual_shared_folders")
+
     if actual != expected
       puts "Fail for '#{name}'!"
       puts "=> produced: '#{actual}'"
@@ -100,15 +102,15 @@ class Tester
         },
       "includes" => ["include/sub.yml"],
       "machines" => [
-        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
-        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM", "actual_shared_folders"=>[] },
+        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
+        {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}]},
-        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
-        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]},
+        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil },
+        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"linux", "nictype2"=>nil },
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
                            "shared_folders"=>[{"Host"=>"Guest"}],
-                           "private_net" => "1.1.1.1", "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
+                           "private_net" => "1.1.1.1", "os"=>"linux", "nictype2"=>nil
         },
         {"name" => "merged_role", "box" => "generic",
                                    "roles" => [
@@ -129,10 +131,10 @@ class Tester
                                     }
                                   ],
                                    "shared_folders"=>[{"Host"=>"Guest"}],
-                                   "os"=>"linux", "nictype2"=>nil, "actual_shared_folders"=>[{"Host"=>"Guest"}]
+                                   "os"=>"linux", "nictype2"=>nil
         },
-        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] },
-        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM", "actual_shared_folders"=>[] }
+        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" },
+        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
     }
 

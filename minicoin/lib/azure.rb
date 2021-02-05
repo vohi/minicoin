@@ -27,12 +27,9 @@ def azure_setup(box, machine)
 
     box.vm.provider :azure do |azure, override|
         override.vm.synced_folder ".", "/minicoin", disabled: true
-        unless machine['actual_shared_folders'].nil?
-            machine['actual_shared_folders'].each do |shared_folder|
-                shared_folder.each do |host, guest|
-                    override.vm.synced_folder host, guest, disabled: true
-                end
-            end
+        shared_folder = machine['actual_shared_folders'] || {}
+        shared_folder.each do |host, guest|
+            override.vm.synced_folder host, guest, disabled: true
         end
         if $AZURE_PROFILE.nil?
             stdout, stderr, status = Open3.capture3('az account show')
