@@ -79,6 +79,37 @@ Ansible is a tool for automating the provisioning of machines in a declarative w
 it unnecessary to write complex shell scripts. Some of the prebuild
 [roles](minicoin/roles/README.md) use Ansible.
 
+# Configuring minicoin
+
+Minicoin is configured through `minicoin.yml` files. The default, global configuration lives in
+the minicoin directory, and includes default setting for folder sharing, and setting that apply to
+all machines.
+
+User and project specific `minicoin.yml` files can extend and override those settings. User
+settings need to live in `~/minicoin/minicoin.yml`, project specific settings need to live in a
+`.minicoin/minicoin.yml` file within the directory from which minicoin will be run.
+
+The following example adds the `mutagen` role to all machine for file system syncing, and the
+`ccache` role to Ubuntu hosts:
+
+```
+--
+settings:
+  defaults:
+    roles:
+      - role: upload
+        files:
+          $HOME/.gitconfig: ~/.gitconfig
+      - role: mutagen
+        paths:
+          - ~/qt/dev
+  /ubuntu.*/:
+    roles:
+      - role: ccache
+        cache_dir: $GUEST_HOMES/$USER/.ccache
+        max_size: 20.0G
+```
+
 # Security notice
 
 Vagrant boxes are by default insecure. They use the default, insecure,
