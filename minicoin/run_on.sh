@@ -137,6 +137,33 @@ function get_yaml_value() {
   echo "$script" | ruby util/get_yaml_value.rb "$@"
 }
 
+function run_pre()
+{
+  local machine=$1
+  local error=0
+  if [ -f "$jobroot/$job/pre-run.sh" ]; then
+    log_progress "==> $machine: Running pre-run script for $job"
+    $jobroot/$job/pre-run.sh $machine "${script_args[@]}"
+    error=$?
+    [ $error -gt 0 ] && >&2 printf "${RED}Pre-run initialization for '$machine' exited with error code $error, assuming error and aborting!${NOCOL}\n"
+  fi
+  return $error
+}
+
+function run_post()
+{
+  local machine=$1
+  local error=0
+  if [ -f "$jobroot/$job/post-run.sh" ]
+  then
+    log_progress "==> $machine: Running post-run script for $job"
+    $jobroot/$job/post-run.sh $machine "${script_args[@]}"
+    error=$?
+    [ $error -gt 0 ] && >&2 printf "${RED}Post-run clean-up for '$machine' exited with error code $error${NOCOL}\n"
+  fi
+  return $error
+}
+
 function run_on_machine() {
   local machine="$1"
   run_file=".logs/${job}-${machine}-${log_stamp}"
@@ -180,7 +207,7 @@ function run_on_machine() {
   if [ ! -f "$jobroot/$scriptfile" ]
   then
     >&2 printf "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}\n"
-    return -2
+    return 2
   fi
 
   log_progress "==> $machine: Uploading '$upload_source'..."
@@ -195,7 +222,7 @@ function run_on_machine() {
       if ! vagrant up $machine
       then
         >&2 printf "${RED}Can't bring up machine '$machine' - aborting${NOCOL}\n"
-        exit -2
+        return 3
       fi
     fi
 
@@ -204,9 +231,13 @@ function run_on_machine() {
     if [[ $? -gt 0 ]]
     then
       >&2 printf "${RED}==> $machine: Error uploading '$upload_source' to machine '$machine' - skipping machine${NOCOL}\n"
-      return -3
+      return 4
     fi
   fi
+
+  run_pre $machine
+  error=$?
+  [ $error -gt 0 ] && return $error
 
   [[ -f jobs/$job/workflow.script ]] && rm jobs/$job/workflow.script
 
@@ -293,22 +324,15 @@ function run_on_machine() {
   fi
   [ $parallel == "false" ] && clean_log out err
 
+  run_post $machine
+  post_error=$?
+  [ $error -eq 0 ] && error=$post_error
+
   return $error
 }
 
 total_error=0
 pids=()
-
-if [ -f "$jobroot/$job/pre-run.sh" ]; then
-  log_progress "==> $machine: Running pre-run script for $job"
-  $jobroot/$job/pre-run.sh "${script_args[@]}"
-  error=$?
-  if [ $error -gt 0 ]
-  then
-    >&2 printf "${RED}Pre-run initialization exited with error code $error, assuming error and aborting!${NOCOL}"
-    return -3
-  fi
-fi
 
 for machine in "${machines[@]}"
 do
@@ -333,14 +357,5 @@ do
   total_error=$(( total_error+$? ))
   index=$(( index + 1 ))
 done
-
-if [ -f "$jobroot/$job/post-run.sh" ]
-then
-  log_progress "==> $machine: Running post-run script for $job"
-  $jobroot/$job/post-run.sh "${script_args[@]}"
-  post_error=$?
-  [ $post_error -gt 0 ] && >&2 printf "${RED}Post-run clean-up exited with error code $post_error${NOCOL}"
-  [ $error -eq 0 ] && error=$post_error
-fi
 
 exit $total_error
