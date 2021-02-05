@@ -13,16 +13,16 @@ else
 fi
 
 jobpath="$(dirname $0)"
-if [ -f "$jobpath/qtaccount.ini" ]
+if [ -f "qtaccount.ini" ]
 then
     if [ ! -f "$account_path" ]
     then
-        echo "Installing qtaccount.ini file from $jobpath"
+        echo "Installing qtaccount.ini file from $PWD"
         [ -d "$account_path" ] || mkdir -p "$account_path"
-        cp "$jobpath/qtaccount.ini" "$account_path/qtaccount.ini"
+        cp "qtaccount.ini" "$account_path/qtaccount.ini"
     fi
 else
-    echo "qtaccount.ini file not found in $jobpath, aborting"
+    echo "qtaccount.ini file not found in $PWD, aborting"
     exit 3
 fi
 

@@ -1,3 +1,7 @@
+#!/bin/bash
+
+machine=$1
+
 path_options=(
     "$HOME/Library/Application Support/Qt"
     "$HOME/.local/share/Qt"
@@ -10,8 +14,8 @@ do
     then
         if [ -f "$path/qtaccount.ini" ]
         then
-            cp "$path/qtaccount.ini" "$(dirname $0)"
-            exit 0
+            minicoin upload "$path/qtaccount.ini" "$1"
+            exit $?
         else
             echo "No qtaccount.ini file found in $path, please set your account up locally."
             exit 1
