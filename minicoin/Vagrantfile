@@ -278,7 +278,7 @@ Vagrant.configure("2") do |config|
                 "role" => "install",
                 "packages" => package
               }
-              add_role(box, role, name)
+              add_role(box, role, name, machine)
             end
           end
         rescue
