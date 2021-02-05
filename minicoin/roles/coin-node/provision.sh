@@ -11,7 +11,7 @@ then
     exec sudo -u vagrant -H /bin/bash "$0" "$@"
 fi
 
-. /minicoin/util/parse-opts.sh "$@"
+. /minicoin/util/parse-opts.sh $HOME "$@"
 
 if [ -f /minicoin/roles/coin-node/.hosts ]
 then
