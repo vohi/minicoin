@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. /minicoin/util/parse-opts.sh "$@"
+. /minicoin/util/parse-opts.sh $HOME "$@"
 . /etc/os-release
 
 distro=${ID}${VERSION_ID}
