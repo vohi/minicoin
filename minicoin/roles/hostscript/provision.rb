@@ -1,4 +1,4 @@
-def hostscript_provision(box, name, args)
+def hostscript_provision(box, name, args, machine)
     if preprovision = args["preprovision"]
         box.trigger.before [:up, :provision] do |trigger|
             trigger.name = "pre-provisioning hostscript"

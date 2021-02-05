@@ -1,4 +1,4 @@
-def upload_provision(box, name, role_params)
+def upload_provision(box, name, role_params, machine)
   files = role_params["files"]
   if !files.is_a?(Hash)
     raise "Argument error: expecting a 'files' hash table from source to destination"

@@ -1,6 +1,6 @@
 require 'digest'
 
-def script_provision(box, name, args)
+def script_provision(box, name, args, machine)
     script = args["script"]
     if !script.is_a?(String)
         raise "Argument error: expecting a 'script' string"

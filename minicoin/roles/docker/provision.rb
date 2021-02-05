@@ -1,4 +1,4 @@
-def docker_provision(box, name, role_params)
+def docker_provision(box, name, role_params, machine)
   detach = true
   restart = "always"
 

@@ -131,7 +131,7 @@ def mutagen_guest_to_host(box, name, alphas, betas, ignores)
     end
 end
 
-def mutagen_provision(box, name, role_params)
+def mutagen_provision(box, name, role_params, machine)
     paths = role_params["paths"]
     role_params.delete("paths")
 

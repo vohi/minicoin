@@ -136,7 +136,7 @@ def read_process(cmd, ui)
 end
 
 ## Add role as provisioning step for box
-def add_role(box, role, name)
+def add_role(box, role, name, machine)
     if !role.is_a?(Hash)
         role = { "role" => role }
     end
@@ -207,8 +207,8 @@ def add_role(box, role, name)
     role_params["role_path"] = role_path
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
-        pre_provision = lambda do |machine|
-            read_process("#{role_path}/pre-provision.sh #{name}", machine.ui)
+        pre_provision = lambda do |vagrant|
+            read_process("#{role_path}/pre-provision.sh #{name}", vagrant.ui)
         end
         box.vm.provision "#{role}:pre-provision",
             type: :local_command,
@@ -269,7 +269,7 @@ def add_role(box, role, name)
     if File.file?(provisioning_file)
         require provisioning_file
         begin
-            eval("#{role}_provision(box, name, role_params)")
+            eval("#{role}_provision(box, name, role_params, machine)")
             activity = true
         rescue => error
             STDERR.puts "==> #{name}: Error with #{role} role: #{error}"
@@ -343,8 +343,8 @@ def add_role(box, role, name)
     
     # check for post--provisioning script to run locally
     if File.file?("#{role_path}/post-provision.sh")
-        post_provision = lambda do |machine|
-            read_process("#{role_path}/post-provision.sh #{name}", machine.ui)
+        post_provision = lambda do |vagrant|
+            read_process("#{role_path}/post-provision.sh #{name}", vagrant.ui)
         end
         box.vm.provision "#{role}:post-provision",
             type: :local_command,

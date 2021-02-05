@@ -265,7 +265,7 @@ Vagrant.configure("2") do |config|
       unless roles.nil?
         roles.each do |role|
           begin
-            add_role(box, role.dup, name) unless role.nil?
+            add_role(box, role.dup, name, machine) unless role.nil?
           rescue => e
             puts "==> #{name}: Error when adding role #{role}:"
             puts "             #{e}"

@@ -1,4 +1,4 @@
-def azure_provision(box, name, args)
+def azure_provision(box, name, args, machine)
     if !args.is_a?(Hash)
         raise "Argument error: expecting args to be a hash"
     end
