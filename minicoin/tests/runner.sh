@@ -14,13 +14,15 @@ function finish() {
 
 echo "============================> Testing parse-opts  <============================"
 ./parse-opts-test.sh
-[ $? -gt 0 ] && errors=$(( errors + 1 ))
+[ $? -gt 0 ] && errors=$(( $errors + 1 ))
 
 echo "============================> Testing Vagrantfile <============================"
 ruby autotest.rb
-[ $? -gt 0 ] && errors=$(( errors + 1 ))
+error=$?
+[ $error -gt 0 ] && errors=$(( $errors + $error ))
 minicoin list > /dev/null
-[ $? -gt 0 ] && errors=$(( errors + 1 ))
+error=$?
+[ $error -gt 0 ] && errors=$(( $errors + $error ))
 
 if [ $# -eq 0 ]
 then
@@ -38,7 +40,7 @@ function assert()
     expected="$2"
     if [[ "$actual" != "$expected" ]]; then
       printf "${RED}FAIL '$actual' vs '$expected'${NOCOL}\n"
-      errors=$(( errors + 1 ))
+      errors=$(( $errors + 1 ))
 #    else
 #      printf "${GREEN}PASS '$1' equals '$2'${NOCOL}\n"
     fi

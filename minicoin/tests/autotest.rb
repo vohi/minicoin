@@ -63,10 +63,10 @@ class Tester
         base_copy = base.clone
         result = merge_yaml(base_copy, user)
         if result != test_result[result_index]
-          puts "Failure for index #{result_index}:"
-          puts "=> input: #{base_copy} + #{user}"
-          puts "=> produced: #{result}"
-          puts "=> expected: #{test_result[result_index]}"
+          STDERR.puts "Failure for index #{result_index}:"
+          STDERR.puts "=> input: #{base_copy} + #{user}"
+          STDERR.puts "=> produced: #{result}"
+          STDERR.puts "=> expected: #{test_result[result_index]}"
         end
         result_index += 1
       end
@@ -78,9 +78,9 @@ class Tester
     actual.delete("actual_shared_folders")
 
     if actual != expected
-      puts "Fail for '#{name}'!"
-      puts "=> produced: '#{actual}'"
-      puts "=> expected: '#{expected}'"
+      STDERR.puts "Fail for '#{name}'!"
+      STDERR.puts "=> produced: '#{actual}'"
+      STDERR.puts "=> expected: '#{expected}'"
       @error_count += 1
     end
   end
@@ -151,6 +151,10 @@ class Tester
         end
       elsif result.is_a?(Hash)
         result.each do |result_key, result_value|
+          if data[result_key].nil?
+            STDERR.puts "#{result_key} not expected: #{data}"
+            @error_count += 1
+          end
           compare(name, result_value, data[result_key])
         end
       else
@@ -183,9 +187,9 @@ class Tester
     test_data.each do |name, expected|
       @data_count += 1
       if expected != box_data[name]
-        puts "Fail for '#{name}'!"
-        puts "=> produced: #{box_data[name]}"
-        puts "=> expected: #{expected}"
+        STDERR.puts "Fail for '#{name}'!"
+        STDERR.puts "=> produced: #{box_data[name]}"
+        STDERR.puts "=> expected: #{expected}"
         @error_count += 1
       end
     end
@@ -216,9 +220,9 @@ class Tester
       ENV["GUEST_HOMES"] = "#{guest}"
       result = expand_env(input, box)
       if result != output
-        puts "Fail! for '#{name}'!"
-        puts "=> produced: '#{result}'"
-        puts "=> expected: '#{output}'"
+        STDERR.puts "Fail! for '#{name}'!"
+        STDERR.puts "=> produced: '#{result}'"
+        STDERR.puts "=> expected: '#{output}'"
         @error_count += 1
       end
       ENV["GUEST_HOMES"] = old_env
@@ -251,11 +255,13 @@ begin
   tester = Tester.new
   tester.run()
   if tester.errors != 0
-    puts "Test failed: #{tester.errors} encountered!"
+    STDERR.puts "Test failed: #{tester.errors} encountered!"
+    exit tester.errors
   else
     puts "Success after #{tester.tested} tests!"
   end
 rescue => error
-  puts "Test failed while loading:"
-  puts error
+  STDERR.puts "Test failed while loading:"
+  STDERR.puts error
+  exit 1
 end
