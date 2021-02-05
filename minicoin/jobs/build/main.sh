@@ -64,7 +64,9 @@ then
   echo "Already configured with qmake - run with --clean to reconfigure"
 elif [ -f $JOBDIR/configure ]
 then
-  configure=${PARAM_configure:-"-developer-build -confirm-license -opensource -nomake examples"}
+  default_configure="-developer-build -confirm-license -opensource -nomake examples"
+  [[ $(which ccache) ]] && default_configure="$default_configure -ccache -no-pch"
+  configure=${PARAM_configure:-$default_configure}
   # not setting CMAKE_C(XX)_COMPILER, using CC and CXX environment instead
   [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'configure $configure'"
