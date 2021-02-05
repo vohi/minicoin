@@ -126,29 +126,14 @@ set posCount=
 set flagCount=
 
 REM Interpret P0 and P1, set JOBDIR
-set "_JOBDIR=!POSITIONAL[1]!"
-set "HOST_HOME=!POSITIONAL[0]!"
-call :get_username %HOST_HOME%
-set "MOUNTED_HOME=C:\Users\%HOST_USER%"
-if not exist %MOUNTED_HOME% SET "MOUNTED_HOME=C:\Users\host"
-set JOBDIR=!_JOBDIR:%HOST_HOME%=%USERPROFILE%!
-if not exist %JOBDIR% (
-    set JOBDIR=!_JOBDIR:%HOST_HOME%=%MOUNTED_HOME%!
-)
+set "JOBDIR=!POSITIONAL[0]!"
 
 if not exist %JOBDIR% (
   >&2 echo Folder '%JOBDIR%' does not exist on this guest - couldn't map to a shared folder
 )
 
-set _JOBDIR=
-set MOUNTED_HOME=
-set HOST_HOME=
 set JOBDIR=!JOBDIR:/=\!
 
-exit /b
-
-:get_username
-  SET "HOST_USER=%~nx1"
 exit /b
 
 :add_flag

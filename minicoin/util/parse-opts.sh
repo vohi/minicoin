@@ -70,23 +70,9 @@ unset names
 unset args
 unset count
 
-_JOBDIR="${POSITIONAL[1]}"
-HOST_HOME="${POSITIONAL[0]}"
-HOST_USER=$(basename $HOST_HOME)
-[ -d /Users ] && MOUNTED_HOME="/Users" || MOUNTED_HOME="/home"
-[ -d "$MOUNTED_HOME/$HOST_USER" ] && MOUNTED_HOME="$MOUNTED_HOME/$HOST_USER" || MOUNTED_HOME="$MOUNTED_HOME/host"
-JOBDIR="${_JOBDIR/$HOST_HOME/$HOME}"
-if [ ! -d "$JOBDIR" ]
-then
-  JOBDIR="${_JOBDIR/$HOST_HOME/$MOUNTED_HOME}"
-fi
+JOBDIR="${POSITIONAL[0]}"
 
 if [ ! -d "$JOBDIR" ]
 then
   >&2 echo "Folder '$JOBDIR' does not exist on this guest - couldn't map to a shared folder"
 fi
-
-unset _JOBDIR
-unset _HOST_HOME
-unset HOST_HOME
-unset MOUNTED_HOME

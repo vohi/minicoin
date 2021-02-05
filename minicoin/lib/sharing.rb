@@ -1,21 +1,19 @@
 ## Folder sharing helpers
 def win_link_folders(box, links)
     symlink_lines = []
-    links.each do |link|
-        link.each do |net, local|
-            local_symlink = local
-            local_segments = local.split("\\")
-            local_symlink = "#{local_segments[0]}\\#{local_segments[-1]}"
-            symlink_lines << "if (Test-Path -Path \"$($Hostname)#{net}\") {"
-            symlink_lines << "  New-Item -ItemType SymbolicLink -Path #{local_symlink} -Target \"$($Hostname)#{net}\" -Force"
-            if local_segments.length > 2
-                symlink_lines << "  (Get-Item -Path #{local_symlink}).Attributes += 'Hidden'"
-                # we create a junction because qmake would otherwise follow the symlink to a \\HOSTNAME\share
-                symlink_lines << "  if (Test-Path -Path \"#{local}\") { cmd /c \"rd #{local}\" }"
-                symlink_lines << "  New-Item -ItemType Junction -Path \"#{local}\" -Target \"#{local_symlink}\" -Force | Out-Null"
-            end
-            symlink_lines << "}"
+    links.each do |net, local|
+        local_symlink = local
+        local_segments = local.split("\\")
+        local_symlink = "#{local_segments[0]}\\#{local_segments[-1]}"
+        symlink_lines << "if (Test-Path -Path \"$($Hostname)#{net}\") {"
+        symlink_lines << "  New-Item -ItemType SymbolicLink -Path #{local_symlink} -Target \"$($Hostname)#{net}\" -Force"
+        if local_segments.length > 2
+            symlink_lines << "  (Get-Item -Path #{local_symlink}).Attributes += 'Hidden'"
+            # we create a junction because qmake would otherwise follow the symlink to a \\HOSTNAME\share
+            symlink_lines << "  if (Test-Path -Path \"#{local}\") { cmd /c \"rd #{local}\" }"
+            symlink_lines << "  New-Item -ItemType Junction -Path \"#{local}\" -Target \"#{local_symlink}\" -Force | Out-Null"
         end
+        symlink_lines << "}"
     end
     
     link_cmd = <<-SCRIPT
@@ -189,7 +187,7 @@ def share_folders(box, machine, shares)
         return
     end
     
-    win_links = []
+    win_links = {}
     exp_shares.each do |share|
         share.each do |host, guest|
             if box.vm.guest == :windows
@@ -199,11 +197,11 @@ def share_folders(box, machine, shares)
                 win_guest = guest.gsub(/^\\/, "C:\\")
                 # for the sharing itself, we only care about the basename. We assume they are unique
                 guest = "#{guest.split('\\')[-1]}"
-                win_links << { guest => win_guest }
+                win_links[guest] = win_guest
                 guest = "/#{guest}"
             end
             machine["actual_shared_folders"][host] = guest
-            machine["fs_mappings"][host] = guest
+            machine["fs_mappings"][host] = win_links[guest[1..-1]] || guest
             box.vm.synced_folder host, guest
         end
     end

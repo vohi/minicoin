@@ -3,8 +3,8 @@
 PARSE_OPTS_FLAGS=(
   flag4
 )
-args=( pos1
-  $HOME
+args=( $HOME
+  pos2
   --param1 value1
   --param2 value2
   pos3
@@ -57,10 +57,10 @@ if [[ $debug == true ]]; then
   exit 0
 fi
 
-assert "${POSITIONAL[*]}" "pos1 $HOME pos3 pos 4 pos5"
+assert "${POSITIONAL[*]}" "$HOME pos2 pos3 pos 4 pos5"
 assert "${#POSITIONAL[@]}" 5
-assert ${POSITIONAL[0]} "pos1"
-assert ${POSITIONAL[1]} "$HOME"
+assert ${POSITIONAL[0]} "$HOME"
+assert ${POSITIONAL[1]} "pos2"
 assert ${POSITIONAL[2]} "pos3"
 assert "${POSITIONAL[3]}" "pos 4"
 assert "${POSITIONAL[4]}" "pos5"

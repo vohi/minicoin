@@ -3,7 +3,7 @@ setlocal
 setlocal enabledelayedexpansion
 
 set PARSE_OPTS_FLAGS=flag4
-set args=pos1 %USERPOFILE% --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 --flag4 pos5 --param4 "--value4 123 --value5" -- pass "pass through" --pass
+set args=%USERPOFILE% pos2 --param1 value1 --param2 value2 pos3 --flag1 --param3 value3 --array "a 1" --array "a 2" --flag2 --array a3 "pos 4" --flag3 --flag4 pos5 --param4 "--value4 123 --value5" -- pass "pass through" --pass
 set /A errors=0
 set debug=false
 
@@ -26,10 +26,10 @@ if "%debug%" == "true" (
   exit /B
 )
 
-call :assert "!POSITIONAL[@]!" "pos1 %USERPROFILE% pos3 pos 4 pos5"
+call :assert "!POSITIONAL[@]!" "%USERPROFILE% pos2 pos3 pos 4 pos5"
 call :assert "!POSITIONAL[#]!" 5
-call :assert "!POSITIONAL[0]!" pos1
-call :assert "!POSITIONAL[1]!" %USERPROFILE%
+call :assert "!POSITIONAL[0]!" %USERPROFILE% 
+call :assert "!POSITIONAL[1]!" pos2
 call :assert "!POSITIONAL[2]!" pos3
 call :assert "!POSITIONAL[3]!" "pos 4"
 call :assert "!POSITIONAL[4]!" "pos5"

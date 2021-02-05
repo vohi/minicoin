@@ -210,11 +210,12 @@ function run_on_machine() {
 
   [[ -f jobs/$job/workflow.script ]] && rm jobs/$job/workflow.script
 
-  home_share=$(echo $machine_runinfo | awk {'print $5'})
+  home_share=$(echo $machine_runinfo | awk {'print $6'})
   [ -z $home_share ] && home_share=$HOME
+  job_dir=$(echo $machine_runinfo | awk {'print $7'})
 
-  # job scripts can expect P0 to be home on host, and P1 PWD on host
-  job_args=( "$home_share" )
+  # job scripts can expect P1 to be the JOBDIR on the guest, and P2 PWD on the host
+  job_args=( "$job_dir" )
 
   # quote arguments with spaces to make guests behave identically
   whitespace=" |'|,"

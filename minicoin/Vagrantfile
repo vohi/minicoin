@@ -188,11 +188,6 @@ Vagrant.configure("2") do |config|
       end
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
 
-      if ARGV[0] == "runinfo"
-        puts "#{name} #{machine['os']} #{box.vm.communicator} #{ENV['GUEST_HOMES']} #{ENV["HOME_SHARE"]}"
-        next
-      end
-
       # port forwarding
       box.vm.network "forwarded_port", id: "ssh", # id must be ssh
         guest: 22,
@@ -292,6 +287,22 @@ Vagrant.configure("2") do |config|
 
       if ARGV[0] == "describe"
         puts machine.to_yaml
+        next
+      end
+
+      if ARGV[0] == "runinfo"
+        project_dir = ENV["MINICOIN_PROJECT_DIR"]
+        guest_dir = ""
+        # check whether we are in a subdirectory of a mapped path, and use the best match
+        machine["fs_mappings"].each do |hostpath, guestpath|
+          match_length = -1
+          if project_dir.start_with?(hostpath) && hostpath.length > match_length
+            match_length = hostpath.length
+            guest_dir = project_dir.dup #[hostpath.length, -1]
+            guest_dir[hostpath] = guestpath
+          end
+        end
+        puts "#{name} #{machine['os']} #{box.vm.communicator} #{ENV['GUEST_HOMES']} #{ENV["USER"]} #{ENV["HOME_SHARE"]} #{guest_dir}"
         next
       end
 
