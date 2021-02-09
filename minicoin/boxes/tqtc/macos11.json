@@ -1,18 +1,14 @@
 {
-    "name": "tqtc/macos1015",
-    "description": "macOS 10.15 Catalina",
+    "name": "tqtc/macos11",
+    "description": "macOS 11 Big Sur",
     "versions": [
         {
             "version": "0.0.1",
-            "status": "active",
+            "status": "inactive",
             "providers": [
                 {
                     "name": "virtualbox",
-                    "url": "file:///tmp/virtualbox/macos1015-0.0.1.box"
-                },
-                {
-                    "name": "vmware_desktop",
-                    "url": "file:///tmp/vmware_desktop/macos1015-0.0.1.box"
+                    "url": "file:///tmp/virtualbox/macos1101-0.0.1.box"
                 }
             ]
         },
@@ -22,7 +18,7 @@
             "providers": [
                 {
                     "name": "virtualbox",
-                    "url": "file:///tmp/virtualbox/macos1015-virtualbox-0.0.2.box"
+                    "url": "file:///tmp/virtualbox/macos1101-virtualbox-0.0.2.box"
                 }
             ]
         },
@@ -32,11 +28,11 @@
             "providers": [
                 {
                     "name": "virtualbox",
-                    "url": "file:///tmp/virtualbox/macos1015-virtualbox-0.0.3.box"
+                    "url": "file:///tmp/virtualbox/macos11-virtualbox-0.0.3.box"
                 },
                 {
                     "name": "vmware_desktop",
-                    "url": "file:///tmp/vmware_desktop/macos1015-vmware-0.0.3.box"
+                    "url": "file:///tmp/vmware_desktop/macos11-vmware-0.0.3.box"
                 }
             ]
         }

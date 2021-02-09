@@ -3,83 +3,65 @@ set +ex
 
 if [ $# -lt 2 ]
 then
-  echo "Publish a box file to the AWS 'tqtc-vagrant-boxes' S3 bucket" 
-  echo ""
-  echo "Usage: $0 boxfile aws|azure [private] [virtualbox|vmware_desktop|azure]"
-  echo ""
-  echo "Uses the AWS and Azure cli clients. Make sure access credentials are configured."
-  echo "The box file will be world-readable, so make sure it doesn't contain any secrets."
-  exit -1
+    echo "Publish box files to cloud storage" 
+    echo ""
+    echo "Usage: $0 box.json aws|azure"
+    echo ""
+    echo "Uses the AWS and Azure cli clients. Make sure access credentials are configured."
+    echo "The box files will be world-readable, so make sure it doesn't contain any secrets."
+    exit -1
 fi
 
-blobname=$(basename $1)
-private=
-if [ "$3" != "" ]
+metafile="$1"
+metafilename=$(basename ${metafile})
+
+if [ ! -f "${metafile}" ]
 then
-  private="$3/"
+    >&2 echo "File not found: ${metafile}"
+    exit 1
 fi
-provider=
-[ ! -z "$4" ] && provider="$4/"
 
-metafile=${blobname%-*} # strip version number
-metafile=${metafile%-*} # and provider from filename
-metafile="../minicoin/boxes/tqtc/$metafile.json"
-if [ -f "$metafile" ] && [ ! -z "$private" ]
-then
-  metafilename="$(basename $metafile)"
+meta=$(cat "${metafile}")
+meta=$(echo "${meta}" | sed "s/file:\/\/\/tmp/https:\/\/tqtcvagrantboxes.z16.web.core.windows.net\/tqtc\/${minicoin_key}/g")
 
-  meta=$(cat "$metafile")
-  meta=$(echo "$meta" | sed "s/\$server/tqtcvagrantboxes.z16.web.core.windows.net\/tqtc/g")
-  meta=$(echo "$meta" | sed "s/\$minicoin_key/${private}g")
+metafile_up="/tmp/${metafilename}"
+echo "${meta}" > "${metafile_up}"
+echo "Generated ${metafile}:"
+cat "${metafile_up}"
 
-  metafile="/tmp/$metafilename"
-  echo "$meta" > "$metafile"
-else
-  >&2 echo "No metafile found at '$metafile'"
-  metafile=
-fi
+function to_aws()
+{
+    if [ aws s3 cp "$1" s3://tqtc-vagrant-boxes/tqtc/${minicoin_key}/${2} ]
+    then
+        aws s3api put-object-acl --bucket tqtc-vagrant-boxes --key tqtc/${minicoin_key}/${2} --acl public-read
+    fi
+}
+
+function to_azure()
+{
+    exists=$(az storage blob exists -n tqtc/${minicoin_key}/${2} -c \$web --account-name tqtcvagrantboxes -o tsv 2> /dev/null)
+    if [ $exists == "True" ]
+    then
+        >&2 echo "The blob ${2} already exists. Press any key to skip!"
+        read -t 5 -n 1
+        [ $? = 0 ] && echo " -> skipping ${2}"; return
+    fi
+
+    echo " -> Uploading ${2}"
+#    az storage blob upload -f "$1" -n tqtc/${minicoin_key}/${2} -c \$web --account-name tqtcvagrantboxes
+}
+
+files=$(ruby box-files.rb ${metafile})
+files=( ${files[@]} "${metafile_up}")
 
 error=0
-if [ "$2" == "aws" ]
-then
-  if [ -f "$metafile" ]
-  then
-    if [ aws s3 cp "$metafile" s3://tqtc-vagrant-boxes/tqtc/$private$blobname ]
+for file in ${files[@]}
+do
+    echo "Uploading '${file} to ${2}...."
+    to_${2} "${file}" "${file#/tmp/}"
+    if [ $error -gt 0 ]
     then
-      aws s3api put-object-acl --bucket tqtc-vagrant-boxes --key tqtc/$private$metafilename --acl public-read
+        >&2 echo "Error uploading box '${file}' to ${2}"
+        exit 2
     fi
-    error=$?
-    rm "$metafile"
-  fi
-  if [ $error -eq 0 ]
-  then
-    if [ aws s3 cp "$1" s3://tqtc-vagrant-boxes/tqtc/$private$blobname ]
-    then
-      aws s3api put-object-acl --bucket tqtc-vagrant-boxes --key tqtc/$private$provider$blobname --acl public-read
-    fi
-    error=$?
-  else
-    >&2 echo "Metafile upload error - aborting"
-  fi
-elif [ "$2" == "azure" ]
-then
-  if [ -f "$metafile" ]
-  then
-    az storage blob upload -f "$metafile" -n tqtc/$private$metafilename -c \$web --account-name tqtcvagrantboxes
-    error=$?
-    rm "$metafile"
-  fi
-  if [ $error -eq 0 ]
-  then
-    az storage blob upload -f "$1" -n tqtc/$private$provider$blobname -c \$web --account-name tqtcvagrantboxes
-    error=$?
-  else
-    >&2 echo "Metafile upload error - aborting"
-  fi
-else
-  echo "Unknown cloud storage provider '$2'"
-  exit 1
-fi
-
-[ $error -eq 0 ] || >&2 echo "Failed to upload to $2"
-exit $error
+done

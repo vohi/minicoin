@@ -1,7 +1,7 @@
 .DS_Store
 *.code-workspace
 .vscode
-*/.vagrant
+**/.vagrant
 **/.diskcache/*
 **/.logs/*
 *.box
