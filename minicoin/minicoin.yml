@@ -72,15 +72,8 @@ machines:
     box: tqtc/$minicoin_key/macos1014
   - name: macos1015
     box: tqtc/$minicoin_key/macos1015
-    roles:
-      - role: install
-        packages: cmake
-  - name: macos1101
-    box: tqtc/$minicoin_key/macos1101
-    roles:
-      - role: install
-        packages: cmake
-
+  - name: macos11
+    box: tqtc/$minicoin_key/macos11
 
 ## Specialized machines
 
