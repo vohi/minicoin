@@ -56,7 +56,7 @@ def mutagen_host_to_guest(box, name, alphas, betas, ignores)
         mutagen_create = lambda do |machine|
             ssh_info = machine.ssh_info
             if ssh_info.nil?
-                machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                machine.ui.error("Error setting up mutagen sync to #{machine} - no SSH info!")
                 raise "Error setting up mutagen sync: no ssh info available for #{name}!"
             else
                 stdout, stderr, status = Open3.capture3("mutagen sync list #{session_name}")
@@ -72,7 +72,7 @@ def mutagen_host_to_guest(box, name, alphas, betas, ignores)
                     end
                     stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
                     if status != 0
-                        machine.ui.warn("Error setting up mutagen sync to #{machine.ssh_info[:host]}: #{stderr}")
+                        machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
                     end
                 end
             end
