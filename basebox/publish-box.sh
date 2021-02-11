@@ -48,7 +48,7 @@ function to_azure()
     fi
 
     echo " -> Uploading ${2}"
-#    az storage blob upload -f "$1" -n tqtc/${minicoin_key}/${2} -c \$web --account-name tqtcvagrantboxes
+    az storage blob upload -f "$1" -n tqtc/${minicoin_key}/${2} -c \$web --account-name tqtcvagrantboxes
 }
 
 files=$(ruby box-files.rb ${metafile})
