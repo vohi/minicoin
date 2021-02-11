@@ -44,7 +44,11 @@ function to_azure()
     then
         >&2 echo "The blob ${2} already exists. Press any key to skip!"
         read -t 5 -n 1
-        [ $? = 0 ] && echo " -> skipping ${2}"; return
+        if [ $? = 0 ]
+        then
+            echo " -> skipping ${2}"
+            return
+        fi
     fi
 
     echo " -> Uploading ${2}"
