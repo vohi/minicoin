@@ -1,0 +1,35 @@
+def setup(machine)
+    sourcebox = machine.vm.box
+
+    is_windows = (sourcebox.include? "windows")
+    is_mac = (sourcebox.include? "mac")
+
+    if is_windows
+        machine.vm.guest = :windows
+        machine.vm.communicator = :winrm
+    elsif is_mac
+        machine.vm.guest = :darwin
+    end
+
+    machine.vm.provider :vmware_desktop do |vmware|
+        vmware.linked_clone = false
+        vmware.gui = true
+    end
+    machine.vm.provider :virtualbox do |vb|
+        vb.gui = true
+    end
+    machine.vm.synced_folder ".", "/vagrant", disabled: true
+    machine.ssh.insert_key = false
+end
+
+Vagrant.configure("2") do |config|
+    config.vm.define "source", autostart: false do |source|
+        source.vm.box = "{{.SourceBox}}"
+        setup source
+    end
+    config.vm.define "output" do |output|
+        output.vm.box = "{{.BoxName}}"
+        output.vm.box_url = "file://package.box"
+        setup output
+    end
+end
