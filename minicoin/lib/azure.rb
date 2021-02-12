@@ -9,7 +9,6 @@ if $AZURE_CLI_INSTALLED.nil?
     begin
         `az version`
         $AZURE_CLI_INSTALLED = true
-        ENV["VAGRANT_EXPERIMENTAL"] = "dependency_provisioners"
     rescue
         $AZURE_CLI_INSTALLED = false
     end
@@ -24,6 +23,23 @@ def azure_setup(box, machine)
     name = machine["name"]
     location = "northeurope"
     pwd = ENV['minicoin_key']
+
+    azure_validate = lambda do |machine|
+        # this runs after the machine has booted, but aborts provisioning
+        # if it can't succed.
+        if machine.box.provider == :azure
+            exp_features = ENV["VAGRANT_EXPERIMENTAL"] || ""
+            if !exp_features.include?("dependency_provisioners")
+                machine.ui.error("Provisioning Azure machines requires the 'dependency_provisioners'
+experimental vagrant feture to be enabled. Set the VAGRANT_EXPERIMENTAL
+variable, and provision explicitly using 'minicoin provision #{name}'!")
+                exit 1
+                end
+        end
+    end
+    box.vm.provision "azure_validate:#{name}",
+        type: :local_command,
+        code: azure_validate
 
     box.vm.provider :azure do |azure, override|
         override.vm.synced_folder ".", "/minicoin", disabled: true
