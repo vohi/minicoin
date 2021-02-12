@@ -91,12 +91,6 @@ def azure_setup(box, machine)
             admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
             override.vagrant.sensitive = [ admin_password, pwd ]
             admin_password = admin_password.gsub('$', '`$') # powershell escapism
-            begin
-                mutagen_version = `mutagen version`
-                mutagen_version = mutagen_version.strip()
-            rescue
-                mutagen_version = "0.11.7"
-            end
 
             override.vm.provision "openssh_key",
                 type: :file,
@@ -107,7 +101,7 @@ def azure_setup(box, machine)
                 type: :shell,
                 before: :all,
                 path: "./lib/cloud_provision/windows.ps1",
-                args: [ "#{admin_password}", "#{mutagen_version}" ],
+                args: [ "#{admin_password}" ],
                 upload_path: "c:\\windows\\temp\\windows_init.ps1",
                 privileged: true
 

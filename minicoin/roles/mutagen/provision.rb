@@ -3,6 +3,43 @@ require 'open3'
 
 $HOST_HAS_MUTAGEN = nil
 
+# work around mutagen bug with Windows 20H2's OpenSSH server
+def upload_mutagen_agent(machine)
+    if machine.config.vm.guest != :windows
+        machine.ui.error("Workaround not implemented for #{machine.config.vm.guest}")
+        return
+    end
+    agent_binary = "windows_amd64"
+
+    stdout, stderr, status = Open3.capture3("which mutagen")
+    if status != 0
+        machine.ui.error("Mutagen not found on host machine")
+        return
+    end
+    mutagen_exe = stdout.strip
+    if File.symlink?(mutagen_exe)
+        mutagen_link = mutagen_exe
+        mutagen_exe = File.readlink(mutagen_exe)
+        unless mutagen_exe.start_with?("/") # relative path, resolve
+            mutagen_exe = File.realpath("#{File.dirname(mutagen_link)}/#{mutagen_exe}")
+        end
+    end
+    stdout, stderr, status = Open3.capture3("mutagen version")
+    mutagen_version = stdout.strip
+    mutagen_bin = File.dirname(mutagen_exe)
+    machine.ui.info("mutagen at #{mutagen_bin} is version #{mutagen_version}")
+    mutagen_agents = File.join(File.dirname(mutagen_bin), "libexec", "mutagen-agents.tar.gz")
+    if File.exist?(mutagen_agents)
+        machine.ui.info("Extracting #{agent_binary} from #{mutagen_agents}")
+        `cd /tmp; tar -zxvf #{mutagen_agents} #{agent_binary}`
+        if File.exist?("/tmp/#{agent_binary}")
+            machine.ui.info("Uploading #{agent_binary} to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
+            `ssh -p #{machine.ssh_info[:port]} vagrant@#{machine.ssh_info[:host]} mkdir -p .mutagen/agents/#{mutagen_version} 2> /dev/null`
+            `scp -P #{machine.ssh_info[:port]} /tmp/#{agent_binary} vagrant@#{machine.ssh_info[:host]}:.mutagen/agents/#{mutagen_version}/mutagen-agent.exe`
+        end
+    end
+end
+
 def mutagen_host_to_guest(box, name, alphas, betas, ignores)
     session_name = "minicoin-#{name.gsub('.', '')}"
     box.trigger.before :destroy do |trigger|
@@ -72,8 +109,15 @@ def mutagen_host_to_guest(box, name, alphas, betas, ignores)
                     end
                     stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
                     if status != 0
+                        machine.ui.warn("Attempting workaround to set up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
+                        upload_mutagen_agent(machine)
+                        stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
+                    end
+                    if status != 0
                         machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
                     end
+                else
+                    machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
                 end
             end
         end

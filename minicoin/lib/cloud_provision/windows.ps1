@@ -1,6 +1,5 @@
 param (
-    [string]$admin_password,
-    [string]$mutagen_version
+    [string]$admin_password
 )
 
 if ($admin_password) {
@@ -50,44 +49,3 @@ $acl.SetAccessRule($accessrule)
 $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administrators","FullControl","Allow")
 $acl.SetAccessRule($accessrule)
 $acl | Set-Acl $file
-
-function Download-Mutagen {
-    param(
-        $ARCH,
-        $VERSION,
-        $PATH
-    )
-    $PLATFORM="windows"
-    $FILE="mutagen_${PLATFORM}_${ARCH}_v${VERSION}.tar.gz"
-    $URL="https://github.com/mutagen-io/mutagen/releases/download/v${VERSION}/${FILE}"
-
-    Write-Host "Downloading '$URL'"
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    $webClient = new-object net.webclient
-    $webClient.DownloadFile($URL, $PATH) | out-null
-}
-
-function Install-Mutagen {
-    param(
-        [string]$Version,
-        [string]$InstallPath
-    )
-
-    if (!(Test-Path $InstallPath)) {
-        New-Item -ItemType Directory -Force -Path $InstallPath | Out-Null
-    }
-    cd $InstallPath
-    if (!(Test-Path "mutagen.tar.gz")) {
-        Download-Mutagen -Arch amd64 -Version $Version -Path "${InstallPath}\mutagen.tar.gz"
-    }
-    tar -xzf mutagen.tar.gz
-    Remove-Item mutagen.tar.gz
-
-    tar -xzf "${InstallPath}\mutagen-agents.tar.gz" windows_amd64
-    move windows_amd64 mutagen-agent.exe
-    ./mutagen-agent.exe install
-}
-
-Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version $mutagen_version
-
