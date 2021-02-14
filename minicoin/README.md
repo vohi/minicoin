@@ -137,9 +137,11 @@ clearer separation of the data defining machines, and the code implementing
 the logic.
 
 Machines are defined in the `machines` section of the `minicoin.yml` file. The
-default `minicoin.yml` file is loaded first; a `minicoin.yml` file in `~/minicoin`
-will be loaded if present, and can add additional boxes, or override settings
-from boxes in the default file.
+default `minicoin.yml` file is loaded first. A user-specific `minicoin.yml` file
+in `~/minicoin` will be loaded if present, and a project specific file in
+`$PWD/.minicoin/minicoin.yml` will be loaded last. Those user- and project-
+specific files and can add additional boxes, and extend or override settings from boxes
+in the default file.
 
 ## Machine definition
 
@@ -286,7 +288,7 @@ for the first time via
 
 `$ minicoin up machine`
 
-or when provisioning is explicitly run using
+or when provisioning is explicitly run using either
 
 `$ minicoin provision machine`
 

@@ -34,7 +34,7 @@ def azure_setup(box, machine)
 experimental vagrant feture to be enabled. Set the VAGRANT_EXPERIMENTAL
 variable, and provision explicitly using 'minicoin provision #{name}'!")
                 exit 1
-                end
+            end
         end
     end
     box.vm.provision "azure_validate:#{name}",
