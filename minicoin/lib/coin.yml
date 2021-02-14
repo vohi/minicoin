@@ -51,7 +51,13 @@ coin:
   CentOS-8.1:
     box: generic/centos8
     roles: *linuxroles
+  CentOS-8.3:
+    box: generic/centos8
+    roles: *linuxroles
   openSUSE-15.2:
+    box: generic/opensuse15
+    roles: *linuxroles
+  SLES-15_SP2:
     box: generic/opensuse15
     roles: *linuxroles
   Ubuntu-20.04:
@@ -62,6 +68,9 @@ coin:
     roles: *macosroles
   macos-10.15:
     box: tqtc/$minicoin_key/macos1015
+    roles: *macosroles
+  macos-11.0:
+    box: tqtc/$minicoin_key/macos11
     roles: *macosroles
     
   windows-10:

@@ -153,9 +153,7 @@ done
 
 function minicoin_run()
 {
-  job="${machines[@]: -1}"
-  unset "machines[${#machines[@]}-1]"
-  run_args=("${machines[@]}" $job -- "$project_dir" "${script_args[@]}")
+  run_args=("${machines[@]}" -- "$project_dir" "${script_args[@]}")
 
   run . run_on.sh "${run_args[@]}"
   error=$?
@@ -176,10 +174,7 @@ function minicoin_runinfo()
 
 function minicoin_jobconfig()
 {
-  job="${machines[0]}"
-  unset "machines[0]"
-
-  run ruby lib/minicoin.rb jobconfig $job "${machines[@]}"
+  run ruby lib/minicoin.rb jobconfig "${machines[@]}"
   return $?
 }
 

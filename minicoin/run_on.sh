@@ -167,7 +167,6 @@ function run_post()
 function run_on_machine() {
   local machine="$1"
   run_file=".logs/${job}-${machine}-${log_stamp}"
-  exec 0<&- # closing stdin
 
   upload_source="$jobroot/$job"
 
@@ -185,31 +184,88 @@ function run_on_machine() {
 
   scriptfile=$job/main.$ext
 
-  jobconfig_yaml=("$(minicoin jobconfig $job $machine)")
-  [[ ! -z $jobconfig ]] && machine_args=$(echo "$machine_args" | grep "$jobconfig")
-
-  jobconfig=()
-  jobconfig_keys=( $(get_yaml_value "$jobconfig_yaml") )
-  for jobconfig_key in "${jobconfig_keys[@]}"
-  do
-    jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key)
-    if [[ $jobconfig_key == "workflow" ]]
-    then
-      jobconfig_value=$(get_yaml_value "$jobconfig_yaml" $jobconfig_key --raw)
-      echo "$jobconfig_value" > jobs/$job/workflow.script
-      jobconfig_value="workflow.script"
-    fi
-    [[ "$jobconfig_value" =~ " " ]] && jobconfig_value="\"$jobconfig_value\""
-    [[ "$ext" == "ps1" ]] && jobconfig_key="-${jobconfig_key}" || jobconfig_key="--${jobconfig_key}"
-    jobconfig+=( "${jobconfig_key}" "${jobconfig_value}" )
-  done
-
   if [ ! -f "$jobroot/$scriptfile" ]
   then
     >&2 printf "${RED}'$scriptfile' does not exist - skipping '$machine'${NOCOL}\n"
     return 2
   fi
 
+  jobconfig_select="$job"
+  [[ ! -z "$jobconfig" ]] && jobconfig_select=( "$jobconfig_select" --config "$jobconfig" )
+  OLS_IFS="$IFS"
+  IFS=$'\t'; jobconfig_data=( $(minicoin jobconfig ${jobconfig_select[@]} $machine) )
+
+  if [[ ! -z "$jobconfig" ]] && [[ -z $jobconfig_data ]]
+  then
+    >&2 printf "${RED}==> %s: No job configuration '%s' defined for job '%s'${NOCOL}\n" "$machine" "$jobconfig" "$job"
+    return 3
+  fi
+
+  if [[ ${#jobconfig_data[@]} -gt 1 ]] # we got a list of config names, let user select one
+  then
+    echo "Multiple job configurations are available:"
+    echo
+    for config_data in ${jobconfig_data[@]}
+    do
+      echo "  $config_data"
+    done
+    echo
+    read -p "Pick a number and press enter: " n
+    selected="${jobconfig_data[$n]#*) }"
+    if [[ -z "$selected" ]]
+    then
+      >&2 echo "Invalid selection $n, aborting"
+      return 4
+    fi
+    echo "Selected: '$selected' (run $job job with --jobconfig \"$selected\" to skip this dialog"
+    jobconfig_select=( "$job" --index $n )
+    IFS=$'\n'; auto_args=( $(minicoin jobconfig ${jobconfig_select[@]} $machine) )
+  else # we got a list of parameters
+    IFS=$'\n'; auto_args=( ${jobconfig_data[@]} )
+  fi
+  IFS="$OLD_IFS"
+
+  home_share=$(echo $machine_runinfo | awk {'print $6'})
+  [ -z $home_share ] && home_share=$HOME
+  job_dir=$(echo $machine_runinfo | awk {'print $7'})
+
+  # job scripts can expect P1 to be the JOBDIR on the guest, and P2 PWD on the host
+  job_args=( "$job_dir" )
+
+  # quote arguments with spaces to make guests behave identically
+  whitespace=" |'|,"
+  for arg in "${script_args[@]}"; do
+    [[ $arg =~ $whitespace ]] && arg=\"$arg\"
+    job_args+=($arg)
+  done
+
+  # ignore implict args that are explicitly set
+  overwrite=0
+  for implicit in ${auto_args[@]}
+  do
+    if [[ $implicit =~ ^--.* ]]
+    then
+      for explicit in ${script_args[@]}
+      do
+        if [ $explicit == $implicit ]
+        then
+          overwrite=1
+          break
+        fi
+      done
+      [ $overwrite == 1 ] && continue
+    fi
+    [ $overwrite == 0 ] && job_args+=( "${implicit}" )
+    overwrite=0
+  done
+
+  # pass --verbose through to guest
+  if [ $verbose == "true" ]
+  then
+    [ $ext == "ps1" ] && job_args+=( "-verbose" ) || job_args+=( "--verbose" )
+  fi
+
+  exec 0<&- # closing stdin
   log_progress "==> $machine: Uploading '$upload_source'..."
   $(vagrant upload $upload_source $job $machine 2> /dev/null > /dev/null)
   if [[ $? -gt 0 ]]
@@ -238,30 +294,6 @@ function run_on_machine() {
   run_pre $machine
   error=$?
   [ $error -gt 0 ] && return $error
-
-  [[ -f jobs/$job/workflow.script ]] && rm jobs/$job/workflow.script
-
-  home_share=$(echo $machine_runinfo | awk {'print $6'})
-  [ -z $home_share ] && home_share=$HOME
-  job_dir=$(echo $machine_runinfo | awk {'print $7'})
-
-  # job scripts can expect P1 to be the JOBDIR on the guest, and P2 PWD on the host
-  job_args=( "$job_dir" )
-
-  # quote arguments with spaces to make guests behave identically
-  whitespace=" |'|,"
-  for arg in "${script_args[@]}"; do
-    [[ $arg =~ $whitespace ]] && arg=\"$arg\"
-    job_args+=($arg)
-  done
-
-  job_args+=( ${jobconfig[@]} )
-
-  # pass --verbose through to guest
-  if [ $verbose == "true" ]
-  then
-    [ $ext == "ps1" ] && job_args+=( "-verbose" ) || job_args+=( "--verbose" )
-  fi
 
   echo "==> $machine: running '$job' with arguments '${job_args[@]}' via '$communicator'"
 

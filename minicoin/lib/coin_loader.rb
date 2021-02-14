@@ -22,6 +22,7 @@ def load_coin(yaml)
         rescue
             coin_configs = []
         end
+        coin_config_index = 0
         coin_configs.each do |coin_config|
             coin_template = coin_config["Template"].split('-')
             template = coin_template
@@ -34,7 +35,10 @@ def load_coin(yaml)
             end
 
             minicoin_box = yaml["coin"][template]
-            next if minicoin_box.nil?
+            if minicoin_box.nil?
+                STDERR.puts "Warning: No box set for template #{template}"
+                next
+            end
 
             template_file = coin_template[0]
             (1..range).each do |i|
@@ -63,9 +67,10 @@ def load_coin(yaml)
                     "privileged" => false
                 }
             ]
-            coin_machine["jobs"] = [
+            coin_machine["jobconfigs"] = [
                 {
                     "job" => "build",
+                    "name" => coin_config["id"] || "config_#{coin_config_index}",
                     "features" => coin_config["Features"],
                     "compiler" => coin_config["Compiler"],
                     "configure" => coin_config["Configure arguments"],
@@ -73,6 +78,7 @@ def load_coin(yaml)
                 }
             ]
             coin_machines << coin_machine
+            coin_config_index += 1
         end
         coin_root = find_config(File.dirname(coin_root), "coin")
     end
