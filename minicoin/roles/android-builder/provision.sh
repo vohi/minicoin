@@ -6,29 +6,22 @@ if [[ $UID -eq 0 ]]; then
     apt-get -q install -y build-essential
     apt-get -q install -y default-jre openjdk-8-jdk-headless
     apt-get -q install -y libc6-i386 libpulse-dev
-    apt-get -q install -y qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils virt-manager
-
-    usermod -a -G libvirt vagrant
-    usermod -a -G kvm vagrant
 
     cd /home/vagrant
     exec su vagrant $0 -- $@
 fi
 
 # the rest of the provisioning is executed as user vagrant
-ndkVersion="${PARAM_ndkVersion:-r18b}"
+ndkVersion="${PARAM_ndkVersion:-r21d}"
 ndkHost="linux-x86_64"
-ndkToolchainVersion="${PARAM_ndkToolchainVersion:-4.9}"
-sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-28.0.3}"
-sdkApiLevel="${PARAM_sdkApiLevel:-android-28}"
-androidArch="${PARAM_androidArch:-x86}"
-androidImage="${PARAM_androidImage:-android-21}"
+sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-29.0.3}"
+sdkApiLevel="${PARAM_sdkApiLevel:-android-29}"
 
-repository=https://dl.google.com/android/repository
-toolsFile=sdk-tools-linux-4333796.zip
-toolsFolder=android-sdk-tools
-ndkFile=android-ndk-$ndkVersion-$ndkHost.zip
-ndkFolder=android-ndk-$ndkVersion
+repository="https://dl.google.com/android/repository"
+toolsFile="commandlinetools-linux-6609375_latest.zip"
+toolsFolder="android-sdk-tools"
+ndkFile="android-ndk-$ndkVersion-$ndkHost.zip"
+ndkFolder="android-ndk-$ndkVersion"
 targetFolder=/home/vagrant
 
 rm -rf $toolsFolder
@@ -83,54 +76,4 @@ echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.profile
 
 echo "Installing SDK packages"
 cd $toolsFolder/tools/bin
-echo "y" | ./sdkmanager "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log
-echo "y" | ./sdkmanager --install "emulator" >> sdkmanager.log
-echo "y" | ./sdkmanager --install "system-images;$androidImage;google_apis;$androidArch" >> sdkmanager.log
-# echo "y" | ./sdkmanager --install "add-ons;addon-google_apis-google-21" >> sdkmanager.log
-# echo "y" | ./sdkmanager --install "extras;android;m2repository" >> sdkmanager.log
-# echo "y" | ./sdkmanager --install "extras;google;m2repository" >> sdkmanager.log
-echo "no" | ./avdmanager create avd -n $androidArch"emulator" -k "system-images;$androidImage;google_apis;$androidArch" -c 2048M -f >> sdkmanager.log
-
-echo "Provisioning complete. Here's the list of packages and avd devices:"
-./sdkmanager --list
-./avdmanager list avd
-cd ..
-echo "Verifying emulator:"
-./emulator-check accel
-echo "Starting adb"
-../platform-tools/adb start-server
-echo "Starting windowless emulator"
-./emulator -avd $androidArch"emulator" -no-window &
-
-printf "%s\n" \
-    -xplatform \
-    android-clang \
-    --disable-rpath \
-    -nomake \
-    tests \
-    -nomake \
-    examples \
-    -android-ndk \
-    $targetFolder/$ndkFolder \
-    -android-sdk \
-    $targetFolder/$toolsFolder \
-    -android-ndk-host \
-    $ndkHost \
-    -android-arch \
-    $androidArch \
-    -android-toolchain-version \
-    $ndkToolchainVersion \
-    -skip \
-    qttranslations \
-    -skip \
-    qtserialport \
-    -no-dbus \
-    -no-warnings-are-errors \
-    -opengl es2 \
-    -no-use-gold-linker \
-    -no-qpa-platform-guard \
-    -opensource \
-    -developer-build \
-    -confirm-license > ~/$1-config.opt
-
-ln -fs ~/$1-config.opt ~/config.opt
+echo "y" | ./sdkmanager --sdk_root="$targetFolder"/"$toolsFolder" "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log

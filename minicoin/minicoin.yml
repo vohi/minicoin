@@ -78,12 +78,20 @@ machines:
 ## Specialized machines
 
   - name: android-builder
-    box: generic/ubuntu1804
-    provider: vmware_desktop
+    box: generic/ubuntu2004
     roles:
       - role: linux-desktop
         desktop: lxde
+      - role: linux-builder
       - role: android-builder
+    jobconfigs:
+      - name: host
+        job: build
+        target: "Core uic qlalr qmltyperegistrar qmlcachegen"
+      - name: android
+        job: build
+        configure: "-qt-host-path ~/dev-build/qtbase -xplatform android-clang --disable-rpath -nomake tests -nomake examples -android-ndk ~/android-ndk-r21d -android-sdk ~/android-sdk-tools -android-ndk-host linux-x86_64 -android-arch x86 -no-dbus -developer-build -no-use-gold-linker -opengl es2 -no-warnings-are-errors"
+        build: android
 
   - name: doc-server
     box: generic/ubuntu2004
