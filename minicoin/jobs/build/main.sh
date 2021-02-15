@@ -99,21 +99,36 @@ else
 fi
 error=$?
 
+
 if [[ -f build.ninja ]]
 then
-  echo "Building '$JOBDIR' using 'ninja $target'"
-  ninja $target
-  error=$?
+  maketool=ninja
 elif [[ -f Makefile ]]
 then
-  echo "Building '$JOBDIR' using 'make $target -j$(nproc)'"
-  make $target -j$(nproc)
-  error=$?
+  maketool="make -j$(nsproc)"
 else
   >&2 echo "No build system generated, aborting"
+  exit 1
 fi
 
-link_tool qmake
-link_tool qt-cmake
+echo "Building '$JOBDIR' using '$maketool $target'"
+$maketool $target
+error=$?
+if [[ "$PARAM_configure" == *"prefix"* ]]
+then
+  if [[ $error -eq 0 ]]
+  then
+    echo "Prefix build detected, installing"
+    $maketool install
+  else
+    >&2 echo "Build failed, not installing"
+  fi
+fi
+
+if [[ ! "$PARAM_configure" == *"xplatform"* ]]
+then
+  link_tool qmake
+  link_tool qt-cmake
+fi
 
 exit $error

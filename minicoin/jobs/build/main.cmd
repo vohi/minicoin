@@ -5,7 +5,7 @@ call \minicoin\util\parse-opts.cmd %*
 call \minicoin\util\discover-make.cmd
 
 if NOT DEFINED JOBDIR (
-  echo Error: path to host clone of Qt is required!
+  >&2 echo Error: path to host clone of Qt is required!
   exit /B 1
 )
 
@@ -90,20 +90,29 @@ if EXIST build.ninja (
 set error=%ERRORLEVEL%
 
 if exist build.ninja (
-  echo Building '!JOBDIR!' using 'ninja !target!'
-  ninja !target!
-  set error=%ERRORLEVEL%
+  set maketool=ninja
 ) else (
-  if exist Makefile (
-    echo Building '!JOBDIR!' using '!maketool! !target!'
-    !maketool! !target!
-    set error=%ERRORLEVEL%
-  ) else (
-    >&2 echo "No build system generated, aborting"
+  if not exist Makefile (
+    >&2 echo No build system generated, aborting
+    exit /B 2
   )
 )
 
-call :link_tool qmake.exe
-call :link_tool qt-cmake.bat
+echo Building '!JOBDIR!' using '!maketool! !target!'
+!maketool! !target!
+set error=%ERRORLEVEL%
+if /I NOT "!PARAM_configure!"=="!PARAM_configure:prefix=!" (
+  if %error% EQU 0 (
+    echo Prefix build detected, installing
+    !maketool! install
+  ) else (
+    >&2 echo Build failed, not installing
+  )
+)
+
+if /I "!PARAM_configure!"=="!PARAM_configure:xplatform=!" (
+  call :link_tool qmake.exe
+  call :link_tool qt-cmake.bat
+)
 
 exit /B %error%
