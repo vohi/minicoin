@@ -88,9 +88,10 @@ machines:
       - name: host
         job: build
         target: "Core uic qlalr qmltyperegistrar qmlcachegen"
+        build: android-host
       - name: android
         job: build
-        configure: "-qt-host-path ~/dev-build/qtbase -xplatform android-clang --disable-rpath -nomake tests -nomake examples -android-ndk ~/android-ndk-r21d -android-sdk ~/android-sdk-tools -android-ndk-host linux-x86_64 -android-arch x86 -no-dbus -developer-build -no-use-gold-linker -opengl es2 -no-warnings-are-errors"
+        configure: "-qt-host-path ~/android-host/qtbase -xplatform android-clang --disable-rpath -nomake tests -nomake examples -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -no-dbus -developer-build -no-use-gold-linker -opengl es2 -no-warnings-are-errors"
         build: android
 
   - name: doc-server

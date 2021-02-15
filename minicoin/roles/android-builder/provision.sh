@@ -1,15 +1,14 @@
-if [[ $UID -eq 0 ]]; then
-    sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
-    echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
+#!/bin/bash
+set -e
+set -o pipefail
 
-    apt-get -qq update
-    apt-get -q install -y build-essential
-    apt-get -q install -y default-jre openjdk-8-jdk-headless
-    apt-get -q install -y libc6-i386 libpulse-dev
+sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
+echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
 
-    cd /home/vagrant
-    exec su vagrant $0 -- $@
-fi
+apt-get -qq update
+apt-get -q install -y build-essential
+apt-get -q install -y default-jre openjdk-8-jdk-headless
+apt-get -q install -y libc6-i386 libpulse-dev
 
 # the rest of the provisioning is executed as user vagrant
 ndkVersion="${PARAM_ndkVersion:-r21d}"
@@ -19,55 +18,59 @@ sdkApiLevel="${PARAM_sdkApiLevel:-android-29}"
 
 repository="https://dl.google.com/android/repository"
 toolsFile="commandlinetools-linux-6609375_latest.zip"
-toolsFolder="android-sdk-tools"
+toolsFolder="cmdline-tools"
 ndkFile="android-ndk-$ndkVersion-$ndkHost.zip"
 ndkFolder="android-ndk-$ndkVersion"
-targetFolder=/home/vagrant
+androidRoot=/opt/android
 
-rm -rf $toolsFolder
-rm -rf $ndkFolder
+[[ -d "$androidRoot" ]] && rm -rf $androidRoot
+mkdir -p $androidRoot
 
 echo "Downloading SDK tools from '$repository/$toolsFile'"
 wget -q $repository/$toolsFile
 error=$?
 if [[ ! $error -eq 0 ]]; then
-  >&2 echo "Error downloading SDK tools!"
-  exit $error
+    >&2 echo "Error downloading SDK tools!"
+    exit $error
 fi
 
 echo "Downloading NDK from '$repository/$ndkFile'"
 wget -q $repository/$ndkFile
 error=$?
 if [[ ! $error -eq 0 ]]; then
-  >&2 echo "Error downloading NDK!"
-  exit $error
+>&2 echo "Error downloading NDK!"
+exit $error
 fi
 
-echo "Unpacking SDK and NDK into '$targetFolder'"
-unzip -qq $toolsFile -d $targetFolder/$toolsFolder
-unzip -qq $ndkFile -d $targetFolder
-
-chown -R vagrant $toolsFolder
-chown -R vagrant $ndkFolder
+echo "Unpacking SDK and NDK into '$androidRoot'"
+unzip -qq $toolsFile -d $androidRoot/$toolsFolder
+unzip -qq $ndkFile -d $androidRoot
 
 rm $toolsFile
 rm $ndkFile
 
 # silence warnings
-mkdir ~/.android
+[[ ! -d ~/.android ]] && mkdir ~/.android
 touch ~/.android/repositories.cfg
 
 echo "Configuring environment"
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-export PATH=$PATH:$JAVA_HOME/bin
 
-cp ~/.profile ~/.profile.backup
-echo "export JAVA_HOME=$JAVA_HOME" >> ~/.profile
-echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> ~/.profile
-echo "export ANDROID_SDK_HOME=$targetFolder/$toolsFolder" >> ~/.profile
-echo "export ANDROID_NDK_HOME=$targetFolder/$ndkFolder" >> ~/.profile
-echo "export ANDROID_NDK_HOST=$ndkHost" >> ~/.profile
-echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.profile
+#exec su vagrant $0 -- $@
+
+if (! grep "ANDROID_SDK_ROOT" /home/vagrant/.profile)
+then
+  cp /home/vagrant/.profile /home/vagrant/.profile.backup
+  echo "export JAVA_HOME=$JAVA_HOME" >> /home/vagrant/.profile
+  echo "export ANDROID_SDK_ROOT=$androidRoot" >> /home/vagrant/.profile
+  echo "export PATH=\$PATH:\$JAVA_HOME/bin:\$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:\$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" >> /home/vagrant/.profile
+  echo "export ANDROID_SDK_HOME=\$ANDROID_SDK_ROOT/$toolsFolder" >> /home/vagrant/.profile
+  echo "export ANDROID_NDK_HOME=\$ANDROID_SDK_ROOT/$ndkFolder" >> /home/vagrant/.profile
+  echo "export ANDROID_NDK_HOST=$ndkHost" >> /home/vagrant/.profile
+  echo "export ANDROID_API_VERSION=$sdkApiLevel" >> /home/vagrant/.profile
+fi
+
+. /home/vagrant/.profile
 
 # Optional workaround for issue with certain JDK/JRE versions
 #cp $toolsFolder/tools/bin/sdkmanager $toolsFolder/tools/bin/sdkmanager.backup
@@ -75,5 +78,11 @@ echo "export ANDROID_API_VERSION=$sdkApiLevel" >> ~/.profile
 #        $toolsFolder/tools/bin/sdkmanager
 
 echo "Installing SDK packages"
-cd $toolsFolder/tools/bin
-echo "y" | ./sdkmanager --sdk_root="$targetFolder"/"$toolsFolder" "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log
+# cd $androidRoot/$toolsFolder/tools/bin
+echo "y" | sdkmanager "platforms;$sdkApiLevel" "platform-tools" "build-tools;$sdkBuildToolsVersion" >> sdkmanager.log
+
+echo "SDK installation complete. Here's the list of installed packages:"
+sdkmanager --list
+
+echo "... and a list of available targets:"
+avdmanager list target
