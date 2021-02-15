@@ -171,6 +171,35 @@ def merge_roles(machines)
     end
 end
 
+def merge_boxes(machines)
+    machines.each do |machine|
+        index = machines.rindex {|m| m["name"] == machine["name"] && m != machine}
+        unless index.nil?
+            duplicate = machines[index]
+            duplicate.each do |key, value|
+                machine[key] = merge_yaml(machine[key], value)
+            end
+            machines.delete_at(index)
+        end
+    end
+
+    machines.each do |machine|
+        basename = machine["extends"]
+        unless basename.nil?
+            basemachine = machines.select{|m| m["name"] == basename}.first
+            basemachine.each do |key, value|
+                machine_value = machine[key]
+                if !machine.has_key?(key)
+                    machine[key] = value
+                elsif key != "name"
+                    machine[key] = merge_yaml(value, machine_value)
+                end
+            end
+            machine.delete("extends")
+        end
+    end
+end
+
 def find_config(root, config_name)
     while !Dir.exist?("#{root}/#{config_name}") do
         old_root = root
@@ -228,6 +257,9 @@ def load_minicoin()
     machines = load_boxes(yaml, user_yaml)
     machines = load_boxes(yaml, local_yaml)
 
+    # inheritance after override resolution
+    merge_boxes(machines)
+    # role merging once each box is fully defined
     merge_roles(machines)
 
     load_urls(yaml, user_yaml)

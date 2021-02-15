@@ -45,3 +45,13 @@ machines:
       - role: mutagen
         paths:
           - path2
+  - name: uses
+    extends: merged_role
+    roles:
+      - role: upload
+        files:
+          "source": "targetx"
+      - role: merge_test
+        attribute: value2
+      - role: mutagen
+        paths: ~

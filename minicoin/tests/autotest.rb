@@ -105,7 +105,7 @@ class Tester
         },
       "includes" => ["include/sub.yml"],
       "machines" => [
-        {"name" => "machine1", "box" => "generic", "gui" => false, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
+        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}]},
         {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux", "nictype2"=>nil },
@@ -136,8 +136,27 @@ class Tester
                                    "shared_folders"=>[{"Host"=>"Guest"}],
                                    "os"=>"linux", "nictype2"=>nil
         },
-        {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" },
-        {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
+        {"name" => "uses", "roles" => [
+          {
+            "role" => "upload",
+            "files" => {
+              "source" => "targetx",
+              "source2" => "target2"
+            },
+          },
+          {
+            "role" => "merge_test",
+            "attribute" => "value2"
+          },
+          {
+            "role" => "mutagen"
+          }
+        ],
+        "shared_folders"=>[{"Host"=>"Guest"}],
+        "box" => "generic",
+        "os"=>"linux", "nictype2"=>nil
+      },
+      {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
     }
 
