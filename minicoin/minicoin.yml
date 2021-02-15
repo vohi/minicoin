@@ -50,7 +50,7 @@ machines:
         desktop: gnome
       - role: linux-builder
 
-### Simple Windows boxes - different versions, different compiles
+### Simple Windows boxes - different versions, different compilers
   - name: windows7
     box: tqtc/$minicoin_key/windows7
     roles:
@@ -87,11 +87,12 @@ machines:
     jobconfigs:
       - name: host
         job: build
-        target: "Core uic qlalr qmltyperegistrar qmlcachegen"
-        build: android-host
+        configure: -release -prefix ~/android-host
+        target: "Core qmake uic qlalr qmltyperegistrar qmlcachegen androidtestrunner androiddeployqt"
+        build: android-host-build
       - name: android
         job: build
-        configure: "-qt-host-path ~/android-host/qtbase -xplatform android-clang --disable-rpath -nomake tests -nomake examples -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -no-dbus -developer-build -no-use-gold-linker -opengl es2 -no-warnings-are-errors"
+        configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
         build: android
 
   - name: doc-server
