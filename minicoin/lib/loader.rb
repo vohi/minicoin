@@ -26,10 +26,6 @@ def merge_yaml(first, second)
     end
 
     if first.is_a?(Hash)
-        if second.is_a?(Array)
-            STDERR.puts "Can't insert array #{second} into hash #{first}"
-            return first
-        end
         if second.is_a?(Hash)
             result = first.clone
             second.each do |key, value|
@@ -46,7 +42,11 @@ def merge_yaml(first, second)
             end
             return result;
         end
-        STDERR.puts "Can't insert value #{second} into hash #{first}"
+        # already a value, assume flattened hash
+        if first.has_value?(second)
+            return first
+        end
+        STDERR.puts "Can't insert #{second.class} '#{second}' into hash #{first}"
         return first
     end
 
@@ -94,11 +94,11 @@ def load_boxes(yaml, user_yaml)
 
     machines.each do |machine|
         machine_name = machine["name"]
-        defaults = $settings["defaults"].dup
+        defaults = $settings["defaults"].dup || {}
         $settings.each do |machine_exp, machine_settings|
             if machine_exp.start_with?("/") && machine_exp.end_with?("/")
                 if machine_name.match?(machine_exp[1..-2])
-                    defaults = merge_yaml(defaults, machine_settings)
+                    defaults = merge_yaml(defaults, machine_settings) || {}
                 end
             end
         end
