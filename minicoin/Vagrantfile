@@ -227,10 +227,10 @@ Vagrant.configure("2") do |config|
       private_net = machine["private_net"]
       if private_net.nil?
         box.vm.network "private_network", type: "dhcp"
-        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil?
+        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil? && !machine["nictype1"].nil?
       elsif private_net != "disabled"
         box.vm.network "private_network", ip: "#{private_net}"
-        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil?
+        machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil? && !machine["nictype1"].nil?
       end
 
       # map virtual machine configurations to provider specific settings

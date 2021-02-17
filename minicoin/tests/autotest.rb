@@ -108,12 +108,12 @@ class Tester
         {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "machine2", "box" => "generic2", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "override", "gui" => true, "shared_folders"=>[{"Host"=>"Guest"}]},
-        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux", "nictype2"=>nil },
-        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux", "nictype2"=>nil },
+        {"name" => "environment1", "box" => "$USER", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux" },
+        {"name" => "environment2", "box" => "private/$minicoin_key/box", "shared_folders"=>[{"Host"=>"Guest"}], "matched" => "global", "os"=>"linux" },
         {"name" => "base", "box" => "generic",
                            "roles" => [{"role" => "hello-world"}, {"role" => "script", "script" => "hello"}],
                            "shared_folders"=>[{"Host"=>"Guest"}],
-                           "private_net" => "1.1.1.1", "os"=>"linux", "nictype2"=>nil
+                           "private_net" => "1.1.1.1", "os"=>"linux"
         },
         {"name" => "merged_role", "box" => "generic",
                                    "roles" => [
@@ -134,7 +134,7 @@ class Tester
                                     }
                                   ],
                                    "shared_folders"=>[{"Host"=>"Guest"}],
-                                   "os"=>"linux", "nictype2"=>nil
+                                   "os"=>"linux"
         },
         {"name" => "uses", "roles" => [
           {
@@ -154,7 +154,7 @@ class Tester
         ],
         "shared_folders"=>[{"Host"=>"Guest"}],
         "box" => "generic",
-        "os"=>"linux", "nictype2"=>nil
+        "os"=>"linux"
       },
       {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
