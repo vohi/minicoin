@@ -24,6 +24,21 @@ minicoin list > /dev/null
 error=$?
 [ $error -gt 0 ] && errors=$(( $errors + $error ))
 
+echo "=========================> Testing minicoin commands <========================="
+minicoin list | (
+    read; read
+    while read machine
+    do
+        machine=$(echo "$machine" | cut -d ' ' -f 1)
+        minicoin runinfo $machine > /dev/null
+        error=$?
+        [ $error -gt 0 ] && errors=$(( $errors + $error ))
+        minicoin describe $machine > /dev/null
+        error=$?
+        [ $error -gt 0 ] && errors=$(( $errors + $error ))
+    done
+)
+
 if [ $# -eq 0 ]
 then
     echo "For additional tests, provide names of running machines!"
