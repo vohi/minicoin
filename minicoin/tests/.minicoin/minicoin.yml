@@ -7,6 +7,7 @@ settings:
       - $HOME_SHARE: $GUEST_HOMES/tester
 
 machines:
+  - ~ # remove default machines
   - name: empty
     box: testbox
 

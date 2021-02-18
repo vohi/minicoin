@@ -81,8 +81,13 @@ def load_boxes(yaml, user_yaml)
     machines = yaml["machines"]
 
     user_machines = user_yaml["machines"] unless user_yaml.nil?
-    user_machines = [] if user_machines.nil?
+    if user_machines.nil?
+        user_machines = []
+    elsif user_machines.length > 0 && user_machines.first.nil?
+        machines = []
+    end
     user_machines.each do |user_machine|
+        next if user_machine.nil?
         idx = machines.find_index {|m| m["name"] == user_machine["name"] }
         unless idx.nil?
             new_machine = merge_yaml(machines[idx], user_machine)

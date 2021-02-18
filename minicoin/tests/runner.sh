@@ -2,14 +2,29 @@
 set -o pipefail
 declare -i errors=0
 GREEN="\033[0;32m"
+YELLOW="\e[0;33m"
 RED="\033[0;31m"
 NOCOL="\033[0m"
 
 
+function assert()
+{
+    actual="$1"
+    actual="${actual//$'\r'/}"
+    expected="$2"
+    if [[ "$actual" != "$expected" ]]; then
+      printf "${RED}FAIL - %s\n" "$(cmp <(echo $actual) <(echo $expected))"
+      printf "\t${YELLOW}'%s'${NOCOL} vs\n" "$actual"
+      printf "\t'%s'${NOCOL}\n" "$expected"
+      errors=$(( $errors + 1 ))
+#    else
+#      printf "${GREEN}PASS '$1' equals '$2'${NOCOL}\n"
+    fi
+}
+
 function finish() {
     [ $errors -gt 0 ] && printf "${RED}" || printf "${GREEN}"
     printf "Done with $errors error!${NOCOL}\n"
-    exit
 }
 
 echo "============================> Testing parse-opts  <============================"
@@ -20,11 +35,31 @@ echo "============================> Testing Vagrantfile <=======================
 ruby autotest.rb
 error=$?
 [ $error -gt 0 ] && errors=$(( $errors + $error ))
-minicoin list > /dev/null
-error=$?
-[ $error -gt 0 ] && errors=$(( $errors + $error ))
 
 echo "=========================> Testing minicoin commands <========================="
+
+echo "=== Testing list"
+minicoin list > /dev/null
+error=$?
+assert $error 0
+
+echo "=== Testing runinfo"
+assert "$(minicoin runinfo empty 2>&1)" \
+"==> empty: the host path '${PWD}' doesn't map to any location on the guest:
+empty linux ssh /home ${USER} ${HOME} ${PWD}"
+
+# prints: name os communicator guest_homes host_user home_share guest_pwd
+assert "$(minicoin runinfo test_linux)" "test_linux linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}"
+assert "$(minicoin runinfo test_windows)" "test_windows windows winrm C:\\Users ${USER} ${HOME} ${PWD/"$HOME"/C:\\Users\\tester}"
+assert "$(minicoin runinfo test_mac)" "test_mac macos ssh /Users ${USER} ${HOME} ${PWD/"$HOME"//Users/tester}"
+assert "$(minicoin runinfo test_linux test_mac test_windows)" \
+"test_linux linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}
+test_mac macos ssh /Users ${USER} ${HOME} ${PWD/"$HOME"//Users/tester}
+test_windows windows winrm C:\\Users ${USER} ${HOME} ${PWD/"$HOME"/C:\\Users\\tester}"
+
+echo "=== Testing in global environment"
+cd ..
+
 minicoin list | (
     read; read
     while read machine
@@ -38,28 +73,17 @@ minicoin list | (
         [ $error -gt 0 ] && errors=$(( $errors + $error ))
     done
 )
+[ $error -gt 0 ] && errors=$(( $errors + $error ))
 
 if [ $# -eq 0 ]
 then
     echo "For additional tests, provide names of running machines!"
     finish
+    exit $error
 fi
 
 echo "============================> Testing job running <============================"
 machines=( "${@}" )
-
-function assert()
-{
-    actual="$1"
-    actual="${actual//$'\r'/}"
-    expected="$2"
-    if [[ "$actual" != "$expected" ]]; then
-      printf "${RED}FAIL '$actual' vs '$expected'${NOCOL}\n"
-      errors=$(( $errors + 1 ))
-#    else
-#      printf "${GREEN}PASS '$1' equals '$2'${NOCOL}\n"
-    fi
-}
 
 count=${#machines[@]}
 echo "Running test on $count machines independently"
@@ -98,3 +122,4 @@ then
 fi
 
 finish
+exit $errors

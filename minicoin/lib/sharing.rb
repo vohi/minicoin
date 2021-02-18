@@ -184,6 +184,11 @@ def share_folders(box, machine, shares)
     if box.vm.guest == :darwin
         mac_setup_sshfs(box, machine)
         sshfs_share_folders(box, exp_shares)
+        exp_shares.each do |share|
+            share.each do |host, guest|
+                machine["fs_mappings"][host] = guest
+            end
+        end
         return
     end
     
@@ -191,7 +196,7 @@ def share_folders(box, machine, shares)
     exp_shares.each do |share|
         share.each do |host, guest|
             if box.vm.guest == :windows
-                guest = guest.gsub("/", "\\")
+                guest.gsub!("/", "\\")
                 # on windows, shares become network locations; win_links contains the link
                 # we create to the network location
                 win_guest = guest.gsub(/^\\/, "C:\\")
