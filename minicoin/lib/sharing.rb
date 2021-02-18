@@ -177,16 +177,13 @@ def share_folders(box, machine, shares)
             exp_shares << { host => guest }
         end
     end
-
-    machine["actual_shared_folders"] = {}
-    machine["fs_mappings"] = {}
     
     if box.vm.guest == :darwin
         mac_setup_sshfs(box, machine)
         sshfs_share_folders(box, exp_shares)
         exp_shares.each do |share|
             share.each do |host, guest|
-                machine["fs_mappings"][host] = guest
+                box.minicoin.fs_mappings[host] = guest
             end
         end
         return
@@ -205,8 +202,8 @@ def share_folders(box, machine, shares)
                 win_links[guest] = win_guest
                 guest = "/#{guest}"
             end
-            machine["actual_shared_folders"][host] = guest
-            machine["fs_mappings"][host] = win_links[guest[1..-1]] || guest
+            box.minicoin.actual_shared_folders[host] = guest
+            box.minicoin.fs_mappings[host] = win_links[guest[1..-1]] || guest
             box.vm.synced_folder host, guest
         end
     end

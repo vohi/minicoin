@@ -7,7 +7,6 @@ require 'yaml'
 require 'json'
 require 'net/http'
 
-require_relative "lib/local_command.rb"
 require_relative "lib/expand_env.rb"
 require_relative "lib/loader.rb"
 require_relative "lib/roles.rb"
@@ -17,8 +16,7 @@ require_relative "lib/virtualbox.rb"
 require_relative "lib/vmware_desktop.rb"
 require_relative "lib/azure.rb"
 # minicoin command extensions
-require_relative "lib/jobconfig.rb"
-require_relative "lib/runinfo.rb"
+require_relative "lib/minicoin.rb"
 
 $is_windows_host = !(ENV["windir"].nil?)
 $has_winrm = false
@@ -90,18 +88,13 @@ Vagrant.configure("2") do |config|
       next
     end
 
-
     if ARGV[0] == "list"
       puts "#{name.ljust(25)} #{machine_box}"
       next
     end
 
-    if ARGV[0] == "jobconfig"
-      jobconfig(machine)
-      next
-    end
-
     config.vm.define name, autostart: false do |box|
+      box.minicoin.machine = machine
       if !machine["provider"].nil?
         box.vm.provider machine["provider"]
       end
@@ -136,7 +129,7 @@ Vagrant.configure("2") do |config|
         machine["os"] = "windows"
         box.vm.guest = :windows
         box.vm.hostname = name[0..14] # windows hostnames cannot be more than 15 characters long
-        ENV["GUEST_HOMES"] = "C:\\Users"
+        box.minicoin.guest_homes = "C:\\Users"
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
         machine["nictype1"] = "82540EM"
@@ -161,7 +154,7 @@ Vagrant.configure("2") do |config|
       elsif is_mac
         machine["os"] = "macos"
         box.vm.guest = :darwin
-        ENV["GUEST_HOMES"] = "/Users"
+        box.minicoin.guest_homes = "/Users"
 
         # "Intel Pro/1000 MT Server" must be used on Mac
         machine["nictype1"] = "82545EM"
@@ -172,9 +165,10 @@ Vagrant.configure("2") do |config|
         else
           box.vm.guest = machine["os"]
         end
-        ENV["GUEST_HOMES"] = "/home"
+        box.minicoin.guest_homes = "/home"
         box.vm.communicator = :ssh
       end
+      ENV["GUEST_HOMES"] = box.minicoin.guest_homes
 
       # Allow overriding defaults
       box.vm.communicator = machine["communicator"] unless machine["communicator"].nil?
@@ -190,7 +184,7 @@ Vagrant.configure("2") do |config|
       # port forwarding
       box.vm.network "forwarded_port", id: "ssh", # id must be ssh
         guest: 22,
-        host: 2200 + machine["hash"],
+        host: 2200 + box.minicoin.hash,
         auto_correct: true
       ports = machine["ports"]
       if !ports.nil?
@@ -215,7 +209,7 @@ Vagrant.configure("2") do |config|
               # turn on local hypervisor's RDP server, if supported
               machine["rdp"] = true
             end
-            attributes[:host] = attributes[:guest] * 10 + machine["hash"] if attributes[:host].nil?
+            attributes[:host] = attributes[:guest] * 10 + box.minicoin.hash if attributes[:host].nil?
             box.vm.network "forwarded_port", attributes
           end
         rescue
@@ -282,16 +276,6 @@ Vagrant.configure("2") do |config|
           end
         rescue
         end
-      end
-
-      if ARGV[0] == "describe"
-        puts machine.to_yaml
-        next
-      end
-
-      if ARGV[0] == "runinfo"
-        runinfo(machine, box)
-        next
       end
 
       # make powershell the default ssh shell on Windows at the end, as some provisioners rely on cmd

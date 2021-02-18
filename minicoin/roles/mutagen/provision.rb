@@ -218,7 +218,7 @@ def mutagen_provision(box, name, role_params, machine)
                     beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
                 end
                 betas << beta
-                machine["fs_mappings"][alpha] = beta
+                box.minicoin.fs_mappings[alpha] = beta
             end
         else
             raise "Argument error: expecting 'paths' to be a list of strings or hashes from source to destination"

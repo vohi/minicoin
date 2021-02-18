@@ -45,9 +45,11 @@ end
 class MockPlugin
   def initialize()
   end
+  def self.command(x, b=false)
+  end
   def self.name(n)
   end
-  def self.config(a, b)
+  def self.config(a, b=0)
   end
   def self.provisioner(a)
   end
@@ -59,6 +61,8 @@ class MockWinssh
 end
 
 class MockVm
+  attr_accessor :minicoin
+
   def initialize(type)
     @guest = type
     @box = ""
@@ -66,6 +70,7 @@ class MockVm
     @box_url = ""
     @communicator = :ssh
     @boxes = {}
+    @minicoin = MockMinicoin.new
   end
   def vm()
     return self
@@ -124,5 +129,20 @@ class MockTrigger
   def before(a)
   end
   def after(a)
+  end
+end
+
+class MockMinicoin
+  attr_accessor :machine
+  attr_accessor :fs_mappings
+  attr_accessor :actual_shared_folders
+  attr_accessor :hash
+  attr_accessor :guest_homes
+
+  def initialize
+    @fs_mappings = {}
+    @actual_shared_folders = {}
+    @hash = -1
+    @guest_homes = nil
   end
 end

@@ -271,21 +271,5 @@ def load_minicoin()
 
     $TEST_OUTPUT=yaml
 
-    # Calculate a simple hash so that we can give each machine a well-defined
-    # port number.
-    # If we don't do that, then the port of a suspended or halted machine might
-    # be re-used by vagrant, and then resuming the suspended machine will fail,
-    # or result in traffic going the wrong way (ie with mutagen synching).
-
-    machine_hashes = {}
-    machines.each do |machine|
-        machine_hash = machine["name"].sum % 797
-        if ! machine_hashes[machine_hash].nil? && machine_hashes[machine_hash] != machine["name"]
-            STDERR.puts "==> Warning: hash collision for #{machine['name']}: #{machine_hashes[machine_hash]}"
-        end
-        machine_hashes[machine_hash] = machine["name"].dup
-        machine["hash"] = machine_hash
-    end
-
     return machines
 end

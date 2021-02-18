@@ -43,7 +43,7 @@ variable, and provision explicitly using 'minicoin provision #{name}'!")
 
     box.vm.provider :azure do |azure, override|
         override.vm.synced_folder ".", "/minicoin", disabled: true
-        shared_folder = machine['actual_shared_folders'] || {}
+        shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|
             override.vm.synced_folder host, guest, disabled: true
         end
