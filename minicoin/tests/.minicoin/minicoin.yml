@@ -6,29 +6,34 @@ settings:
     shared_folders:
       - $HOME_SHARE: $GUEST_HOMES/tester
 
+jobconfigs: &testconfigs
+  - job: runtest
+    name: A
+    config: a1
+  - job: runtest
+    name: A
+    config: a2
+  - job: runtest
+    name: B
+  - job: skiptest
+    name: default
+    config: skip
+
 machines:
   - ~ # remove default machines
   - name: empty
     box: testbox
 
   - name: test_linux
-    box: testbox
+    box: generic/ubuntu2004
+    jobconfigs: *testconfigs
   - name: test_mac
-    box: testbox
+    box: tqtc/$minicoin_key/macos11
+    jobconfigs: *testconfigs
   - name: test_windows
-    box: testbox
+    box: tqtc/$minicoin_key/windows10
+    jobconfigs: *testconfigs
 
   - name: test
     box: testbox
-    jobconfigs:
-      - job: runtest
-        name: A
-        config: a1
-      - job: runtest
-        name: A
-        config: a2
-      - job: runtest
-        name: B
-      - job: skiptest
-        name: default
-        config: skip
+    jobconfigs: *testconfigs

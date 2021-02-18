@@ -57,6 +57,13 @@ assert "$(minicoin runinfo test_linux test_mac test_windows)" \
 test_mac macos ssh /Users ${USER} ${HOME} ${PWD/"$HOME"//Users/tester}
 test_windows windows winrm C:\\Users ${USER} ${HOME} ${PWD/"$HOME"/C:\\Users\\tester}"
 
+echo "=== Testing jobconfig"
+assert "$(minicoin runinfo test)" "test linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}"
+assert "$(minicoin jobconfig --job runtest test)" "$(printf '0) A\t1) A\t2) B\t')"
+assert "$(minicoin jobconfig --job runtest --config A test)" "$(printf '0) A\t1) A\t')"
+assert "$(minicoin jobconfig --job runtest --config B test)" ""
+assert "$(minicoin jobconfig --job runtest --index 2 test)" ""
+
 echo "=== Testing in global environment"
 cd ..
 
@@ -74,6 +81,8 @@ minicoin list | (
     done
 )
 [ $error -gt 0 ] && errors=$(( $errors + $error ))
+
+cd -
 
 if [ $# -eq 0 ]
 then
