@@ -190,10 +190,9 @@ function run_on_machine() {
     return 2
   fi
 
-  jobconfig_select="$job"
   [[ ! -z "$jobconfig" ]] && jobconfig_select=( "$jobconfig_select" --config "$jobconfig" )
   OLS_IFS="$IFS"
-  IFS=$'\t'; jobconfig_data=( $(minicoin jobconfig ${jobconfig_select[@]} $machine) )
+  IFS=$'\t'; jobconfig_data=( $(minicoin jobconfig --job $job ${jobconfig_select[@]} $machine) )
 
   if [[ ! -z "$jobconfig" ]] && [[ -z $jobconfig_data ]]
   then
@@ -211,15 +210,24 @@ function run_on_machine() {
     done
     echo
     read -p "Pick a number and press enter: " n
-    selected="${jobconfig_data[$n]#*) }"
+    for config_data in ${jobconfig_data[@]}
+    do
+      index=${config_data%)*}
+      if [ $index == $n ]
+      then
+        selected=${config_data#*) }
+        echo "$selected"
+        selected=$(echo "$selected" | cut -d ' ' -f 1)
+        echo "$selected"
+      fi
+    done
     if [[ -z "$selected" ]]
     then
       >&2 echo "Invalid selection $n, aborting"
       return 4
     fi
-    echo "Selected: '$selected' (run $job job with --jobconfig \"$selected\" to skip this dialog"
-    jobconfig_select=( "$job" --index $n )
-    IFS=$'\n'; auto_args=( $(minicoin jobconfig ${jobconfig_select[@]} $machine) )
+    echo "Selected: '$selected' (run $job job with --jobconfig \"$selected\" to skip this dialog)"
+    IFS=$'\n'; auto_args=( $(minicoin jobconfig --job "$job" --index "$n" $machine) )
   else # we got a list of parameters
     IFS=$'\n'; auto_args=( ${jobconfig_data[@]} )
   fi
