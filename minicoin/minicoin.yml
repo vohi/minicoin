@@ -98,6 +98,7 @@ machines:
   - name: android-tester
     extends: android-builder
     provider: vmware_desktop
+    if: Vagrant.has_plugin?("vagrant-vmware-desktop")
     roles:
       - role: linux-desktop
         desktop: lxde

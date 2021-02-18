@@ -217,6 +217,36 @@ def find_config(root, config_name)
     return root
 end
 
+def preprocess(data)
+    return true unless data.is_a?(Hash)
+    data.each do |key, value|
+        if key == "if"
+            begin
+                exp = eval(value)
+                data.delete(key) if exp
+                return exp
+            rescue => error
+                STDERR.puts "Error in expression #{value}:"
+                STDERR.puts "\t#{error}"
+                return false
+            end
+        elsif value.is_a?(Hash)
+            if !preprocess(value)
+                data.delete(key)
+            end
+        elsif value.is_a?(Array)
+            index = 0
+            value.each do |entry|
+                if !preprocess(entry)
+                    value.delete_at(index)
+                else
+                    index += 1
+                end
+            end
+        end
+    end
+    true
+end
 
 def load_minicoin()
     begin # see tests/autotest.rb
@@ -268,6 +298,8 @@ def load_minicoin()
 
     load_urls(yaml, user_yaml)
     load_urls(yaml, local_yaml)
+
+    preprocess(yaml)
 
     $TEST_OUTPUT=yaml
 

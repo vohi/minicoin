@@ -33,3 +33,5 @@ machines:
       - role: upload
         files:
           source2: target2
+      - role: hello-world
+        if: "false"

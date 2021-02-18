@@ -35,6 +35,7 @@ machines:
     box: generic
     roles:
       - role: hello-world
+        if: 2 + 2 == 4
   - name: merged_role
     box: generic
     roles:
@@ -55,3 +56,5 @@ machines:
         attribute: value2
       - role: mutagen
         paths: ~
+  - name: notthere
+    if: "false"
