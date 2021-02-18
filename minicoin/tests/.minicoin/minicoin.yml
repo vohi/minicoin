@@ -1,0 +1,33 @@
+settings:
+  # reset everything
+  defaults: ~
+
+  /test.*/:
+    shared_folders:
+      - $HOME_SHARE: $GUEST_HOMES/tester
+
+machines:
+  - name: empty
+    box: testbox
+
+  - name: test_linux
+    box: testbox
+  - name: test_mac
+    box: testbox
+  - name: test_windows
+    box: testbox
+
+  - name: test
+    box: testbox
+    jobconfigs:
+      - job: runtest
+        name: A
+        config: a1
+      - job: runtest
+        name: A
+        config: a2
+      - job: runtest
+        name: B
+      - job: skiptest
+        name: default
+        config: skip
