@@ -3,7 +3,7 @@ def runinfo(machine, box)
     project_dir = ENV["MINICOIN_PROJECT_DIR"]
     guest_dir = nil
     # check whether we are in a subdirectory of a mapped path, and use the best match
-    machine["fs_mappings"].each do |hostpath, guestpath|
+    (machine["fs_mappings"] || {}).each do |hostpath, guestpath|
         hostpath = hostpath.gsub("~", "$HOME")
         hostpath = expand_env(hostpath, nil)
         match_length = -1
@@ -15,7 +15,7 @@ def runinfo(machine, box)
     end
     if guest_dir.nil? || guest_dir.empty?
         STDERR.puts "==> #{name}: the host path '#{project_dir}' doesn't map to any location on the guest:"
-        machine["fs_mappings"].each do |hostpath, guestpath|
+        (machine["fs_mappings"] || {}).each do |hostpath, guestpath|
             STDERR.puts "    #{hostpath} => #{guestpath}"
         end
         guest_dir = project_dir
