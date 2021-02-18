@@ -84,11 +84,13 @@ machines:
       - role: android-builder
     jobconfigs:
       - name: host
+        description: builds and installs host-side tools for Qt
         job: build
         configure: -release -prefix ~/android-host
         target: "Core qmake uic qlalr qmltyperegistrar qmlcachegen androidtestrunner androiddeployqt"
         build: android-host-build
       - name: android
+        description: cross-platform build of Qt for Android
         job: build
         configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
         build: android
