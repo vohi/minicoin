@@ -87,7 +87,7 @@ machines:
         description: builds and installs host-side tools for Qt
         job: build
         configure: -release -prefix ~/android-host
-        target: "Core qmake uic qlalr qmltyperegistrar qmlcachegen androidtestrunner androiddeployqt"
+        target: "host_tools"
         build: android-host-build
       - name: android
         description: cross-platform build of Qt for Android
