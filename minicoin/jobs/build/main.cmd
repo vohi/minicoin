@@ -101,12 +101,14 @@ if exist build.ninja (
 echo Building '!JOBDIR!' using '!maketool! !target!'
 !maketool! !target!
 set error=%ERRORLEVEL%
-if /I NOT "!PARAM_configure!"=="!PARAM_configure:prefix=!" (
-  if %error% EQU 0 (
-    echo Prefix build detected, installing
-    !maketool! install
-  ) else (
-    >&2 echo Build failed, not installing
+if NOT "!PARAM_configure!" == "" (
+  if /I NOT "!PARAM_configure!" == "!PARAM_configure:prefix=!" (
+    if %error% EQU 0 (
+      echo Prefix build detected, installing
+      !maketool! install
+    ) else (
+      >&2 echo Build failed, not installing
+    )
   )
 )
 
