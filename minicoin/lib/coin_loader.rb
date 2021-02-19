@@ -70,7 +70,8 @@ def load_coin(yaml)
             coin_machine["jobconfigs"] = [
                 {
                     "job" => "build",
-                    "name" => coin_config["id"] || "config_#{coin_config_index}",
+                    "name" => coin_config["id"] || "#{coin_config['Compiler']}_#{coin_config_index}",
+                    "description" => coin_config["Features"].join(";"),
                     "features" => coin_config["Features"],
                     "compiler" => coin_config["Compiler"],
                     "configure" => coin_config["Configure arguments"],
