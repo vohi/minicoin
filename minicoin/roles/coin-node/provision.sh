@@ -13,10 +13,10 @@ fi
 
 . /minicoin/util/parse-opts.sh $HOME "$@"
 
-if [ -f /minicoin/roles/coin-node/.hosts ]
+if [ -f .hosts ]
 then
     echo "Adding coin hosts"
-    sudo bash -c "cat /minicoin/roles/coin-node/.hosts >> /etc/hosts"
+    sudo bash -c "cat .hosts >> /etc/hosts"
 fi
 
 cd coin/provisioning

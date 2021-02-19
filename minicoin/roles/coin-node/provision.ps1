@@ -1,22 +1,7 @@
 param (
     [String]$template,
     [String[]]$runlist = @(),
-    [String[]]$skiplist = @(
-        "disable-netadapterlso",
-        "allow-remote-desktop-access",
-        "change-resolution",
-        "set-proxy",
-        "enable-guest-logon",
-        "python-32bit",
-        "install_telegraf",
-        "install-mcuxpresso",
-        "install-virtualbox",
-        "openssl_for_android",
-        "qnx_700",
-        "android",
-        "emsdk",
-        "squish", "squish-coco"
-        )
+    [String[]]$skiplist = @()
 )
 
 if ( $runlist.Length -eq 1 ) {
@@ -29,9 +14,9 @@ if ( $skiplist.Length -eq 1 ) {
 # provisioning scripts run as Administrator, so $PWD is C:\Windows\system32
 Set-Location -Path $env:USERPROFILE
 
-if ( Test-Path C:\minicoin\roles\coin-node\.hosts -PathType Leaf ) {
+if ( Test-Path Documents\.hosts -PathType Leaf ) {
     Write-Output "Adding hosts"
-    Get-Content c:\minicoin\roles\coin-node\.hosts | Add-Content -Path C:\Windows\system32\drivers\etc\hosts
+    Get-Content Documents\.hosts | Add-Content -Path C:\Windows\system32\drivers\etc\hosts
 }
 
 try {

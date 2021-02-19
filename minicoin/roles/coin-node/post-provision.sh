@@ -1,4 +1,4 @@
 #!/bin/bash
 cd $(dirname "$0")
 
-rm .hosts
+rm /tmp/.hosts

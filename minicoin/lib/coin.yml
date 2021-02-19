@@ -38,6 +38,7 @@ coin:
         - qnx660
         - qnx700
         - qnx_700
+        - qnx710
         - integrity
         - squish
         - squish-coco
@@ -47,6 +48,26 @@ coin:
         - openssl_for_android_linux
         - docker
         - fix_msns_docker_resolution
+
+  windows: &windowsroles
+    - role: msvc2019
+    - role: coin-node
+      skiplist:
+        - disable-netadapterlso
+        - allow-remote-desktop-access
+        - change-resolution
+        - set-proxy
+        - enable-guest-logon
+        - python-32bit
+        - install_telegraf
+        - install-mcuxpresso
+        - install-virtualbox
+        - openssl_for_android
+        - qnx_700
+        - android
+        - emsdk
+        - squish
+        - squish-coco
 
   CentOS-8.1:
     box: generic/centos8
@@ -59,6 +80,9 @@ coin:
     roles: *linuxroles
   SLES-15_SP2:
     box: generic/opensuse15
+    roles: *linuxroles
+  Ubuntu-18.04:
+    box: generic/ubuntu1804
     roles: *linuxroles
   Ubuntu-20.04:
     box: generic/ubuntu2004
@@ -75,5 +99,4 @@ coin:
     
   windows-10:
     box: tqtc/$minicoin_key/windows10
-    roles:
-      - role: msvc2019
+    roles: *windowsroles
