@@ -47,8 +47,8 @@ Vagrant.configure("2") do |config|
           end
           next
         end
-        machine_url = machine_url.gsub("$minicoin_key", minicoin_key)
-        machine_box = machine_box.gsub("$minicoin_key/", "")
+        machine_url = machine_box.gsub("$minicoin_key", minicoin_key)
+        machine_box.gsub!("$minicoin_key/", "")
       end
       machine_box = expand_env(machine_box, nil)
     end
