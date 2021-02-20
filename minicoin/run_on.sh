@@ -172,6 +172,10 @@ function run_on_machine() {
 
   machine_runinfo=$(minicoin runinfo --machine-readable $machine | grep Minicoin::RunInfo)
   log_progress "==> $machine: Machine runinfo retrieved: '$machine_runinfo'"
+
+  home_share=$(echo $machine_runinfo | cut -d ',' -f 10)
+  [ -z $home_share ] && home_share=$HOME
+  job_dir=$(echo $machine_runinfo | cut -d ',' -f 11)
   communicator=$(echo $machine_runinfo | cut -d ',' -f 7)
   if [[ $communicator == "winrm" || $communicator == "winssh" ]]
   then
@@ -191,51 +195,8 @@ function run_on_machine() {
   fi
 
   [[ ! -z "$jobconfig" ]] && jobconfig_select=( "$jobconfig_select" --config "$jobconfig" )
-  OLS_IFS="$IFS"
-  IFS=$'\t'; jobconfig_data=( $(minicoin jobconfig --job $job ${jobconfig_select[@]} $machine) )
-
-  if [[ ! -z "$jobconfig" ]] && [[ -z $jobconfig_data ]]
-  then
-    >&2 printf "${RED}==> %s: No job configuration '%s' defined for job '%s'${NOCOL}\n" "$machine" "$jobconfig" "$job"
-    return 3
-  fi
-
-  if [[ ${#jobconfig_data[@]} -gt 1 ]] # we got a list of config names, let user select one
-  then
-    echo "Multiple job configurations are available:"
-    echo
-    for config_data in ${jobconfig_data[@]}
-    do
-      echo "  $config_data"
-    done
-    echo
-    read -p "Pick a number and press enter: " n
-    for config_data in ${jobconfig_data[@]}
-    do
-      index=${config_data%)*}
-      if [ $index == $n ]
-      then
-        selected=${config_data#*) }
-        echo "$selected"
-        selected=$(echo "$selected" | cut -d ' ' -f 1)
-        echo "$selected"
-      fi
-    done
-    if [[ -z "$selected" ]]
-    then
-      >&2 echo "Invalid selection $n, aborting"
-      return 4
-    fi
-    echo "Selected: '$selected' (run $job job with --jobconfig \"$selected\" to skip this dialog)"
-    IFS=$'\n'; auto_args=( $(minicoin jobconfig --job "$job" --index "$n" $machine) )
-  else # we got a list of parameters
-    IFS=$'\n'; auto_args=( ${jobconfig_data[@]} )
-  fi
-  IFS="$OLD_IFS"
-
-  home_share=$(echo $machine_runinfo | cut -d ',' -f 10)
-  [ -z $home_share ] && home_share=$HOME
-  job_dir=$(echo $machine_runinfo | cut -d ',' -f 11)
+  IFS=$'\n'; auto_args=( $(minicoin jobconfig --job $job ${jobconfig_select[@]} $machine) )
+  log_progress "==> $machine: auto-args received: '$(echo ${auto_args[@]})'"
 
   # job scripts can expect P1 to be the JOBDIR on the guest, and P2 PWD on the host
   job_args=( "$job_dir" )

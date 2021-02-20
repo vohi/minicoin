@@ -7,17 +7,19 @@ settings:
       - $HOME_SHARE: $GUEST_HOMES/tester
 
 jobconfigs: &testconfigs
-  - job: runtest
-    name: A
-    config: a1
-  - job: runtest
-    name: A
-    config: a2
-  - job: runtest
-    name: B
-  - job: skiptest
-    name: default
-    config: skip
+  - job: test
+    name: simple
+    param1: value1
+    param2: value2
+    flag:
+
+  - job: test
+    name: complicated
+    array1:
+      - entry1
+      - entry2
+    spacey: foo bar
+    quoted: hello "world"
 
 machines:
   - ~ # remove default machines
@@ -35,5 +37,5 @@ machines:
     jobconfigs: *testconfigs
 
   - name: test
-    box: testbox
+    box: generic/ubuntu2004
     jobconfigs: *testconfigs

@@ -6,6 +6,24 @@ YELLOW="\e[0;33m"
 RED="\033[0;31m"
 NOCOL="\033[0m"
 
+testcases=()
+if [ $1 == "--tests" ]
+then
+    IFS=','; testcases=( $2 )
+    shift
+    shift
+fi
+
+function run_case()
+{
+    [ ${#testcases[@]} == 0 ] && return 0
+
+    for testcase in ${testcases[@]}
+    do
+        [ "$testcase" == "$1" ] && return 0
+    done
+    return 1
+}
 
 function assert()
 {
@@ -27,65 +45,107 @@ function finish() {
     printf "Done with $errors error!${NOCOL}\n"
 }
 
-echo "============================> Testing parse-opts  <============================"
-./parse-opts-test.sh
-[ $? -gt 0 ] && errors=$(( $errors + 1 ))
+if (run_case "parse-opts")
+then
+    echo "============================> Testing parse-opts  <============================"
+    ./parse-opts-test.sh
+    [ $? -gt 0 ] && errors=$(( $errors + 1 ))
+fi
 
-echo "============================> Testing Vagrantfile <============================"
-ruby autotest.rb
-error=$?
-[ $error -gt 0 ] && errors=$(( $errors + $error ))
+if (run_case "Vagrantfile")
+then
+    echo "============================> Testing Vagrantfile <============================"
+    ruby autotest.rb
+    error=$?
+    [ $error -gt 0 ] && errors=$(( $errors + $error ))
+fi
 
 echo "=========================> Testing minicoin commands <========================="
 
-echo "=== Testing list"
-minicoin list > /dev/null
-error=$?
-assert $error 0
+if (run_case "list")
+then
+    echo "=== Testing list"
+    minicoin list > /dev/null
+    error=$?
+    assert $error 0
+fi
 
-echo "=== Testing runinfo"
-assert "$(minicoin runinfo empty --machine-readable 2>&1 | grep warn | cut -d ',' -f 5)" \
-"==> empty: the host path '${PWD}' doesn't map to any location on the guest:"
+if (run_case "runinfo")
+then
+    echo "=== Testing runinfo"
+    assert "$(minicoin runinfo empty --machine-readable 2>&1 | grep warn | cut -d ',' -f 5)" \
+    "==> empty: the host path '${PWD}' doesn't map to any location on the guest:"
 
-# prints: name os communicator guest_homes host_user home_share guest_pwd
-assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
-       "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
-assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
-       "test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
-       "test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}"
-assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    # prints: name os communicator guest_homes host_user home_share guest_pwd
+    assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+        "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
+    assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+        "test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
+    assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+        "test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}"
+    assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
 "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}
 test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}
 test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-assert "$(minicoin runinfo test --machine-readable | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
-       "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
+    assert "$(minicoin runinfo test --machine-readable | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+        "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
+fi
 
-echo "=== Testing jobconfig"
-assert "$(minicoin jobconfig --job runtest test)" "$(printf '0) A\t1) A\t2) B\t')"
-assert "$(minicoin jobconfig --job runtest --config A test)" "$(printf '0) A\t1) A\t')"
-assert "$(minicoin jobconfig --job runtest --config B test)" ""
-assert "$(minicoin jobconfig --job runtest --index 2 test)" ""
+if (run_case "jobconfig")
+then
+    echo "=== Testing jobconfig"
+#    echo "    Interactive"
+#    IFS=$'\n'; jobconfig=( $(minicoin jobconfig --job test test) )
+#    assert "$(echo ${jobconfig[0]})" "--param1"
 
-echo "=== Testing in global environment"
-cd ..
+    echo "    No tty"
+    assert "$(minicoin jobconfig --job test test --no-tty 2>&1 | tail -n1)" "with TTY."
 
-minicoin list --machine-readable | cut -d ',' -f 6 | (
-    while read machine
-    do
-        echo "    $machine"
-        minicoin runinfo $machine > /dev/null
-        error=$?
-        [ $error -gt 0 ] && errors=$(( $errors + $error ))
-        minicoin describe $machine > /dev/null
-        error=$?
-        [ $error -gt 0 ] && errors=$(( $errors + $error ))
-    done
-)
-[ $error -gt 0 ] && errors=$(( $errors + $error ))
+    echo "    Piped"
+    assert "$(echo "0" | minicoin jobconfig --job test test 2>&1 | head -n1)" "Multiple job configurations are available:"
+    assert "$(echo "1" | minicoin jobconfig --job test test  2>&1 | tail -n1)" "\"hello \\\"world\\\"\""
+    echo "    Named"
+    assert "$(minicoin jobconfig --job test --config simple test)" \
+"--param1
+value1
+--param2
+value2
+--flag"
+    assert "$(minicoin jobconfig --job test --config complicated test)" \
+"--array1
+entry1,entry2
+--spacey
+\"foo bar\"
+--quoted
+\"hello \\\"world\\\"\""
+    echo "    Indexed"
+    assert "$(minicoin jobconfig --job test --index 0 test)" "$(minicoin jobconfig --job test --config simple test)"
+    assert "$(minicoin jobconfig --job test --index 1 test)" "$(minicoin jobconfig --job test --config complicated test)"
+    assert "$(minicoin jobconfig --job test --index 2 test)" ""
+fi
 
-printf "  = Returning to test environment "
-cd -
+if (run_case global)
+then
+    echo "=== Testing in global environment"
+    cd ..
+
+    minicoin list --machine-readable | cut -d ',' -f 6 | (
+        while read machine
+        do
+            echo "    $machine"
+            minicoin runinfo $machine > /dev/null
+            error=$?
+            [ $error -gt 0 ] && errors=$(( $errors + $error ))
+            minicoin describe $machine > /dev/null
+            error=$?
+            [ $error -gt 0 ] && errors=$(( $errors + $error ))
+        done
+    )
+    [ $error -gt 0 ] && errors=$(( $errors + $error ))
+
+    printf "  = Returning to test environment "
+    cd -
+fi
 
 if [ $# -eq 0 ]
 then

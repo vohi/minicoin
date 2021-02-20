@@ -48,26 +48,54 @@ module Minicoin
                         res = res && jobconfig["_index"] == @index unless @index.nil?
                         res
                     end
+                    @logger.debug("#{jobconfigs.count} matching configurations found for job '#{@job}'")
                     # print either the configuration, or the tab-separated list of matches
                     if jobconfigs.count == 0
-                        @logger.debug("No matching configurations found for job '#{@job}'")
-                    elsif jobconfigs.count == 1
-                        jobconfig = jobconfigs.first
-                        jobconfig.each do |key, value|
-                            next if key == "name" || key == "job" || key == "description" || key.start_with?("_")
-                            if value.is_a?(String)
-                                value.gsub!("\\", "\\\\")
-                                value.gsub!("\"", "\\\"")
-                            end
-                            
-                            puts "--#{key}"
-                            puts "\"#{value}\"" unless value.nil?
+                        jobconfig = {}
+                    elsif jobconfigs.count > 1
+                        if @env.ui.is_a?(Vagrant::UI::MachineReadable) || @env.ui.is_a?(Vagrant::UI::NonInteractive)
+                            raise Vagrant::Errors::UIExpectsTTY
                         end
-                    else
+                        ui_channel = { :channel => :error }
+                        @env.ui.output "Multiple job configurations are available:", ui_channel
+                        @env.ui.output "", ui_channel
                         jobconfigs.each do |jobconfig|
-                            print "#{jobconfig['_index']}) #{jobconfig['name']}"
-                            print " - #{jobconfig['description']} " unless jobconfig['description'].nil?
-                            print "\t"
+                            line = "#{jobconfig['_index']}) #{jobconfig['name']}"
+                            line += " - #{jobconfig['description']} " unless jobconfig['description'].nil?
+                            @env.ui.output line, ui_channel
+                        end
+                        @env.ui.output "", ui_channel
+                        jobconfig = nil
+                        while !jobconfig
+                            if @env.ui.stdin.tty?
+                                selection = @env.ui.ask "Selection: ", ui_channel
+                            else
+                                @env.ui.output "Selection: ", ui_channel
+                                selection = @env.ui.stdin.gets.chomp
+                            end
+                            filtered = jobconfigs.select do |jc|
+                                jc["_index"].to_s == selection
+                            end
+                            jobconfig = filtered.first if filtered.count == 1
+                            # no point in asking again if the input was piped
+                            raise Vagrant::Errors::UIExpectsTTY if !jobconfig && !@env.ui.stdin.tty?
+                        end
+                        @env.ui.output "Selected: '#{jobconfig['name']}' (run job '#{jobconfig['job']}' with --jobconfig #{jobconfig['name']} to skip this dialog)\n", ui_channel
+                    else
+                        jobconfig = jobconfigs.first
+                    end
+                    jobconfig.each do |key, value|
+                        next if key == "name" || key == "job" || key == "description" || key.start_with?("_")
+                        if value.is_a?(String)
+                            value.gsub!("\\", "\\\\")
+                            value.gsub!("\"", "\\\"")
+                        end
+
+                        puts "--#{key}"
+                        value = value.join(",") if value.is_a?(Array)
+                        if value
+                            value = "\"#{value}\"" if value.include?(" ")
+                            puts value
                         end
                     end
                 end
