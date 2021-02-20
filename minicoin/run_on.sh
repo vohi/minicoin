@@ -170,9 +170,9 @@ function run_on_machine() {
 
   upload_source="$jobroot/$job"
 
-  machine_runinfo=$(minicoin runinfo $machine)
+  machine_runinfo=$(minicoin runinfo --machine-readable $machine | grep Minicoin::RunInfo)
   log_progress "==> $machine: Machine runinfo retrieved: '$machine_runinfo'"
-  communicator=$(echo $machine_runinfo | awk {'print $3'})
+  communicator=$(echo $machine_runinfo | cut -d ',' -f 7)
   if [[ $communicator == "winrm" || $communicator == "winssh" ]]
   then
     [ $communicator == "winssh" ] && communicator="ssh"
@@ -233,9 +233,9 @@ function run_on_machine() {
   fi
   IFS="$OLD_IFS"
 
-  home_share=$(echo $machine_runinfo | awk {'print $6'})
+  home_share=$(echo $machine_runinfo | cut -d ',' -f 10)
   [ -z $home_share ] && home_share=$HOME
-  job_dir=$(echo $machine_runinfo | awk {'print $7'})
+  job_dir=$(echo $machine_runinfo | cut -d ',' -f 11)
 
   # job scripts can expect P1 to be the JOBDIR on the guest, and P2 PWD on the host
   job_args=( "$job_dir" )

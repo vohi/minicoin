@@ -44,21 +44,24 @@ error=$?
 assert $error 0
 
 echo "=== Testing runinfo"
-assert "$(minicoin runinfo empty 2>&1)" \
-"==> empty: the host path '${PWD}' doesn't map to any location on the guest:
-empty linux ssh /home ${USER} ${HOME} ${PWD}"
+assert "$(minicoin runinfo empty --machine-readable 2>&1 | grep warn | cut -d ',' -f 5)" \
+"==> empty: the host path '${PWD}' doesn't map to any location on the guest:"
 
 # prints: name os communicator guest_homes host_user home_share guest_pwd
-assert "$(minicoin runinfo test_linux)" "test_linux linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}"
-assert "$(minicoin runinfo test_windows)" "test_windows windows winrm C:\\Users ${USER} ${HOME} ${PWD/"$HOME"/C:\\Users\\tester}"
-assert "$(minicoin runinfo test_mac)" "test_mac macos ssh /Users ${USER} ${HOME} ${PWD/"$HOME"//Users/tester}"
-assert "$(minicoin runinfo test_linux test_mac test_windows)" \
-"test_linux linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}
-test_mac macos ssh /Users ${USER} ${HOME} ${PWD/"$HOME"//Users/tester}
-test_windows windows winrm C:\\Users ${USER} ${HOME} ${PWD/"$HOME"/C:\\Users\\tester}"
+assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+       "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
+assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+       "test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
+assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+       "test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}"
+assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+"test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}
+test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}
+test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
+assert "$(minicoin runinfo test --machine-readable | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+       "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
 
 echo "=== Testing jobconfig"
-assert "$(minicoin runinfo test)" "test linux ssh /home ${USER} ${HOME} ${PWD/"$HOME"//home/tester}"
 assert "$(minicoin jobconfig --job runtest test)" "$(printf '0) A\t1) A\t2) B\t')"
 assert "$(minicoin jobconfig --job runtest --config A test)" "$(printf '0) A\t1) A\t')"
 assert "$(minicoin jobconfig --job runtest --config B test)" ""

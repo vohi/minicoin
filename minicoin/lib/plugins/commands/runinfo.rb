@@ -15,8 +15,8 @@ module Minicoin
             argv = parse_options(parser)
             return if !argv
 
-            with_target_vms(argv) do |box|
-                keys = box.config.instance_variable_get('@keys')
+            with_target_vms(argv) do |vm|
+                keys = vm.config.instance_variable_get('@keys')
                 minicoin = keys[:minicoin]
                 machine = minicoin.machine
 
@@ -35,13 +35,23 @@ module Minicoin
                     end
                 end
                 if guest_dir.nil? || guest_dir.empty?
-                    box.ui.warn "the host path '#{project_dir}' doesn't map to any location on the guest:"
+                    vm.ui.warn "the host path '#{project_dir}' doesn't map to any location on the guest:"
                     minicoin.fs_mappings.each do |hostpath, guestpath|
-                        box.ui.warn "    #{hostpath} => #{guestpath}"
+                        vm.ui.warn "    #{hostpath} => #{guestpath}"
                     end
                     guest_dir = project_dir
                 end
-                puts "#{name} #{machine['os']} #{box.config.vm.communicator} #{minicoin.guest_homes} #{ENV["USER"]} #{ENV["HOME_SHARE"]} #{guest_dir}"
+                if @env.ui.is_a?(Vagrant::UI::MachineReadable)
+                    @env.ui.output name, machine['os'], vm.config.vm.communicator, minicoin.guest_homes, $USER, ENV["HOME_SHARE"], guest_dir, { :target => self.class }
+                else
+                    @env.ui.output "Name        : #{name}"
+                    @env.ui.output "OS          : #{machine['os']}"
+                    @env.ui.output "Communicator: #{vm.config.vm.communicator}"
+                    @env.ui.output "Guest homes : #{minicoin.guest_homes}"
+                    @env.ui.output "Host user   : #{$USER}"
+                    @env.ui.output "Home share  : #{ENV['HOME_SHARE']}"
+                    @env.ui.output "Guest PWD   : #{guest_dir}"
+                end
             end
         end
     end
