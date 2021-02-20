@@ -28,7 +28,7 @@ module Minicoin
             argv = parse_options(opts)
             return if !argv
 
-            with_target_vms(argv) do |box|
+            with_target_vms(argv, { :single_target => true }) do |box|
                 keys = box.config.instance_variable_get('@keys')
                 minicoin = keys[:minicoin]
                 machine = minicoin.machine
@@ -54,7 +54,7 @@ module Minicoin
                     elsif jobconfigs.count == 1
                         jobconfig = jobconfigs.first
                         jobconfig.each do |key, value|
-                            next if key == "name" || key == "job" || key.start_with?("_")
+                            next if key == "name" || key == "job" || key == "description" || key.start_with?("_")
                             if value.is_a?(String)
                                 value.gsub!("\\", "\\\\")
                                 value.gsub!("\"", "\\\"")
