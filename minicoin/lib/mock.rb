@@ -1,35 +1,67 @@
 # Mocking classes for testing Vagrant
 # THe hierarchy is MockVagrant -> MockConfig -> MockVM -> MockBox
-class MockVagrant
-  def initialize()
-    @config = MockConfig.new()
-    @config.vagrant = self
-    @plugin = MockPlugin.new()
-    @sensitive = Array.new
+module Vagrant
+  @@config = nil
+  def self.config
+    @@config = MockConfig.new unless @@config
+    @@config
   end
-  def require_version(expr)
+
+  class OptionParser
   end
-  def configure(version)
-    yield @config
+
+  module UI
+    class Basic
+    end
+    class Colored
+    end
+    class Prefixed
+      def initialize(a, b)
+      end
+      def warn(*)
+      end
+    end
   end
-  def config()
-    return @config
+  module Util
+    class Platform
+      def self.terminal_supports_colors?()
+        false
+      end
+      def self.windows?
+        false
+      end
+    end
   end
-  def plugin(a, b="default")
+  def self.require_version(expr)
+  end
+  def self.plugin(a, b="default")
     MockPlugin
   end
-  def sensitive
-    @sensitive
+  def self.configure(version)
+    yield config
   end
-  def sensitive=(sensitive)
-    @sensitive << sensitive
+  
+  class MockVagrant
+    def initialize()
+      @plugin = MockPlugin.new()
+      @sensitive = Array.new
+    end
+    def sensitive
+      @sensitive
+    end
+    def sensitive=(sensitive)
+      @sensitive << sensitive
+    end
+    def config
+      Vagrant.config
+    end
   end
 end
 
 class MockConfig
   def initialize()
     @vm = MockVm.new(nil)
-    @vagrant = nil
+    @vagrant = Vagrant::MockVagrant.new
   end
   def vm()
     return @vm

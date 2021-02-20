@@ -67,11 +67,10 @@ assert "$(minicoin jobconfig --job runtest --index 2 test)" ""
 echo "=== Testing in global environment"
 cd ..
 
-minicoin list | (
-    read; read
+minicoin list --machine-readable | cut -d ',' -f 6 | (
     while read machine
     do
-        machine=$(echo "$machine" | cut -d ' ' -f 1)
+        echo "    $machine"
         minicoin runinfo $machine > /dev/null
         error=$?
         [ $error -gt 0 ] && errors=$(( $errors + $error ))
@@ -82,6 +81,7 @@ minicoin list | (
 )
 [ $error -gt 0 ] && errors=$(( $errors + $error ))
 
+printf "  = Returning to test environment "
 cd -
 
 if [ $# -eq 0 ]

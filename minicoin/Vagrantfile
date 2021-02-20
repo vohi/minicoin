@@ -18,55 +18,24 @@ require_relative "lib/azure.rb"
 # minicoin command extensions
 require_relative "lib/minicoin.rb"
 
-$is_windows_host = !(ENV["windir"].nil?)
 $has_winrm = false
 $HOME = ENV["HOME"]
 $USER = ENV['USER']
-if $is_windows_host
+if Vagrant::Util::Platform.windows?
   $HOME = ENV["USERPROFILE"]
   $USER = ENV['USERNAME']
 end
 
 $PWD = File.dirname(__FILE__)
 
-$REQUESTED_BOXES = []
-
-for a in 1 ... ARGV.length
-  arg = ARGV[a]
-  if arg.start_with?("-")
-    next
-  end
-  $REQUESTED_BOXES << ARGV[a]
-end
-
 Vagrant.configure("2") do |config|
   config.vagrant.sensitive = [ ENV["minicoin_key"] ]
-  machines = load_minicoin()
-  if ARGV[0] == "list"
-    puts "Available machines are:"
-    puts
-  end
+  Minicoin.machines = load_minicoin()
 
-  machines.each do |machine|
+  Minicoin.machines.each do |machine|
+    next if Minicoin.skip?(machine)
     name = machine["name"]
-    if name.nil?
-      puts "==> Machine without name: #{machine}"
-      next
-    end
-    unless $REQUESTED_BOXES.empty?
-      requested = false
-      for requested_box in $REQUESTED_BOXES
-        if requested_box.start_with?("/") && requested_box.end_with?("/")
-          requested = name =~ /#{requested_box[1..requested_box.length - 2]}/
-        elsif requested_box == name
-          requested = true
-        end
-        break if requested
-      end
-      if !requested
-        next
-      end
-    end
+    ui = Vagrant::UI::Prefixed.new(Minicoin.ui, name)
     machine_box = machine["box"]
     machine_url = machine_box
     if !machine_box.nil?
@@ -74,7 +43,7 @@ Vagrant.configure("2") do |config|
         minicoin_key = ENV['minicoin_key']
         if minicoin_key.nil?
           if ["validate"].include? ARGV[0]
-            puts "==> #{name}: Box is private, but key is not set. Set 'minicoin_key' environment variable!"
+            ui.warn "Box is private, but key is not set. Set 'minicoin_key' environment variable!"
           end
           next
         end
@@ -84,21 +53,18 @@ Vagrant.configure("2") do |config|
       machine_box = expand_env(machine_box, nil)
     end
     if machine_box.nil?
-      puts "==> #{name}: Machine has no box set"
+      ui.warn "Machine has no box set"
       next
     end
 
-    if ARGV[0] == "list"
-      puts "#{name.ljust(25)} #{machine_box}"
-      next
-    end
+    next if ARGV[0] == "list" # shortcut
 
     config.vm.define name, autostart: false do |box|
       box.minicoin.machine = machine
       if !machine["provider"].nil?
         box.vm.provider machine["provider"]
       end
-  
+
       if machine["os"].nil?
         is_windows = ((name =~ /windows/i) || (machine_box =~ /windows/i)) != nil
         is_mac = ((name =~ /mac/i) || (machine_box =~ /mac/i)) != nil

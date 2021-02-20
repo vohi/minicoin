@@ -1,7 +1,5 @@
 require_relative "../lib/mock.rb"
 
-Vagrant = MockVagrant.new
-
 def load_testmachines()
   $PWD = File.join($PWD, "tests")
   $HOME = File.join($PWD, "user")
@@ -198,7 +196,8 @@ class Tester
     }
 
     box_data = {}
-    Vagrant.config.vm.boxes.each do |name, box|
+    vagrant = Vagrant::MockVagrant.new
+    vagrant.config.vm.boxes.each do |name, box|
       box_data[name] = {}
       box_data[name]["box"] = box.box
     end
