@@ -1,4 +1,4 @@
-require_relative "../lib/mock.rb"
+require_relative "mockvagrant.rb"
 
 def load_testmachines()
   $PWD = File.join($PWD, "tests")
