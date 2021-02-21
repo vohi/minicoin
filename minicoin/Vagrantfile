@@ -134,7 +134,7 @@ Vagrant.configure("2") do |config|
         box.minicoin.guest_homes = "/home"
         box.vm.communicator = :ssh
       end
-      ENV["GUEST_HOMES"] = box.minicoin.guest_homes
+      ENV["GUEST_HOMES"] = box.minicoin.guest_homes.to_s
 
       # Allow overriding defaults
       box.vm.communicator = machine["communicator"] unless machine["communicator"].nil?
