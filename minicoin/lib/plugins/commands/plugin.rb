@@ -32,6 +32,11 @@ module Minicoin
                 require_relative "cmd.rb"
                 CMD
             end
+
+            command(:install) do
+                require_relative "install.rb"
+                Install
+            end
         end
     end
 end

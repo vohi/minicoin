@@ -42,10 +42,6 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_update
     min_args=0
     shift
-  elif [ $1 == "install" ]; then
-    minicoin_command=minicoin_install
-    min_args=1
-    shift
   elif [ $1 == "help" ]; then
     minicoin_command="vagant help"
     min_args=99
@@ -159,16 +155,6 @@ function minicoin_jobhelp()
 function minicoin_update()
 {
   run git pull --rebase --autostash
-}
-
-function minicoin_install()
-{
-  packages="${machines[@]: -1}"
-  unset "machines[${#machines[@]}-1]"
-
-  for machine in ${machines[@]}; do
-    run vagrant provision $machine --provision-with "install:$packages"
-  done
 }
 
 $minicoin_command

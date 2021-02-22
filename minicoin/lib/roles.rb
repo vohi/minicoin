@@ -334,9 +334,6 @@ def add_role(box, role, name, machine)
         end
 
         provisioning_name = "#{role}:script"
-        if role == "install"
-            provisioning_name = "install:#{role_params['packages']}"
-        end
         box.vm.provision provisioning_name,
             attributes
     end

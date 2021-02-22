@@ -1,5 +1,6 @@
 param (
-    [String[]]$Packages
+    [String[]]$Packages,
+    [String[]]$Options = @("--no-progress","--limitoutput","-y")
 )
 
 $Packages = $Packages.split(",")
@@ -7,7 +8,12 @@ $Packages = $Packages.split(",")
 chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) {
     $measurement = Measure-Command {
-        & chocolatey install --no-progress --limitoutput -y $p | Out-Default
+        & chocolatey install $Options $p | Out-Default
+        if ( -not $? )
+        {
+            Write-Error "Installation of $p failed"
+            exit 1
+        }
     }
     
     if ($measurement.TotalMinutes -lt 1) {

@@ -227,23 +227,6 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      if ARGV[0] == "provision"
-        begin
-          install_string = ARGV[ARGV.index("--provision-with") + 1]
-          if install_string.start_with?("install:")
-            packages = install_string["install:".length..-1].split(",")
-            packages.each do |package|
-              role = {
-                "role" => "install",
-                "packages" => package
-              }
-              add_role(box, role, name, machine)
-            end
-          end
-        rescue
-        end
-      end
-
       # make powershell the default ssh shell on Windows at the end, as some provisioners rely on cmd
       if box.vm.guest == :windows
         box.vm.provision "powershell_default",

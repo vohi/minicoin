@@ -12,17 +12,17 @@ fi
 case $distro in
     ubuntu*)
         apt-get update
-        command="apt-get -qq -y install"
+        command="apt-get ${PARAM_options:-"-y -qq"} install"
     ;;
 
     centos*)
         yum update -y
-        command="yum install -y"
+        command="yum install ${PARAM_options:-"-y -qq"}"
     ;;
 
     darwin*)
         su vagrant -c "brew update"
-        command="brew install"
+        command="brew install ${PARAM_options:-"-quiet"}"
     ;;
 esac
 
