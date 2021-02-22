@@ -27,6 +27,11 @@ module Minicoin
                 require_relative "ls.rb"
                 LS
             end
+
+            command(:cmd) do
+                require_relative "cmd.rb"
+                CMD
+            end
         end
     end
 end
