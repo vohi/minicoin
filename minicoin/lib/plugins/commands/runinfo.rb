@@ -5,9 +5,6 @@ module Minicoin
                 "show how jobs will be run"
             end
 
-            def initialize(argv, env)
-                super
-            end
             def execute()
                 parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin runinfo [name|id]"

@@ -5,30 +5,30 @@ module Minicoin
                 "prints the configuration for jobs"
             end
 
-            def initialize(argv, env)
-                super
-                @job = nil
-                @configname = nil
-                @index = nil
-            end
             def execute()
-                opts = OptionParser.new do |option|
+                options = {}
+
+                parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin runinfo [vm-name]"
                     option.separator ""
                     option.separator "Options:"
                     option.separator ""
 
-                    option.on("-j JOB", "--job JOB", "The job") do |job|
-                        @job = job
+                    option.on("-j JOB", "--job JOB", "The job") do |o|
+                        options[:job] = o
                     end
-                    option.on("-c CONFIGNAME", "--config CONFIGNAME", "The name of the configuration") do |configname|
-                        @configname = configname
+                    option.on("-c CONFIGNAME", "--config CONFIGNAME", "The name of the configuration") do |o|
+                        options[:configname] = o
                     end
-                    option.on("-i INDEX", "--index INDEX", "The index of the configuration") do |index|
-                        @index = index.to_i
+                    option.on("-i INDEX", "--index INDEX", "The index of the configuration") do |o|
+                        begin
+                            options[:index] = Integer(o)
+                        rescue Exception => e
+                            @env.ui.error e
+                        end
                     end
                 end
-                argv = parse_options(opts)
+                argv = parse_options(parser)
                 return if !argv
 
                 with_target_vms(argv, { :single_target => true }) do |box|
@@ -46,12 +46,12 @@ module Minicoin
                         # find the ones that match
                         jobconfigs = jobconfigs.select do |jobconfig|
                             res = true
-                            res = jobconfig["job"] == @job unless @job.nil?
-                            res = res && jobconfig["name"] == @configname unless @configname.nil?
-                            res = res && jobconfig["_index"] == @index unless @index.nil?
+                            res &&= jobconfig["job"] == options[:job] if options.key?(:job)
+                            res &&= jobconfig["name"] == options[:configname] if options.key?(:configname)
+                            res &&= jobconfig["_index"] == options[:index] if options.key?(:index)
                             res
                         end
-                        @logger.debug("#{jobconfigs.count} matching configurations found for job '#{@job}'")
+                        @logger.debug("#{jobconfigs.count} matching configurations found for job '#{options[:job]}'")
                         # print either the configuration, or the tab-separated list of matches
                         if jobconfigs.count == 0
                             jobconfig = {}

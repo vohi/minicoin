@@ -5,10 +5,6 @@ module Minicoin
                 "lists all available machines"
             end
 
-            def initialize(argv, env)
-                super
-            end
-
             def execute()
                 parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin list [name|id]"

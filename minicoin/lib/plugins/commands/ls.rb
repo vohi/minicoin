@@ -5,10 +5,6 @@ module Minicoin
                 "lists the file system contents on the guest"
             end
 
-            def initialize(argv, env)
-                super
-            end
-
             def execute()
                 options = {}
                 options[:path] = nil

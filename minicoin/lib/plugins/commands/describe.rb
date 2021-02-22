@@ -5,10 +5,6 @@ module Minicoin
                 "prints the YAML for the machine after all merges"
             end
 
-            def initialize(argv, env)
-                super
-            end
-
             def execute()
                 parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin describe [name|id]"
