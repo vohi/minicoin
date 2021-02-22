@@ -22,19 +22,19 @@ chocolatey feature enable -n=allowGlobalConfirmation
 
 if (!(Get-WmiObject win32_service -Filter "Name = 'sshd'")) {
     write-host "Installing OpenSSH server"
-    choco install --no-progress -y -params "/SSHServerFeature /AlsoLogToFile" openssh
+    choco install --no-progress --confirm --limitoutput -params "/SSHServerFeature /AlsoLogToFile" openssh
     New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
     Set-Service sshd -StartupType Automatic
     Set-Service ssh-agent -StartupType Automatic
 }
 
-choco install -y -no-progress "pstools"
+choco install --no-progress --confirm --limitoutput pstools
 psexec -nobanner -accepteula | Out-Null
 
 chocolatey feature disable -n=allowGlobalConfirmation
 
 # set PowerShell as the default log-in shell
-New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\cmd.exe" -PropertyType String -Force
 
 # fix file permissions for administrators_authorized_keys
 $file = "$Env:programdata\ssh\administrators_authorized_keys"
@@ -49,3 +49,7 @@ $acl.SetAccessRule($accessrule)
 $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule("Administrators","FullControl","Allow")
 $acl.SetAccessRule($accessrule)
 $acl | Set-Acl $file
+
+# remove ourselves so that future provisionings can overwrite
+Remove-Item -Path $PSScriptRoot -Force -Recurse
+exit 0
