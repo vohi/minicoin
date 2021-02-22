@@ -88,7 +88,7 @@ then
 test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}
 test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
     assert "$(minicoin runinfo test --machine-readable | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
-        "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
+        "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/vagrant}" # this machine uses mutagen
 fi
 
 if (run_case "jobconfig")

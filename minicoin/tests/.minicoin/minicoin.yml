@@ -21,6 +21,13 @@ jobconfigs: &testconfigs
     spacey: foo bar
     quoted: hello "world"
 
+roles: &mutagentest
+  - role: mutagen
+    paths:
+      - ~/dev/minicoin/minicoin/tests
+    options: --ignore-vcs
+    ignores: "*-build"
+
 machines:
   - ~ # remove default machines
   - name: empty
@@ -39,3 +46,5 @@ machines:
   - name: test
     box: generic/ubuntu2004
     jobconfigs: *testconfigs
+    roles: *mutagentest
+  

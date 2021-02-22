@@ -3,132 +3,7 @@ require 'open3'
 
 $HOST_HAS_MUTAGEN = nil
 
-# work around mutagen bug with Windows 20H2's OpenSSH server
-def upload_mutagen_agent(machine)
-    if machine.config.vm.guest != :windows
-        machine.ui.error("Workaround not implemented for #{machine.config.vm.guest}")
-        return
-    end
-    agent_binary = "windows_amd64"
-
-    stdout, stderr, status = Open3.capture3("which mutagen")
-    if status != 0
-        machine.ui.error("Mutagen not found on host machine")
-        return
-    end
-    mutagen_exe = stdout.strip
-    if File.symlink?(mutagen_exe)
-        mutagen_link = mutagen_exe
-        mutagen_exe = File.readlink(mutagen_exe)
-        unless mutagen_exe.start_with?("/") # relative path, resolve
-            mutagen_exe = File.realpath("#{File.dirname(mutagen_link)}/#{mutagen_exe}")
-        end
-    end
-    stdout, stderr, status = Open3.capture3("mutagen version")
-    mutagen_version = stdout.strip
-    mutagen_bin = File.dirname(mutagen_exe)
-    machine.ui.info("mutagen at #{mutagen_bin} is version #{mutagen_version}")
-    mutagen_agents = File.join(File.dirname(mutagen_bin), "libexec", "mutagen-agents.tar.gz")
-    if File.exist?(mutagen_agents)
-        machine.ui.info("Extracting #{agent_binary} from #{mutagen_agents}")
-        `cd /tmp; tar -zxvf #{mutagen_agents} #{agent_binary}`
-        if File.exist?("/tmp/#{agent_binary}")
-            machine.ui.info("Uploading #{agent_binary} to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
-            `ssh -p #{machine.ssh_info[:port]} vagrant@#{machine.ssh_info[:host]} mkdir -p .mutagen/agents/#{mutagen_version} 2> /dev/null`
-            `scp -P #{machine.ssh_info[:port]} /tmp/#{agent_binary} vagrant@#{machine.ssh_info[:host]}:.mutagen/agents/#{mutagen_version}/mutagen-agent.exe`
-        end
-    end
-end
-
-def mutagen_host_to_guest(box, name, alphas, betas, ignores)
-    session_name = "minicoin-#{name.gsub('.', '')}"
-    box.trigger.before :destroy do |trigger|
-        trigger.name = "Shutting down mutagen sync to #{name} and removing from known hosts"
-        trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("mutagen sync terminate #{session_name}")
-            ssh_info = machine.ssh_info
-            unless ssh_info.nil?
-                keyname = "[127.0.0.1]"
-                keyname = "#{ssh_info[:host]}" unless ssh_info[:host] == "127.0.0.1"
-                keyname = "#{keyname}:#{ssh_info[:port]}" if ssh_info[:port] != 22
-                `ssh-keygen -R #{keyname}`
-            end
-        end
-    end
-    box.trigger.before [ :halt, :suspend ] do |trigger|
-        trigger.name = "Pausing mutagen sync to #{name}"
-        trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("mutagen sync pause #{session_name}")
-        end
-    end
-    box.trigger.after [ :up, :resume ] do |trigger|
-        trigger.name = "Resuming mutagen sync to #{name}"
-        trigger.ruby do |env, machine|
-            stdout, stderr, status = Open3.capture3("echo yes | mutagen sync resume #{session_name}")
-        end
-    end
-
-    if box.vm.guest == :windows
-        mutagen_key_destination = "..\\.ssh\\#{$USER}.pub"
-        mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
-        mutagen_key_add_script = "c:\\windows\\temp\\mutagen_key_add.ps1"
-    else
-        mutagen_key_destination = ".ssh/#{$USER}.pub"
-        mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
-        mutagen_key_add_script = "/tmp/vagrant-shell/mutagen_key_add.sh"
-    end
-    box.vm.provision "mutagen:key upload",
-        type: :file,
-        source: "~/.ssh/id_rsa.pub",
-        destination: mutagen_key_destination
-    box.vm.provision "mutagen:key add",
-        type: :shell,
-        inline: mutagen_key_add,
-        upload_path: mutagen_key_add_script,
-        privileged: false
-    sync = 0
-    alphas.each do |alpha|
-        alpha = alpha.gsub("~", ENV['HOME'])
-        beta = betas[sync]
-        mutagen_create = lambda do |machine|
-            ssh_info = machine.ssh_info
-            if ssh_info.nil?
-                machine.ui.error("Error setting up mutagen sync to #{machine} - no SSH info!")
-                raise "Error setting up mutagen sync: no ssh info available for #{name}!"
-            else
-                stdout, stderr, status = Open3.capture3("mutagen sync list #{session_name}")
-                if (status == 0)
-                    status = -1 unless stdout.include?(alpha)
-                end
-                if status != 0
-                    command = "mutagen sync create --sync-mode one-way-replica --ignore-vcs --name #{session_name} --label minicoin=#{name}"
-                    unless ignores.nil?
-                        ignores.each do |ignore|
-                            command += " -i #{ignore}"
-                        end
-                    end
-                    stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
-                    if status != 0
-                        machine.ui.warn("Attempting workaround to set up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
-                        upload_mutagen_agent(machine)
-                        stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} vagrant@#{ssh_info[:host]}:#{ssh_info[:port]}:#{beta}")
-                    end
-                    if status != 0
-                        machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
-                    end
-                else
-                    machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
-                end
-            end
-        end
-        box.vm.provision "mutagen:sync_create #{alpha}",
-            type: :local_command,
-            code: mutagen_create
-        sync += 1
-    end
-end
-
-def mutagen_guest_to_host(box, name, alphas, betas, ignores)
+def mutagen_guest_to_host(box, name)
     key_file = "#{$PWD}/.vagrant/machines/#{name}/mutagen"
     authorized_keys = "#{$HOME}/.ssh/authorized_keys"
 
@@ -200,36 +75,49 @@ def mutagen_provision(box, name, role_params, machine)
 
     alphas = []
     betas = []
-    paths.each do |path|
-        if path.is_a?(String)
-            path = { path => path }
+    sessions = {}
+    if paths.is_a?(String)
+        paths = { paths => paths }
+    elsif paths.is_a?(Array)
+        paths_hash = {}
+        paths.each do |path|
+            paths_hash[path] = path
         end
-        if path.is_a?(Hash)
-            path.each do |alpha, beta|
-                alphas << alpha
-                if box.vm.guest == :windows
-                    if role_params["reverse"] == true
-                        beta = beta.gsub("/", "\\").gsub("~", "#{ENV['GUEST_HOMES']}\\vagrant")
-                    else    
-                        beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
-                        beta = beta.gsub("\\", "/")
-                    end
-                else
-                    beta = beta.gsub("~", "#{ENV['GUEST_HOMES']}/vagrant")
-                end
-                betas << beta
-                box.minicoin.fs_mappings[alpha] = beta
+        paths = paths_hash
+    end
+    raise "Argument error: 'paths' needs to be a list of strings, or a hash from source to destination" unless paths.is_a?(Hash)
+    paths.each do |alpha, beta|
+        alphas << alpha
+        if box.vm.guest == :windows
+            if role_params["reverse"] == true
+                beta = beta.gsub("/", "\\").gsub("~", "#{box.minicoin.guest_homes}\\vagrant")
+            else
+                beta = beta.gsub("~", "#{box.minicoin.guest_homes}/vagrant")
+                beta = beta.gsub("\\", "/")
             end
         else
-            raise "Argument error: expecting 'paths' to be a list of strings or hashes from source to destination"
+            beta = beta.gsub("~", "#{box.minicoin.guest_homes}/vagrant")
         end
+        betas << beta
+        sessions[alpha] = beta
     end
+    box.minicoin.fs_mappings.merge!(sessions)
+
     role_params["alpha"] = alphas
     role_params["beta"] = betas
 
     if role_params["reverse"] == true
         mutagen_guest_to_host(box, name, alphas, betas, role_params["ignores"])
     else
-        mutagen_host_to_guest(box, name, alphas, betas, role_params["ignores"])
+        sessions.each do |alpha, beta|
+            ignores = [ role_params["ignores"] || [] ].flatten
+            options = [ role_params["options"] || [ "--ignore-vcs" ] ].flatten
+            ignores.each do |ignore|
+                options << "--ignore #{ignore}"
+            end
+            box.vm.synced_folder alpha, beta,
+                type: :mutagen,
+                mount_options: options
+        end
     end
 end

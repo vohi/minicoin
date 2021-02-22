@@ -85,6 +85,8 @@ class MockPlugin
   end
   def self.provisioner(a)
   end
+  def self.synced_folder(*)
+  end
 end
 
 class MockWinssh
