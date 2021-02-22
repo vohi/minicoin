@@ -77,17 +77,17 @@ then
     "==> empty: the host path '${PWD}' doesn't map to any location on the guest:"
 
     # prints: name os communicator guest_homes host_user home_share guest_pwd
-    assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
         "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
-    assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
         "test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-    assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
         "test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}"
-    assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
 "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}
 test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}
 test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-    assert "$(minicoin runinfo test --machine-readable | grep Minicoin::RunInfo | cut -d ',' -f 5-)" \
+    assert "$(minicoin runinfo test --machine-readable | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
         "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/vagrant}" # this machine uses mutagen
 fi
 

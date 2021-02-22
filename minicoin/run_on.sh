@@ -170,7 +170,7 @@ function run_on_machine() {
 
   upload_source="$jobroot/$job"
 
-  machine_runinfo=$(minicoin runinfo --machine-readable $machine | grep Minicoin::RunInfo)
+  machine_runinfo=$(minicoin runinfo --machine-readable $machine | grep Minicoin::Commands::RunInfo)
   log_progress "==> $machine: Machine runinfo retrieved: '$machine_runinfo'"
 
   home_share=$(echo $machine_runinfo | cut -d ',' -f 10)
