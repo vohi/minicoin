@@ -42,10 +42,6 @@ if [[ $# > 0 ]]; then
     minicoin_command=minicoin_update
     min_args=0
     shift
-  elif [ $1 == "ls" ]; then
-    minicoin_command=minicoin_ls
-    min_args=1
-    shift
   elif [ $1 == "cmd" ]; then
     minicoin_command=minicoin_cmd
     min_args=1
@@ -89,11 +85,11 @@ IFS='
   echo
   echo "    Prints the YAML version for the specificed machines"
   echo
-  echo "  ls machine1 [machine2] ... [-- [args]]"
+  echo "  ls [--path path] machine1 [machine2] ... [-- [args]]"
   echo
-  echo "    Show the directory contents of each machine. 'args' will be passed to the"
-  echo "    respective command, ie 'ls' on mac and Linux guests, and the 'dir' command"
-  echo "    on Windows guests."
+  echo "    Show the contents of 'path' for each machine (defaults to the vagrant user's"
+  echo "    home directory. 'args' will be passed to the respective command, ie 'ls' on"
+  echo "    mac and Linux guests, and the 'dir' command on Windows guests."
   echo
   echo "  jobs"
   echo
@@ -167,29 +163,6 @@ function minicoin_jobhelp()
 function minicoin_update()
 {
   run git pull --rebase --autostash
-}
-
-function minicoin_ls()
-{
-  args=
-  if [[ ! ${script_args[@]} == "" ]]; then
-    args=" ${script_args[@]}"
-  fi
-  for machine in ${machines[@]}; do
-    echo "==> $machine:"
-    if $(run vagrant winrm $machine < /dev/null &> /dev/null)
-    then
-      run vagrant winrm -c "cd \$Env:USERPROFILE; cmd /c dir$args" $machine
-    else
-      run vagrant ssh -c "ls -l$args" $machine
-    fi
-    error=$?
-    if [ $error -gt 0 ]; then
-      echo "==> $machine: Error executing command on $machine"
-      return $error
-    fi
-  done
-  return 0
 }
 
 function minicoin_cmd()

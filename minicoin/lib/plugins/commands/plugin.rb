@@ -22,6 +22,11 @@ module Minicoin
                 require_relative "jobconfig.rb"
                 JobConfig
             end
+
+            command(:ls) do
+                require_relative "ls.rb"
+                LS
+            end
         end
     end
 end
