@@ -41,6 +41,15 @@ module Minicoin
                 end
                 { "minicoin" => errors }
             end
+
+            def to_hash()
+                hash = {}
+                instance_variables.each do |var|
+                    var_name = var.to_s[1..-1]
+                    hash[var_name] = instance_variable_get(var) unless var_name.start_with?("_")
+                end
+                hash
+            end
         end
     end
 end

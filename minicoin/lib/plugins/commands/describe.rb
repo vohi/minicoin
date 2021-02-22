@@ -18,9 +18,7 @@ module Minicoin
                 with_target_vms(argv) do |box|
                     keys = box.config.instance_variable_get('@keys')
                     minicoin = keys[:minicoin]
-                    machine = minicoin.machine
-                    machine.delete("_internal")
-                    puts machine.to_yaml
+                    puts minicoin.to_hash.to_yaml
                 end
             end
         end
