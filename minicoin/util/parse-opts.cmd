@@ -1,4 +1,8 @@
 @echo off
+title minicoin_command_%1
+for /f "tokens=2 USEBACKQ" %%f IN (`tasklist /NH /FI "WINDOWTITLE eq minicoin_command_%1*"`) Do set PID=%%f
+echo minicoin.process.id=!PID!
+
 REM Needs to be set in the calling script
 REM setlocal ENABLEDELAYEDEXPANSION
 

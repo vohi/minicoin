@@ -1,4 +1,5 @@
 require "open3"
+require "vagrant/util/busy"
 
 module Minicoin
     module Commands
@@ -84,7 +85,7 @@ module Minicoin
                         options[:privileged] = o
                     end
                     option.on("--parallel", "Run the job on several machines in parallel") do |o|
-                        options[:privileged] = o
+                        options[:parallel] = o
                     end
                 end
 
@@ -166,20 +167,109 @@ module Minicoin
                 return if !argv
                 raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
+                @run_options[:machine_ui] = argv.count > 1
+                Thread.report_on_exception = true
                 threads = []
                 with_target_vms(argv) do |vm|
-                    threads << Thread.new do
-                        do_execute(vm, job_options)
+                    log_verbose(vm.ui, "Starting job on #{vm.name}")
+                    thread = JobThread.new(vm) do
+                        do_execute(job_options)
                     end
+                    thread.run
+                    if @run_options[:parallel]
+                        threads << thread
+                    else
+                        log_verbose(vm.ui, "Waiting for #{vm.name} #{thread.status}")
+                        while thread.alive?
+                            thread.check_interrupted()
+                        end
+                        log_verbose(vm.ui, "Ending thread")
+                        thread.join
+                    end
+                    break if thread.interrupted?
                 end
-                threads.each do |thread|
-                    thread.join
+                # wait for all threads (parallel is set)
+                if threads.count > 0
+                    log_verbose(@env.ui, "Waiting for #{threads.count} jobs to finish")
+                    any_alive = true
+                    while any_alive
+                        any_alive = false
+                        threads.each do |thread|
+                            if thread.alive?
+                                thread.check_interrupted()
+                                any_alive = true
+                            else
+                                thread.join
+                                threads.delete(thread)
+                            end
+                        end
+                    end
                 end
             end
 
             private
 
-            def do_execute(vm, job_options)
+            class JobThread < Thread
+                attr_accessor :vm
+    
+                def initialize(vm)
+                    @vm = vm
+                    @pid = nil
+                    @interrupt = 0
+                    @level = 0
+                    super
+                end
+    
+                def interrupt!()
+                    @interrupt += 1
+                    if @interrupt == 1
+                        vm.ui.warn("Interrupt requested, trying to exit")
+                    elsif @interrupt == 2
+                        vm.ui.warn("Interrupt requested, trying to terminate")
+                    else
+                        vm.ui.error("Hard exit, process #{@pid} might still be running on #{vm.name}")
+                        abort
+                    end
+                end
+                def interrupted?()
+                    @level > 0 || @interrupt > 0
+                end
+                def pid()
+                    @pid
+                end
+                def pid=(id)
+                    @pid = id
+                end
+    
+                def check_interrupted()
+                    sleep 1
+                    if @interrupt > @level && @pid
+                        vm.ui.warn "Attempting to interrupt job #{@pid} running on #{vm.name}"
+                        @level = @interrupt
+                        begin
+                            if vm.guest.name == :windows
+                                vm.communicate.sudo("pskill -t #{@pid}")
+                            else
+                                if @level == 1
+                                    signal = "SIGTERM"
+                                else
+                                    signal = "SIGKILL"
+                                end
+                                vm.ui.warn "Sending #{signal} to process #{@pid}"
+                                vm.communicate.sudo("kill -#{signal} #{@pid}")
+                            end
+                        rescue Vagrant::Errors::VagrantError => e
+                            # ignore those
+                        rescue StandardError => e
+                            vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
+                        end
+                    end
+                end
+            end
+    
+            def do_execute(job_options)
+                thread = Thread.current
+                vm = thread.vm
                 options = job_options.dup
                 unless vm.communicate.ready?
                     vm.ui.warn "Machine not ready, trying to bring it up"
@@ -223,26 +313,59 @@ module Minicoin
                 run_command += " #{job_args.join(" ")}"
 
                 vm.ui.info "Running '#{@job_name}' with arguments #{job_args.join(" ")}"
+
+                buffer = []
                 process_output = lambda do |type, data|
                     data.rstrip!
                     return if data.nil?
                     data.chomp!
-                    if type == :stderr
-                        vm.ui.error data
-                    else
-                        vm.ui.detail data
+                    if !thread.pid && data.start_with?("minicoin.process.id=")
+                        thread.pid = data.delete_prefix("minicoin.process.id=")
+                        log_verbose(vm.ui, "Job has process ID #{thread.pid} on guest")
+                        next
                     end
+                    # batch data up
+                    if thread.interrupted?
+                        buffer << [ type, data ]
+                        next
+                    end
+                    echo(vm.ui, type, data)
                 end
                 log_verbose(vm.ui, "Executing command '#{run_command}'")
-                if vm.guest.name == :windows || !@run_options[:privileged]
-                    vm.communicate.execute(run_command, &process_output)
-                else
-                    vm.communicate.sudo(run_command, &process_output)
+                Vagrant::Util::Busy.busy(Proc.new{ thread.interrupt! }) do
+                    begin
+                        if vm.guest.name == :windows || !@run_options[:privileged]
+                            vm.communicate.execute(run_command, &process_output)
+                        else
+                            vm.communicate.sudo(run_command, &process_output)
+                        end
+                    rescue Vagrant::Errors::VagrantError => e
+                        # ignore those
+                    rescue StandardError => e
+                        log_verbose(vm.ui, "Received error from command:")
+                        log_verbose(vm.ui, e)
+                    end
+                end
+                if thread.interrupted?
+                    buffer.each do |entry|
+                        echo(vm.ui, entry[0], entry[1])
+                    end
+                    vm.ui.warn "Job exited after interruption"
                 end
                 log_verbose(vm.ui, "Cleaning up via '#{cleanup_command}'")
                 vm.communicate.sudo(cleanup_command)
 
                 run_local(vm, "post")
+            end
+
+            def echo(ui, type, data)
+                if type == :stderr
+                    ui.error data
+                elsif @run_options[:machine_ui]
+                    ui.detail data
+                else
+                    @env.ui.detail data
+                end
             end
 
             def log_verbose(ui, message)
