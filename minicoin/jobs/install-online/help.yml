@@ -1,0 +1,9 @@
+---
+summary: "Install Qt using the online installer"
+options:
+  - name: install_root
+    type: string
+    description: Sets the root directory for the installation
+  - name: package
+    type: string
+    description: Specifies the package that should be installed
