@@ -3,7 +3,8 @@ require_relative "mockvagrant.rb"
 def load_testmachines()
   $PWD = File.join($PWD, "tests")
   $HOME = File.join($PWD, "user")
-  ENV['MINICOIN_PROJECT_DIR'] = File.join($PWD, "local")
+  $MINICOIN_PROJECT_DIR = File.join($PWD, "local")
+  ENV['MINICOIN_PROJECT_DIR'] = $MINICOIN_PROJECT_DIR
 end
 
 class Tester
