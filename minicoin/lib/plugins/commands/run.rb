@@ -7,6 +7,18 @@ module Minicoin
                 "runs a job"
             end
 
+            def self.read_help(path)
+                help = {}
+                help["summary"] = path
+                if File.file?(File.join(path, "help.yml"))
+                    help = YAML.load_file(File.join(path, "help.yml"))
+                elsif File.file?(File.join(path, "help.txt"))
+                    file = File.new(File.join(path, "help.txt"))
+                    help["summary"] = file.readline
+                end
+                help
+            end
+
             def find_jobs()
                 def look_up(root)
                     [].tap do |job_roots|
@@ -57,8 +69,9 @@ module Minicoin
                     option.separator ""
                     option.separator "Available jobs:"
                     
-                    @subcommands.each do |key, value|
-                        option.separator "     #{key.ljust(25)}#{value.synopsis}"
+                    @jobs.each do |job, path|
+                        help = Run.read_help(path)
+                        option.separator "     #{job.ljust(25)}#{help["summary"]}"
                     end
                     
                     option.separator ""
@@ -118,9 +131,23 @@ module Minicoin
                 parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin run #{@job_name} [options] [name|id] [-- extra job args]"
                     option.separator ""
+                    help = Run.read_help(@job_path)
+                    if help
+                        option.separator help["summary"]
+                        option.separator ""
+                    end
                     option.separator "Options:"
                     option.separator ""
                     # read job specific help file and list options
+                    if help["options"]
+                        help["options"].each do |help_option|
+                            var = ""
+                            var = help_option["name"].upcase if help_option["type"] == "string"
+                            option.on("--#{help_option["name"]} #{var}", help_option["description"]) do |o|
+                                @run_options["name"]
+                            end
+                        end
+                    end
                     option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
                         puts "Jobconfig specified"
                         @run_options[:jobconfig] = o
