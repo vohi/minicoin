@@ -9,18 +9,19 @@ module Minicoin
 
             def find_jobs()
                 def look_up(root)
-                    job_roots = []
-                    while true do
-                        job_dir = File.join(root, ".minicoin/jobs")
-                        job_roots << job_dir if Dir.exist?(job_dir)
-                        old_root = root
-                        root = File.dirname(old_root)
-                        break if File.identical?(root, old_root)
+                    [].tap do |job_roots|
+                        while true do
+                            job_dir = File.join(root, ".minicoin/jobs")
+                            job_roots << job_dir if Dir.exist?(job_dir)
+                            old_root = root
+                            root = File.dirname(old_root)
+                            break if File.identical?(root, old_root)
+                        end
                     end
-                    job_roots
                 end
                 
-                job_roots = [File.expand_path("jobs"), "#{$HOME}/minicoin/jobs"]
+                job_roots = [ File.expand_path("jobs") ]
+                "#{$HOME}/minicoin/jobs".tap { |user| job_roots << user if File.directory?(user) }
                 job_roots += look_up($MINICOIN_PROJECT_DIR || Dir.pwd)
             end
             
@@ -29,9 +30,8 @@ module Minicoin
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
                 super(@argv, env)
 
-                job_roots = find_jobs()
                 @jobs = {}
-                job_roots.each do |job_root|
+                find_jobs().each do |job_root|
                     Dir.entries(job_root).each do |entry|
                         next if [".", ".."].include?(entry)
                         absolute = File.join(job_root, entry)
