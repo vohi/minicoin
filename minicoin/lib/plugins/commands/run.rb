@@ -296,15 +296,16 @@ module Minicoin
             def job_arguments(options, vm)
                 project_dir = $MINICOIN_PROJECT_DIR
 
-                # start with the implicit arguments
-                arguments = jobconfig(options, vm)
+                # first guest work dir and host work dir
+                arguments = [ guest_dir(vm, project_dir), project_dir ]
+                # then the implicit arguments, so that they can be overridden
+                arguments += jobconfig(options, vm)
                 log_verbose(vm.ui, "Auto-arguments received: #{arguments}")
 
                 # verbosity is passed through to the job, unless the script is a
                 # powershell script (then the run_helper has to pass through)
                 arguments << "--verbose" if options[:verbose] && options[:ext] != "ps1"
 
-                arguments << guest_dir(vm, project_dir) << project_dir
                 options[:job_args].each do |job_arg|
                         # powershell job scripts -> single dash
                     job_arg = job_arg[1..-1] if options[:ext] == "ps1" && job_arg.start_with?("--")
@@ -378,7 +379,10 @@ module Minicoin
                             value.gsub!("\"", "\\\"")
                         end
 
-                        arguments << "--#{key}"
+                        key_flag = "--#{key}"
+                        puts options[:job_args]
+                        next if options[:job_args].include?(key_flag)
+                        arguments << key_flag
                         value = value.join(",") if value.is_a?(Array)
                         if value
                             value = "\"#{value}\"" if value.include?(" ")
