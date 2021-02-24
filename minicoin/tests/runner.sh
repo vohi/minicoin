@@ -7,7 +7,7 @@ RED="\033[0;31m"
 NOCOL="\033[0m"
 
 testcases=()
-if [ $1 == "--tests" ]
+if [ "$1" == "--tests" ]
 then
     IFS=','; testcases=( $2 )
     shift
