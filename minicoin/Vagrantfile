@@ -180,7 +180,7 @@ Vagrant.configure("2") do |config|
             box.vm.network "forwarded_port", attributes
           end
         rescue
-          puts "==> #{name}: 'ports' needs to be a list of mappings, and 'id' and 'guest' needs to be set"
+          STDERR.puts "==> #{name}: 'ports' needs to be a list of mappings, and 'id' and 'guest' needs to be set"
         end
       end
 
