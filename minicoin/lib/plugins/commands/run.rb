@@ -195,8 +195,8 @@ module Minicoin
                     options[:ext] = "cmd" if File.exist?(File.join(@job_path, "main.cmd"))
                     run_command = "C:\\minicoin\\util\\run_helper.ps1 "
                     # enable verbosity and privileged execution in run_helper
-                    run_command += "-verbose " if options[:verbose]
-                    run_command += "-privileged " if options[:privileged]
+                    run_command += "-verbose " if @run_options[:verbose]
+                    run_command += "-privileged " if @run_options[:privileged]
                     target_path = ".minicoin\\jobs"
                     run_command += "Documents\\#{target_path}\\#{@job_name}\\"
                     cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job_name}"
