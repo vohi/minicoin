@@ -16,7 +16,6 @@ end
 
 # Azure specific settings
 def azure_setup(box, machine)
-    box.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
     if $AZURE_CLI_INSTALLED == false
         return
     end
@@ -26,6 +25,8 @@ def azure_setup(box, machine)
     pwd = ENV['minicoin_key']
 
     box.vm.provider :azure do |azure, override|
+        override.vm.synced_folder "", "/azure",
+            type: :mutagen, id: :cloud_prepare, provider: :azure
         override.vm.synced_folder ".", "/minicoin", disabled: true
         shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|

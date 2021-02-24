@@ -34,8 +34,8 @@ module Minicoin
             end
 
             def enable(machine, folders, opts)
-                folder = folders[machine.box.provider]
-                return if folder.nil?
+                folder = folders[:cloud_prepare]
+                return if folder.nil? || folder[:provider] != machine.box.provider
                 if skip_prepare(machine)
                     machine.ui.output "#{machine.box.provider} machine already prepared, use the `--provision` flag to force a re-run."
                     return

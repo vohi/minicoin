@@ -16,13 +16,20 @@ module Minicoin
             end
 
             def enable(machine, folders, opts)
+                if folders[:cloud_prepare]
+                    require_relative "../cloud_prepare/synced_folder.rb"
+                    cloud_preparor = Minicoin::CloudPrepare::SyncedFolder.new
+                    if cloud_preparor.usable?(machine, false)
+                        cloud_preparor.enable(machine, {:cloud_prepare => folders[:cloud_prepare]}, opts)
+                    end
+                end
                 machine.ui.info "Setting up mutagen sync sessions..."
                 stdout, stderr, status = SyncedFolderMutagen.call_mutagen(:list, machine.name)
                 status = -1 if status = 0 && stdout.include?("No sessions found")
                 if status == 0
                     # we have a running session, check if it includes all our alphas
                     folders.each do |id, folder_opts|
-                        next if folder_opts[:type] != :mutagen
+                        next if folder_opts[:type] != :mutagen || id == :cloud_prepare
                         alpha = folder_opts[:hostpath]
                         status = -1 unless stdout.include?(alpha)
                     end
@@ -50,7 +57,7 @@ module Minicoin
 
                 command = "#{SyncedFolderMutagen.mutagen_path} sync create --sync-mode one-way-replica --name minicoin --label minicoin=#{machine.name}"
                 folders.each do |id, folder_opts|
-                    next if folder_opts[:type] != :mutagen
+                    next if folder_opts[:type] != :mutagen || id == :cloud_prepare
                     alpha = folder_opts[:hostpath]
                     beta = folder_opts[:guestpath]
                     mount_options = folder_opts[:mount_options] || []
