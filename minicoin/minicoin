@@ -27,9 +27,14 @@ min_args=1
 
 if [[ $# > 0 ]]; then
   if [ $1 == "run" ]; then
-    minicoin_command=minicoin_run
-    min_args=2
-    shift
+    if [[ "$MINICOIN_EXPERIMENTAL" =~ run ]]
+    then
+      echo "Using new job runner"
+    else
+      minicoin_command=minicoin_run
+      min_args=2
+      shift
+    fi
   elif [ $1 == "jobs" ]; then
     minicoin_command=minicoin_jobs
     min_args=0
