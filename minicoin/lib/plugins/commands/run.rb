@@ -149,7 +149,6 @@ module Minicoin
                         end
                     end
                     option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
-                        puts "Jobconfig specified"
                         @run_options[:jobconfig] = o
                     end
                 end
@@ -380,7 +379,6 @@ module Minicoin
                         end
 
                         key_flag = "--#{key}"
-                        puts options[:job_args]
                         next if options[:job_args].include?(key_flag)
                         arguments << key_flag
                         value = value.join(",") if value.is_a?(Array)

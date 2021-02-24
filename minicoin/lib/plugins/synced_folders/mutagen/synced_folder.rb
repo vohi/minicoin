@@ -114,7 +114,7 @@ module Minicoin
                 else
                     ssh_scanned = stdout.split("\n")
                     if !ssh_scanned.include?(ssh_registered)
-                        machine.ui.warn("Remove host identification changed, revoking old keys for #{ssh_hostname}")
+                        machine.ui.warn("Guest's host identification changed, revoking old keys for #{ssh_hostname}")
                         stdout, stderr, status = Open3.capture3("ssh-keygen -R #{ssh_hostname}")
                     end
                 end
