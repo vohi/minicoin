@@ -277,7 +277,8 @@ module Minicoin
                         vm.ui.warn("Interrupt requested, trying to terminate")
                     else
                         vm.ui.error("Hard exit, process #{@pid} might still be running on #{vm.name}")
-                        abort
+                        @exit_code=255
+                        exit
                     end
                 end
                 def interrupted?()
