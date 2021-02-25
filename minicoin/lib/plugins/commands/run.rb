@@ -215,6 +215,15 @@ module Minicoin
                 threads = []
                 exit_code = 0
                 with_target_vms(argv) do |vm|
+                    unless vm.communicate.ready?
+                        vm.ui.warn "Machine not ready, trying to bring it up"
+                        vm.env.cli("up", vm.name.to_s)
+                        if !vm.communicate.wait_for_ready(60)
+                            vm.ui.error "Failed to bring up machine"
+                            raise Vagrant::Errors::MachineGuestNotReady
+                        end
+                    end
+    
                     log_verbose(vm.ui, "Starting job on #{vm.name}")
                     thread = JobThread.new(vm) do
                         Thread.current.exit_code = do_execute(job_options)
@@ -323,14 +332,6 @@ module Minicoin
                 thread = Thread.current
                 vm = thread.vm
                 options = job_options.dup
-                unless vm.communicate.ready?
-                    vm.ui.warn "Machine not ready, trying to bring it up"
-                    vm.env.cli("up", vm.name.to_s)
-                    if !vm.communicate.wait_for_ready(60)
-                        vm.ui.error "Failed to bring up machine"
-                        raise Vagrant::Errors::MachineGuestNotReady
-                    end
-                end
 
                 if vm.guest.name == :windows
                     options[:ext] = "ps1"
