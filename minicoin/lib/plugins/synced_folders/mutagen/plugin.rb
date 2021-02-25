@@ -55,7 +55,7 @@ module Minicoin
                 super
             end
 
-            synced_folder("mutagen") do
+            synced_folder("mutagen", 9) do # lower priority than built-in
                 require_relative "synced_folder.rb"
                 SyncedFolder
             end
