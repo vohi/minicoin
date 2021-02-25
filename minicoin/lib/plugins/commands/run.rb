@@ -41,8 +41,8 @@ module Minicoin
                         current["description"] = line if current && current["description"].nil?
                     end
                     help["options"] = options
-                    help["summary"] = path if help["summary"].nil?
                 end
+                help["summary"] = "[no help found at #{path}]" if help["summary"].nil?
                 help
             end
 
