@@ -361,7 +361,8 @@ module Minicoin
                 run_local(vm, "pre")
 
                 run_command +=  "#{script_file}"
-                job_args = job_arguments(options, vm)
+                jobconfig = jobconfig(options, vm)
+                job_args = job_arguments(options, jobconfig, vm)
                 run_command += " #{job_args.join(" ")}"
 
                 vm.ui.info "Running '#{@job_name}' with arguments #{job_args.join(" ")}"
@@ -469,13 +470,29 @@ module Minicoin
                 guest_dir
             end
 
-            def job_arguments(options, vm)
+            def job_arguments(options, jobconfig, vm)
                 project_dir = $MINICOIN_PROJECT_DIR
 
                 # first guest work dir and host work dir
                 arguments = [ guest_dir(vm, project_dir), project_dir ]
                 # then the implicit arguments, so that they can be overridden
-                arguments += jobconfig(options, vm)
+                jobconfig.each do |key, value|
+                    next if ["name", "job", "description", "matchers"].include?(key) || key.start_with?("_")
+                    next if value == false
+                    value = value.join(",") if value.is_a?(Array)
+                    value = value.to_s
+                    value.gsub!("\\", "\\\\")
+                    value.gsub!("\"", "\\\"")
+
+                    key_flag = "--#{key}"
+                    # already set by user
+                    next if options[:job_args].include?(key_flag)
+                    arguments << key_flag
+                    if value
+                        value = "\"#{value}\"" if value.include?(" ")
+                        arguments << value
+                    end
+                end
                 log_verbose(vm.ui, "Auto-arguments received: #{arguments}")
 
                 # verbosity is passed through to the job, unless the script is a
@@ -495,7 +512,7 @@ module Minicoin
                 keys = vm.config.instance_variable_get('@keys')
                 minicoin = keys[:minicoin]
                 machine = minicoin.machine
-                return [] if machine["jobconfigs"].nil?
+                return {} if machine["jobconfigs"].nil?
 
                 # enumerate all jobconfigs
                 jobconfigs = []
@@ -509,17 +526,21 @@ module Minicoin
                 rescue
                     # not an integer
                 end
-                # find the ones that match
+                # find the ones that match, remember the default
                 log_verbose(vm.ui, "Finding jobconfig matching #{@run_options}")
-                jobconfigs = jobconfigs.select do |jobconfig|
+                default_config = nil
+                jobconfigs = jobconfigs.select do |jc|
                     res = true
-                    res &&= jobconfig["job"] == @job_name
-                    res &&= jobconfig["name"] == @run_options[:jobconfig] if @run_options.key?(:jobconfig)
-                    res &&= jobconfig["_index"] == @run_options[:jobconfig_index] if @run_options.key?(:jobconfig_index)
+                    res &&= jc["job"] == @job_name
+                    res &&= jc["name"] == @run_options[:jobconfig] if @run_options.key?(:jobconfig)
+                    res &&= jc["_index"] == @run_options[:jobconfig_index] if @run_options.key?(:jobconfig_index)
+                    default_config = jc if res && jc["default"]
                     res
                 end
                 if jobconfigs.count == 0
                     jobconfig = {}
+                elsif default_config
+                    jobconfig = default_config
                 elsif jobconfigs.count > 1
                     # start dialog if multiple configurations, otherwise 
                     log_verbose(vm.ui, "#{jobconfigs.count} matching configurations found for job '#{@job_name}'")
@@ -554,24 +575,9 @@ module Minicoin
                 else
                     jobconfig = jobconfigs.first
                 end
-                [].tap do |arguments|
-                    jobconfig.each do |key, value|
-                        next if key == "name" || key == "job" || key == "description" || key.start_with?("_")
-                        if value.is_a?(String)
-                            value.gsub!("\\", "\\\\")
-                            value.gsub!("\"", "\\\"")
-                        end
-
-                        key_flag = "--#{key}"
-                        next if options[:job_args].include?(key_flag)
-                        arguments << key_flag
-                        value = value.join(",") if value.is_a?(Array)
-                        if value
-                            value = "\"#{value}\"" if value.include?(" ")
-                            arguments << value
-                        end
-                    end
-                end
+                # remove here, only relevant for config selection
+                jobconfig.delete("default")
+                jobconfig
             end
         end
     end
