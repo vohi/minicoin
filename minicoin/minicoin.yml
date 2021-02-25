@@ -22,6 +22,34 @@ includes:
   - lib/coin.yml
   - lib/github.yml
 
+matchers:
+  - qdoc: &qdoc
+    - pattern: "(.*):(\\d+): \\(qdoc\\) warning:\\s+(.*)$"
+      replace: true
+      channel: warn
+    - pattern: "(.*):(\\d+): \\(qdoc\\) error:\\s+(.*)$"
+      replace: true
+      channel: error
+    - pattern: "^\\[\\d+/\\d+\\].*$"
+      replace: true
+      channel: detail
+    - pattern: ".*"
+      replace: true
+      channel: success
+  - cpp: &cpp
+    - pattern: "(.*):(\\d+): warning:\\s+(.*)$"
+      replace: true
+      channel: warn
+    - pattern: "(.*):(\\d+): error:\\s+(.*)$"
+      replace: true
+      channel: error
+    - pattern: "^\\[\\d+/\\d+\\].*$"
+      replace: true
+      channel: detail
+    - pattern: ".*"
+      replace: true
+      channel: success
+
 # machine definitions
 machines:
 
@@ -83,6 +111,7 @@ machines:
       - name: host
         description: builds and installs host-side tools for Qt
         job: build
+        matchers: *cpp
         options:
           configure: -release -prefix ~/android-host
           target: "host_tools"
@@ -90,6 +119,7 @@ machines:
       - name: android
         description: cross-platform build of Qt for Android
         job: build
+        matchers: *cpp
         options:
           configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
           build: android
@@ -108,3 +138,16 @@ machines:
     roles:
       - linux-builder
       - doc-server
+    jobconfigs:
+      - name: qdoc
+        job: build
+        description: build qdoc and tools
+        configure: -release -developer-build
+        target: qdoc qtattributionsscanner
+        matchers: *cpp
+      - name: documentation
+        job: build
+        default: true
+        description: build the documentation
+        target: html_docs
+        matchers: *qdoc
