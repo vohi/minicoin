@@ -41,6 +41,11 @@ module Minicoin
             # register a subcommand for every job directory
             def initialize(argv, env)
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
+                # special case, since we have a main command argument that takes a value
+                if @argv[-1] == "--jobconfig"
+                    @argv << @job_name
+                    @job_name = @job_args.delete_at(0)
+                end
                 super(@argv, env)
 
                 @jobs = {}
@@ -69,6 +74,7 @@ module Minicoin
                     option.banner = "Usage: minicoin run [options] <job> [name|id] [-- extra job args]"
                     option.separator ""
                     option.separator "Available jobs:"
+                    option.separator ""
                     
                     @jobs.each do |job, path|
                         help = Run.read_help(path)
@@ -76,17 +82,24 @@ module Minicoin
                     end
                     
                     option.separator ""
-                    option.separator "For help on any individual subcommand run `minicoin run <subcommand> --help`"
+                    option.separator "For help on a job run `minicoin run <job> --help`"
                     option.separator ""
                     option.on("--verbose", "Enable verbose output") do |o|
                         options[:verbose] = o
                     end
-                    option.on("--privileged", "Run job with administrative privileges") do |o|
+                    option.on("--privileged", "Run job with elevated privileges") do |o|
                         options[:privileged] = o
                     end
                     option.on("--parallel", "Run the job on several machines in parallel") do |o|
                         options[:parallel] = o
                     end
+                    option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
+                        options[:jobconfig] = o
+                    end
+
+                    option.separator ""
+                    option.separator "Standard options:"
+                    option.separator ""
                 end
 
                 argv = parse_options(parser)
@@ -137,21 +150,21 @@ module Minicoin
                         option.separator help["summary"]
                         option.separator ""
                     end
-                    option.separator "Options:"
-                    option.separator ""
                     # read job specific help file and list options
                     if help["options"]
-                        help["options"].each do |help_option|
+                        option.separator "Options:"
+                        option.separator ""
+                            help["options"].each do |help_option|
                             var = ""
                             var = help_option["name"].upcase if help_option["type"] == "string"
                             option.on("--#{help_option["name"]} #{var}", help_option["description"]) do |o|
-                                @run_options["name"]
+                                job_options[help_option["name"]] = o
                             end
                         end
+                        option.separator ""
                     end
-                    option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
-                        @run_options[:jobconfig] = o
-                    end
+                    option.separator "Standard options:"
+                    option.separator ""
                 end
 
                 # everything after the "--" goes to the job script
@@ -459,19 +472,26 @@ module Minicoin
                     jobconfig["_index"] = jobconfigs.length
                     jobconfigs << jobconfig
                 end
+                begin
+                    @run_options[:jobconfig_index] = Integer(@run_options[:jobconfig])
+                    @run_options.delete(:jobconfig)
+                rescue
+                    # not an integer
+                end
                 # find the ones that match
+                log_verbose(vm.ui, "Finding jobconfig matching #{@run_options}")
                 jobconfigs = jobconfigs.select do |jobconfig|
                     res = true
                     res &&= jobconfig["job"] == @job_name
-                    res &&= jobconfig["name"] == options[:jobconfig] if options.key?(:jobconfig)
-                    res &&= jobconfig["_index"] == options[:index] if options.key?(:index)
+                    res &&= jobconfig["name"] == @run_options[:jobconfig] if @run_options.key?(:jobconfig)
+                    res &&= jobconfig["_index"] == @run_options[:jobconfig_index] if @run_options.key?(:jobconfig_index)
                     res
                 end
-                @logger.debug("#{jobconfigs.count} matching configurations found for job '#{options[:job]}'")
-                # print either the configuration, or the tab-separated list of matches
                 if jobconfigs.count == 0
                     jobconfig = {}
                 elsif jobconfigs.count > 1
+                    # start dialog if multiple configurations, otherwise 
+                    log_verbose(vm.ui, "#{jobconfigs.count} matching configurations found for job '#{@job_name}'")
                     if @env.ui.is_a?(Vagrant::UI::MachineReadable) || @env.ui.is_a?(Vagrant::UI::NonInteractive)
                         raise Vagrant::Errors::UIExpectsTTY
                     end
