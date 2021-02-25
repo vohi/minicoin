@@ -13,33 +13,34 @@ The configure script will be default be invoked with
 
 The job then builds the default target.
 
-Supported job parameters:
+--configure CONFIGURE
 
---configure "configure line \"with spaces\""
+  Overrides the default configuration options
 
-  Overrides the default configuration options.
+--target TARGET
 
---target target
-
-  Build a different target than the default, e.g.
+  Builds a different target than the default
 
   $ minicoin run windows10 build -- --target tst_qobject_check
   $ minicoin run doc-server build -- --target html_docs
 
---build name
+--build NAME
 
-  Override the default build tree:
+  Overrides the default build tree
 
   $ minicoin run ubuntu1804 build-qt -- --build qt-build-5.15
 
 --clean
 
-  Delete the build tree before configuring and building.
+  Deletes the build tree before configuring and building
 
---cc path
---cxx path
+--cc PATH
 
-  Use the C and C++ compiler at the specified path, e.g.
+  Use the C compiler at the specified path
+
+--cxx PATH
+
+  Use the C++ compiler at the specified path
 
   $ minicoin run ubuntu1804 build -- -cc /usr/bin/clang-10 --cxx /usr/bin/clang++10
   $ minicoin run windows10 build -- -cc cl --cxx cl

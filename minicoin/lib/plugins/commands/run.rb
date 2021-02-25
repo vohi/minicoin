@@ -10,12 +10,38 @@ module Minicoin
 
             def self.read_help(path)
                 help = {}
-                help["summary"] = path
                 if File.file?(File.join(path, "help.yml"))
                     help = YAML.load_file(File.join(path, "help.yml"))
                 elsif File.file?(File.join(path, "help.txt"))
-                    file = File.new(File.join(path, "help.txt"))
-                    help["summary"] = file.readline
+                    options = []
+                    current = nil
+                    File.open(File.join(path, "help.txt")).each do |line|
+                        # first non-empty line is the summary
+                        if help["summary"].nil?
+                            help["summary"] = line
+                            next
+                        end
+                        # any line starting with -- creates a new option
+                        if line.start_with?("--")
+                            current = {}
+                            current["name"] = line.delete_prefix("--")
+                            options << current
+                            next
+                        elsif current.nil?
+                            # everything else before the first option is job description
+                            line.lstrip! unless line.lstrip.empty?
+                            help["description"] = (help["description"] || "") + line
+                            next
+                        end
+
+                        # ignore empty lines
+                        next if line.strip.empty?
+                        # next line after -- is the description
+
+                        current["description"] = line if current && current["description"].nil?
+                    end
+                    help["options"] = options
+                    help["summary"] = path if help["summary"].nil?
                 end
                 help
             end
@@ -148,6 +174,8 @@ module Minicoin
                     help = Run.read_help(@job_path)
                     if help
                         option.separator help["summary"]
+                        option.separator ""
+                        option.separator help["description"]
                         option.separator ""
                     end
                     # read job specific help file and list options
