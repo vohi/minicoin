@@ -170,10 +170,11 @@ module Minicoin
                 @run_options[:machine_ui] = argv.count > 1
                 Thread.report_on_exception = true
                 threads = []
+                exit_code = 0
                 with_target_vms(argv) do |vm|
                     log_verbose(vm.ui, "Starting job on #{vm.name}")
                     thread = JobThread.new(vm) do
-                        do_execute(job_options)
+                        Thread.current.exit_code = do_execute(job_options)
                     end
                     thread.run
                     if @run_options[:parallel]
@@ -185,6 +186,7 @@ module Minicoin
                         end
                         log_verbose(vm.ui, "Ending thread")
                         thread.join
+                        exit_code += thread.exit_code
                     end
                     break if thread.interrupted?
                 end
@@ -200,23 +202,27 @@ module Minicoin
                                 any_alive = true
                             else
                                 thread.join
-                                threads.delete(thread)
+                                exit_code += thread.exit_code
+                                thread.exit_code = 0
                             end
                         end
                     end
                 end
+                exit_code
             end
 
             private
 
             class JobThread < Thread
                 attr_accessor :vm
+                attr_accessor :exit_code
     
                 def initialize(vm)
                     @vm = vm
                     @pid = nil
                     @interrupt = 0
                     @level = 0
+                    @exit_code = 0
                     super
                 end
     
@@ -247,8 +253,12 @@ module Minicoin
                         vm.ui.warn "Attempting to interrupt job #{@pid} running on #{vm.name}"
                         @level = @interrupt
                         begin
+                            opts = {
+                                error_check: false,
+                                sudo: true
+                            }
                             if vm.guest.name == :windows
-                                vm.communicate.sudo("pskill -t #{@pid}")
+                                vm.communicate.sudo("pskill -t #{@pid}", opts)
                             else
                                 if @level == 1
                                     signal = "SIGTERM"
@@ -256,10 +266,8 @@ module Minicoin
                                     signal = "SIGKILL"
                                 end
                                 vm.ui.warn "Sending #{signal} to process #{@pid}"
-                                vm.communicate.sudo("kill -#{signal} #{@pid}")
+                                vm.communicate.sudo("kill -#{signal} #{@pid}", opts)
                             end
-                        rescue Vagrant::Errors::VagrantError => e
-                            # ignore those
                         rescue StandardError => e
                             vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
                         end
@@ -334,13 +342,11 @@ module Minicoin
                 log_verbose(vm.ui, "Executing command '#{run_command}'")
                 Vagrant::Util::Busy.busy(Proc.new{ thread.interrupt! }) do
                     begin
-                        if vm.guest.name == :windows || !@run_options[:privileged]
-                            vm.communicate.execute(run_command, &process_output)
-                        else
-                            vm.communicate.sudo(run_command, &process_output)
-                        end
-                    rescue Vagrant::Errors::VagrantError => e
-                        # ignore those
+                        opts = {
+                            error_check: false,
+                            sudo: vm.guest.name != :windows && @run_options[:privileged]
+                        }
+                        thread.exit_code = vm.communicate.execute(run_command, opts, &process_output)
                     rescue StandardError => e
                         log_verbose(vm.ui, "Received error from command:")
                         log_verbose(vm.ui, e)
@@ -352,10 +358,14 @@ module Minicoin
                     end
                     vm.ui.warn "Job exited after interruption"
                 end
+                if thread.exit_code != 0
+                    vm.ui.error "Job finished with non-zero exit code #{thread.exit_code}"
+                end
                 log_verbose(vm.ui, "Cleaning up via '#{cleanup_command}'")
                 vm.communicate.sudo(cleanup_command)
 
                 run_local(vm, "post")
+                thread.exit_code
             end
 
             def echo(ui, type, data)
