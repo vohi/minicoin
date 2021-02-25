@@ -185,8 +185,10 @@ module Minicoin
                             help["options"].each do |help_option|
                             var = ""
                             var = help_option["name"].upcase if help_option["type"] == "string"
-                            option.on("--#{help_option["name"]} #{var}", help_option["description"]) do |o|
-                                job_options[help_option["name"]] = o
+                            var_tag = "--#{help_option["name"]}"
+                            option.on("#{var_tag} #{var}", help_option["description"]) do |o|
+                                job_options[:job_args] << var_tag
+                                job_options[:job_args] << o if help_option["type"] == "string"
                             end
                         end
                         option.separator ""
@@ -198,7 +200,7 @@ module Minicoin
                 # everything after the "--" goes to the job script
                 split_index = @argv.index("--")
                 if split_index
-                    job_options[:job_args] = @argv.drop(split_index + 1)
+                    job_options[:job_args] << @argv.drop(split_index + 1)
                     @argv = @argv.take(split_index)
                 end
 
@@ -480,7 +482,7 @@ module Minicoin
                 arguments << "--verbose" if options[:verbose] && options[:ext] != "ps1"
 
                 options[:job_args].each do |job_arg|
-                        # powershell job scripts -> single dash
+                    # powershell job scripts -> single dash
                     job_arg = job_arg[1..-1] if options[:ext] == "ps1" && job_arg.start_with?("--")
                     job_arg = "\"#{job_arg}\"" if job_arg.include?(" ")
                     arguments << job_arg
