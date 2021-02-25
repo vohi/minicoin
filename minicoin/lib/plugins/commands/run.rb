@@ -368,6 +368,17 @@ module Minicoin
 
                 vm.ui.info "Running '#{@job_name}' with arguments #{job_args.join(" ")}"
 
+                matchers = jobconfig["matchers"] || []
+                matchers.each do |matcher|
+                    begin
+                        re = Regexp.new(matcher["pattern"])
+                    rescue RegexpError => e
+                        vm.ui.warn "#{matcher["pattern"]} is not a valid regular expression: #{e}"
+                        next
+                    end
+                    matcher[:regexp] = re
+                end
+
                 buffer = []
                 process_output = lambda do |type, data|
                     data.rstrip!
@@ -378,12 +389,26 @@ module Minicoin
                         log_verbose(vm.ui, "Job has process ID #{thread.pid} on guest")
                         next
                     end
-                    # batch data up
-                    if thread.interrupted?
-                        buffer << [ type, data ]
-                        next
+                    # s/guest_dir/host_dir
+                    data.split("\n").each do |line|
+                        channel = type
+                        if type == :stdout
+                            matchers.each do |matcher|
+                                if matcher[:regexp] && matcher[:regexp].match?(line)
+                                    channel = matcher["channel"]
+                                    line.gsub!(job_args[0], job_args[1]) if matcher["replace"]
+                                    break # first matcher wins
+                                end
+                            end
+                        end
+
+                        # batch data up
+                        if thread.interrupted?
+                            buffer << [ channel, line ]
+                            next
+                        end
+                        echo(vm.ui, channel, line)
                     end
-                    echo(vm.ui, type, data)
                 end
                 log_verbose(vm.ui, "Executing command '#{run_command}'")
                 Vagrant::Util::Busy.busy(Proc.new{ thread.interrupt! }) do
@@ -415,7 +440,13 @@ module Minicoin
             end
 
             def echo(ui, type, data)
-                if type == :stderr
+                if type.is_a?(String)
+                    if @run_options[:machine_ui]
+                        ui.send(type, *data)
+                    else
+                        @env.ui.send(type, *data)
+                    end
+                elsif type == :stderr
                     ui.error data
                 elsif @run_options[:machine_ui]
                     ui.detail data
