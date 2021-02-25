@@ -540,6 +540,8 @@ module Minicoin
                 arguments
             end
 
+            public
+
             def jobconfig(options, vm)
                 keys = vm.config.instance_variable_get('@keys')
                 minicoin = keys[:minicoin]
