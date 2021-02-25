@@ -87,8 +87,8 @@ module Minicoin
                         else
                             jobconfig = jobconfigs.first
                         end
-                        jobconfig.each do |key, value|
-                            next if key == "name" || key == "job" || key == "description" || key.start_with?("_")
+                        options = jobconfig["options"] || []
+                        options.each do |key, value|
                             if value.is_a?(String)
                                 value.gsub!("\\", "\\\\")
                                 value.gsub!("\"", "\\\"")

@@ -508,9 +508,9 @@ module Minicoin
                 # first guest work dir and host work dir
                 arguments = [ guest_dir(vm, project_dir), project_dir ]
                 # then the implicit arguments, so that they can be overridden
-                jobconfig.each do |key, value|
-                    next if ["name", "job", "description", "matchers"].include?(key) || key.start_with?("_")
-                    next if value == false
+                auto_args = jobconfig["options"] || []
+                auto_args.each do |key, value|
+                    next if value == false # boolean flag that should not be set
                     value = value.join(",") if value.is_a?(Array)
                     value = value.to_s
                     value.gsub!("\\", "\\\\")
@@ -607,8 +607,6 @@ module Minicoin
                 else
                     jobconfig = jobconfigs.first
                 end
-                # remove here, only relevant for config selection
-                jobconfig.delete("default")
                 jobconfig
             end
         end

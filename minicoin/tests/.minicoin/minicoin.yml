@@ -10,17 +10,19 @@ settings:
 jobconfigs: &testconfigs
   - job: test
     name: simple
-    param1: value1
-    param2: value2
-    flag:
+    options:
+      param1: value1
+      param2: value2
+      flag:
 
   - job: test
     name: complicated
-    array1:
-      - entry1
-      - entry2
-    spacey: foo bar
-    quoted: hello "world"
+    options:
+      array1:
+        - entry1
+        - entry2
+      spacey: foo bar
+      quoted: hello "world"
 
 roles: &mutagentest
   - role: mutagen
