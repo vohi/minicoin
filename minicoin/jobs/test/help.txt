@@ -1,0 +1,5 @@
+Test job to confirm that the machine and minicoin are working
+
+Produces some output to stdout and stderr, and echoes the parameters
+going in. If any parameter is "error", then the job will return with
+a non-zero exit code.
