@@ -23,6 +23,29 @@ module Minicoin
         def self.mutagen_path
             @@mutagen_path
         end
+        def self.find_session(machine)
+            stdout, stderr, status = self.call_mutagen("list", machine.name)
+            return nil if status != 0 # got nothing
+            status = stdout.split("\n")
+            re = nil
+            port = nil
+            ip = nil
+            status.each do |line|
+                line.strip!
+                if /Beta:/.match?(line)
+                    re = Regexp.new /URL:\s+(?<user>.*?)@(?<host>.*?):((?<port>.*?):)?(?<path>.*\/.*?)/
+                    next
+                end
+                next unless re
+                matchdata = re.match(line)
+                if matchdata
+                    user, host, port, path = matchdata.captures
+                    return [ host, port ]
+                end
+            end
+            nil # found nothing
+        end
+
         def self.call_mutagen(command, label, params=nil)
             Open3.capture3("#{SyncedFolderMutagen.mutagen_path} sync #{command} --label-selector minicoin=#{label} #{params}")
         end
@@ -38,15 +61,11 @@ module Minicoin
 
         # removes the known host
         def self.remove_known_host(ssh_info)
-            if ssh_info
-                stdout, stderr, status = Open3.capture3("ssh-keygen -R #{self.ssh_hostname(ssh_info)}")
-                Vagrant.global_logger.debug("ssh-keygen output:")
-                Vagrant.global_logger.debug(stdout)
-                Vagrant.global_logger.debug(stderr)
-                if status != 0
-                    machine.ui.warn("Failed to remove SSH key for #{ssh_info[:host]}:#{ssh_info[:port]}: #{stderr}")
-                end
-            end
+            stdout, stderr, status = Open3.capture3("ssh-keygen -R #{self.ssh_hostname(ssh_info)}")
+            Vagrant.global_logger.debug("ssh-keygen output:")
+            Vagrant.global_logger.debug(stdout)
+            Vagrant.global_logger.debug(stderr)
+            return status == 0
         end
 
         class Plugin < Vagrant.plugin("2")
@@ -67,10 +86,6 @@ module Minicoin
             action_hook("mutagen_suspend", :machine_action_halt) do |hook|
                 require_relative "actions.rb"
                 hook.prepend(MutagenSuspend)
-            end
-            action_hook("mutagen_resume", :machine_action_destroy) do |hook|
-                require_relative "actions.rb"
-                hook.append(MutagenDestroy)
             end
             action_hook("mutagen_resume", :machine_action_resume) do |hook|
                 require_relative "actions.rb"

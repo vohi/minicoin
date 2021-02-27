@@ -27,18 +27,5 @@ module Minicoin
                 SyncedFolderMutagen.call_mutagen("resume", machine.name)
             end
         end
-        class MutagenDestroy < MutagenAction
-            def call(env)
-                machine = env[:machine]
-
-                # machine.ui.info "Terminating mutagen sessions"
-                SyncedFolderMutagen.call_mutagen("terminate", machine.name)
-                return if !machine.ssh_info
-
-                # machine.ui.info "Removing #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]} from known hosts"
-                SyncedFolderMutagen.remove_known_host(machine.ssh_info)
-                @app.call(env)
-            end
-        end
     end
 end

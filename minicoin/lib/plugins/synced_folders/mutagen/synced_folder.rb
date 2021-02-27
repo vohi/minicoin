@@ -18,7 +18,7 @@ module Minicoin
             def enable(machine, folders, opts)
                 machine.ui.info "Setting up mutagen sync sessions..."
                 stdout, stderr, status = SyncedFolderMutagen.call_mutagen(:list, machine.name)
-                status = -1 if status = 0 && stdout.include?("No sessions found")
+                status = -1 if status == 0 && stdout.include?("No sessions found")
                 if status == 0
                     # we have a running session, check if it includes all our alphas
                     folders.each do |id, folder_opts|
@@ -85,7 +85,22 @@ module Minicoin
             end
 
             def cleanup(machine, opts)
-                return if !machine.ssh_info
+                if machine.state.id == :not_created
+                    # machine is being destroyed
+                    ssh_info = machine.ssh_info || {}
+                    if ssh_info[:host].nil?
+                        ssh_info[:host], ssh_info[:port] = SyncedFolderMutagen.find_session(machine)
+                    end
+                    SyncedFolderMutagen.call_mutagen("terminate", machine.name)
+                    unless ssh_info[:host].nil?
+                        machine.ui.info "Deauthorizing guest..."
+                        if !SyncedFolderMutagen.remove_known_host(ssh_info)
+                            machine.ui.error("Failed to remove SSH key for #{SyncedFolderMutagen.ssh_hostname(ssh_info)}")
+                        end
+                    end
+                else
+                    keys = machine.config.instance_variable_get('@keys')[:minicoin]
+                end
             end
 
             private
@@ -96,7 +111,7 @@ module Minicoin
                 ssh_hostname = SyncedFolderMutagen.ssh_hostname(machine.ssh_info)
                 Vagrant.global_logger.debug("Finding registered key for #{ssh_hostname}")
                 stdout, stderr, status = Open3.capture3("ssh-keygen -F #{ssh_hostname}")
-                ssh_registered = stdout.split("\n")
+                ssh_registered = stdout.strip.split("\n")
                 Vagrant.global_logger.debug("No keys registered for #{ssh_hostname}")
                 return if ssh_registered.empty?
 
@@ -105,8 +120,7 @@ module Minicoin
                 if status != 0
                     machine.ui.warn("Couldn't scan public key from #{machine.name}")
                 else
-                    ssh_scanned = stdout.split("\n")
-                    if !ssh_scanned.include?(ssh_registered)
+                    if (stdout.strip.split("\n") & ssh_registered).empty?
                         machine.ui.warn("Guest's host identification changed, revoking old keys for #{ssh_hostname}")
                         stdout, stderr, status = Open3.capture3("ssh-keygen -R #{ssh_hostname}")
                     end
