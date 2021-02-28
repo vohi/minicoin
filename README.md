@@ -14,9 +14,9 @@ For basebox maintenance documentation, see the [basebox directory](basebox).
 
 ```
 $ cd ~/qt5/qtbase
-$ minicoin run ubuntu1804 build
+$ minicoin run build ubuntu2004
 $ cd ~/my_project
-$ minicoin run ubuntu1804 build
+$ minicoin run build ubuntu2004
 ```
 
 This will first build qtbase from the local ~/qt5/qtbase directory on the

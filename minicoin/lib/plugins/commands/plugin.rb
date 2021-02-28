@@ -13,16 +13,6 @@ module Minicoin
                 Describe
             end
 
-            command(:runinfo, primary: false) do
-                require_relative "runinfo.rb"
-                RunInfo
-            end
-
-            command(:jobconfig, primary: false) do
-                require_relative "jobconfig.rb"
-                JobConfig
-            end
-
             command(:ls) do
                 require_relative "ls.rb"
                 LS

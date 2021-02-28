@@ -26,33 +26,15 @@ minicoin_command=
 min_args=1
 
 if [[ $# > 0 ]]; then
-  if [ $1 == "run" ]; then
-    if [[ "$MINICOIN_EXPERIMENTAL" =~ run ]]
-    then
-      echo "Using new job runner"
-    else
-      minicoin_command=minicoin_run
-      min_args=2
-      shift
-    fi
-  elif [ $1 == "jobs" ]; then
-    minicoin_command=minicoin_jobs
-    min_args=0
-    shift
-  elif [ $1 == "job-help" ]; then
-    minicoin_command=minicoin_jobhelp
-    min_args=0
-    shift
-  elif [ $1 == "update" ]; then
+  if [ $1 == "update" ]; then
     minicoin_command=minicoin_update
     min_args=0
     shift
-  elif [ $1 == "help" ]; then
-    minicoin_command="vagant help"
-    min_args=99
-  fi
-
-  if [[ $minicoin_command == "" ]]; then
+  elif [[ "$1" == "help" && "$2" == "" ]]; then
+    minicoin_command="vagrant help"
+    min_arg=0
+    shift
+  elif [[ $minicoin_command == "" ]]; then
     run vagrant "$@"
     exit $?
   fi
@@ -65,36 +47,17 @@ if [ "$#" -lt $min_args ]; then
   echo "Usage: $(basename $0) <command> [options]"
   echo
   echo "Common commands:"
-  echo "  run [options] machine1 machine2 ... job [-- [job-args]]"
+  echo "  run [options] job [job-args] machine1 machine2 ... [-- extra job-args]"
   echo
-IFS='
-'
-  for line in $($minicoin_dir/run_on.sh --help)
-  do
-     printf "    %s\n" "$line"
-  done
+  echo "    Runs a job on one or more machines using the appropriate remoting mechanism."
   echo
   echo "  list"
   echo
-  echo "    List the available machines, without querying them for their status."
+  echo "    Quickly lists the available machines, highlighting created machines."
   echo
-  echo "  describe [machine1 [machine2]]"
+  echo "  ls [--path path] machine1 [machine2]"
   echo
-  echo "    Prints the YAML version for the specificed machines"
-  echo
-  echo "  ls [--path path] machine1 [machine2] ... [-- [args]]"
-  echo
-  echo "    Show the contents of 'path' for each machine (defaults to the vagrant user's"
-  echo "    home directory. 'args' will be passed to the respective command, ie 'ls' on"
-  echo "    mac and Linux guests, and the 'dir' command on Windows guests."
-  echo
-  echo "  jobs"
-  echo
-  echo "    Lists the available jobs."
-  echo
-  echo "  job-help job"
-  echo
-  echo "    Prints the help for 'job', if available."
+  echo "    Shows the contents of 'path' for each machine."
   echo
   echo "  update"
   echo
@@ -107,7 +70,8 @@ IFS='
   echo "    destroy     stops and deletes all traces of the machines"
   echo "    ssh         connects to a machine via SSH"
   echo
-  echo "  See 'vagrant help' for details and a complete list of available commands."
+  echo "  For help on any individual command run 'minicoin help <command>'."
+  echo "  To see all commands, run 'minicoin list-commands'."
   echo
   exit 1
 fi
@@ -127,35 +91,6 @@ for arg in "${@}"; do
     script_args+=("$arg")
   fi
 done
-
-function minicoin_run()
-{
-  run_args=("${machines[@]}" -- "$project_dir" "${script_args[@]}")
-
-  run . run_on.sh "${run_args[@]}"
-  error=$?
-  return $?
-}
-
-function minicoin_jobs()
-{
-  echo "Available jobs are:"
-  run . run_on.sh --jobs
-  return $?
-}
-
-function minicoin_jobhelp()
-{
-  job=${args[0]}
-  echo "Help for $job:"
-  run cat jobs/$job/help.txt
-  echo
-  error=$?
-  if [ ! $error -eq 0 ]; then
-    echo "Failed to print help for $job"
-  fi
-  return $error
-}
 
 function minicoin_update()
 {

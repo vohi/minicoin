@@ -34,7 +34,7 @@ boxes.
 
 To run a job on the machine, execute
 
-`$ minicoin run ubuntu2004 [job]`
+`$ minicoin run [job] ubuntu2004`
 
 This will also start the machine if it's not running yet. To sign into a
 machine using ssh, use
@@ -78,7 +78,7 @@ For advanced operations, see the **Machine definition** sections below.
 Jobs are script files that can be executed from the CLI on the host on one or
 more machines. For a list of available jobs, run
 
-`$ minicoin jobs`
+`$ minicoin run --help`
 
 Jobs are defined in the `jobs` folder, and each subfolder represents a job that
 can be executed on machines. Jobs can receive command line arguments, access the
@@ -91,7 +91,7 @@ See [Defining Jobs](jobs/jobs#defining-jobs) for documentation on how to impleme
 
 Jobs are executed using the `minicoin run` command.
 
-`$ minicoin run ubuntu2004 test --  --flag --param1 value1 arg`
+`$ minicoin run test ubuntu2004 --  --flag --param1 value1 arg`
 
 This starts the `ubuntu2004` machine if it's not already running, uploads the
 `jobs/test` subdirectory to the machine, and then runs the `main.sh` script
@@ -101,9 +101,9 @@ The host-users's home directory, the current directory, and any parameters
 after the double dash `--` will be passed on to the `main` script.
 
 Jobs are executed on the guest as the `vagrant` user. If your script requires
-root privileges, use `--privileged` as a parameter (before the --):
+root privileges, use `--privileged` as a parameter (directly after `run`):
 
-`$ minicoin run --privileged windows10 [jobname]`
+`$ minicoin run --privileged [jobname] windows10`
 
 Alternatively, use `sudo` etc in your script, or consider making your job a
 provisioning step.
@@ -112,19 +112,19 @@ provisioning step.
 
 For a list of available jobs, run
 
-`$ minicoin jobs`
+`$ minicoin run --help`
 
 To see the documentation for a given job, run
 
-`$ minicoin job-help [job]`
+`$ minicoin run [job] --help`
 
 To run a job, invoke
 
-`$ minicoin run [machines...] [job]`
+`$ minicoin run [job] [machines...]`
 
 The most important job is:
 
-`$ minicoin run [machines...] build`
+`$ minicoin run build [machines...]`
 
 This job builds the local source tree on the listed machines. The local
 source tree can be a toplevel Qt repo, a single Qt module, or a Qt project.
@@ -199,22 +199,16 @@ probably never have to change this file, unless you want to
 
 ### Debugging machines
 
-If something goes wrong, the following commands might be useful:
-
-`$ minicoin runinfo [machine]`
-
-This prints information that minicoin uses to determine how jobs should be run on
-the machine.
+If something goes wrong, the following command can be useful:
 
 `$ minicoin describe [machine]`
 
 This prints the entire YAML for the machine, after merging global, user, and project
 specific `minicoin.yml` files, and interpreting roles and jobs.
 
-`$ minicoin jobconfig [job] [machine]`
-
-This prints the YAML with the machine's implicit configuration for the specified
-job.
+Standard [vagrant debugging techniques](https://www.vagrantup.com/docs/other/debugging)
+apply, in particular passing `--debug` or setting the log-level via the `VAGRANT_LOG`
+environment varialbe.
 
 ## Vagrant boxes
 

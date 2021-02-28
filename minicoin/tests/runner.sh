@@ -70,60 +70,6 @@ then
     assert $error 0
 fi
 
-if (run_case "runinfo")
-then
-    echo "=== Testing runinfo"
-    assert "$(minicoin runinfo empty --machine-readable 2>&1 | grep warn | cut -d ',' -f 5)" \
-    "==> empty: the host path '${PWD}' doesn't map to any location on the guest:"
-
-    # prints: name os communicator guest_homes host_user home_share guest_pwd
-    assert "$(minicoin runinfo --machine-readable test_linux | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
-        "test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}"
-    assert "$(minicoin runinfo --machine-readable test_windows | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
-        "test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-    assert "$(minicoin runinfo --machine-readable test_mac | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
-        "test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}"
-    assert "$(minicoin runinfo --machine-readable test_linux test_mac test_windows | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
-"test_linux,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/tester}
-test_mac,macos,ssh,/Users,${USER},${HOME},${PWD/"$HOME"//Users/tester}
-test_windows,windows,winrm,C:\\Users,${USER},${HOME},${PWD/"$HOME"/C:\\Users\\tester}"
-    assert "$(minicoin runinfo test --machine-readable | grep Minicoin::Commands::RunInfo | cut -d ',' -f 5-)" \
-        "test,linux,ssh,/home,${USER},${HOME},${PWD/"$HOME"//home/vagrant}" # this machine uses mutagen
-fi
-
-if (run_case "jobconfig")
-then
-    echo "=== Testing jobconfig"
-#    echo "    Interactive"
-#    IFS=$'\n'; jobconfig=( $(minicoin jobconfig --job test test) )
-#    assert "$(echo ${jobconfig[0]})" "--param1"
-
-    echo "    No tty"
-    assert "$(minicoin jobconfig --job test test --no-tty 2>&1 | tail -n1)" "with TTY."
-
-    echo "    Piped"
-    assert "$(echo "0" | minicoin jobconfig --job test test 2>&1 | head -n1)" "Multiple job configurations are available:"
-    assert "$(echo "1" | minicoin jobconfig --job test test  2>&1 | tail -n1)" "\"hello \\\"world\\\"\""
-    echo "    Named"
-    assert "$(minicoin jobconfig --job test --config simple test)" \
-"--param1
-value1
---param2
-value2
---flag"
-    assert "$(minicoin jobconfig --job test --config complicated test)" \
-"--array1
-entry1,entry2
---spacey
-\"foo bar\"
---quoted
-\"hello \\\"world\\\"\""
-    echo "    Indexed"
-    assert "$(minicoin jobconfig --job test --index 0 test)" "$(minicoin jobconfig --job test --config simple test)"
-    assert "$(minicoin jobconfig --job test --index 1 test)" "$(minicoin jobconfig --job test --config complicated test)"
-    assert "$(minicoin jobconfig --job test --index 2 test)" ""
-fi
-
 if (run_case global)
 then
     echo "=== Testing in global environment"
@@ -133,9 +79,6 @@ then
         while read machine
         do
             echo "    $machine"
-            minicoin runinfo $machine > /dev/null
-            error=$?
-            [ $error -gt 0 ] && errors=$(( $errors + $error ))
             minicoin describe $machine > /dev/null
             error=$?
             [ $error -gt 0 ] && errors=$(( $errors + $error ))
@@ -155,50 +98,32 @@ then
 fi
 
 echo "============================> Testing job running <============================"
-machines=( "${@}" )
 
-MINICOIN_EXPERIMENTAL=run
-
-count=${#machines[@]}
-echo "Running test on $count machines independently"
-
-for machine in "${machines[@]}"
-do
-    echo "---- $machine - stdout"
-    stdout="$(echo 0 | minicoin run --no-color test $machine 2> /dev/null | grep 'Hello')"
-    return=$?
-    assert $return 0
-    assert "$stdout" "Hello runner!"
-
-    echo "---- $machine - stderr"
-    stderr="$(echo 0 | minicoin run --no-color test $machine -- error 2>&1 > /dev/null | grep 'error code')"
-    return=$?
-    assert $return 1
-    expected="Exiting with error code 1"
-    [[ $count -gt 1 ]] && expected="==> $machine: $expected"
-    assert "$stderr" "$expected"
-    [[ $errors -gt 0 ]] && printf "${RED}Finished on $machine with $errors errors!${NOCOL}\n"
-done
-
-if [ $count -gt 1 ]
+if (run_case run)
 then
-    if [[ $errors -gt 0 ]]
+    machines=( "${@}" )
+
+    count=${#machines[@]}
+    echo "Running test on $count machines in sequence"
+    minicoin run --jobconfig 0 test ${machines[@]} -- error 2> /dev/null > /dev/null
+    return=$?
+    assert $return $count
+
+    if [ $count -gt 1 ]
     then
-        printf "${RED}Skipping advanced tests due to earlier errors${NOCOL}\n"
-    else
-        echo "Running test on $count machines sequentially"
-        minicoin run --jobconfig 0 test ${machines[@]} -- error 2> /dev/null > /dev/null
-        return=$?
-        assert $return $count
+        if [[ $errors -gt 0 ]]
+        then
+            printf "${RED}Skipping advanced tests due to earlier errors${NOCOL}\n"
+        else
+            echo "Running test on $count machines in parallel"
+            minicoin run --parallel --jobconfig 0 test "${machines[@]}" 2> /dev/null > /dev/null
+            return=$?
+            assert $return 0
 
-        echo "Running test on $count machines in parallel"
-        minicoin run --parallel --jobconfig 0 test "${machines[@]}" 2> /dev/null > /dev/null
-        return=$?
-        assert $return 0
-
-        minicoin run --parallel --jobconfig 0 test "${machines[@]}" -- error 2> /dev/null > /dev/null
-        return=$?
-        assert $return $count
+            minicoin run --parallel --jobconfig 0 test "${machines[@]}" -- error 2> /dev/null > /dev/null
+            return=$?
+            assert $return $count
+        fi
     fi
 fi
 
