@@ -14,6 +14,7 @@ module Minicoin
             end
             # This plugin requires a local SSH server
             def usable?(machine, raise_error=false)
+                return false if machine.box.nil?
                 if machine.box.provider != :virtualbox
                     @logger.debug "SSHFS mounting only needed on virtualbox"
                     return false

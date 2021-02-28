@@ -1,4 +1,4 @@
-$ANSIBLE_FOUND = nil
+include Vagrant::Util
 
 def fetch_file(uri, local)
     begin
@@ -221,9 +221,7 @@ def add_role(box, role, name, machine)
     end
 
     if File.file?("#{role_path}/playbook.yml")
-        $ANSIBLE_FOUND = `which ansible` if $ANSIBLE_FOUND == nil
-        $ANSIBLE_FOUND = false if $ANSIBLE_FOUND == ""
-        if $ANSIBLE_FOUND
+        if Which.which("ansible")
             box.vm.provision "#{role}:ansible",
                 type: :ansible do |ansible|
                     ansible.playbook = "#{role_path}/playbook.yml"

@@ -27,7 +27,8 @@ if Vagrant::Util::Platform.windows?
 end
 
 $MINICOIN_PROJECT_DIR = ENV["MINICOIN_PROJECT_DIR"] || Dir.pwd
-$PWD = File.dirname(__FILE__)
+$PWD = File.dirname(__FILE__) #
+ENV["PWD"] = $PWD if ENV["PWD"].nil?
 
 Vagrant.configure("2") do |config|
   config.vagrant.sensitive = [ ENV["minicoin_key"] ]

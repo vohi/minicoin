@@ -20,12 +20,11 @@ def azure_setup(box, machine)
         return
     end
 
-    name = machine["name"]
-    location = "northeurope"
-    pwd = ENV['minicoin_key']
-
     box.vm.provider :azure do |azure, override|
-        box.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
+        location = "northeurope"
+        pwd = ENV['minicoin_key']
+
+        override.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
         override.vm.synced_folder ".", "/minicoin", disabled: true
         shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|
