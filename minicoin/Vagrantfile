@@ -144,9 +144,6 @@ Vagrant.configure("2") do |config|
       if box.vm.communicator == :winssh
         box.winssh.insert_key = false # Replacing insecure key on Windows fails or takes forever
       end
-      if machine["basebox"] == true
-        box.ssh.insert_key = false
-      end
       config.ssh.shell = machine["shell"] unless machine["shell"].nil?
 
       # port forwarding
