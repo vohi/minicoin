@@ -39,16 +39,7 @@ $ cd minicoin
 $ ./setup.sh
 ```
 
-If you are on a Windows host, you will need a bash shell to use minicoin (f.ex
-the bash that comes with git), and also create a script in a directory that is in
-the `PATH`, and that forwards calls to the `minicoin` script:
-
-```
-$ echo "~/minicoin/minicoin/minicoin \"$@\"" > /bin/minicoin
-$ chmod +x /bin/minicoin
-```
-
-(if `/bin` is in your `PATH`, such as under the `git bash`).
+On Windows, run the `setup.cmd` script instead.
 
 See the [Platform Notes and System Requirements](minicoin/docs/platform-notes.md)
 for platform specific details.

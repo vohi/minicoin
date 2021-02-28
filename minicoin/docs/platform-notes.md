@@ -3,8 +3,7 @@
 The machines are managed using [vagrant](https://vagrantup.com); vagrant 2.2.4
 or later is required.
 
-Scripts are developed and tested on macOS and Windows 10 as hosts, using
-the bash shell.
+Scripts are developed and tested on macOS and Windows 10 as hosts.
 
 While Vagrant and minicoin try to make the boxes all behave the same from
 the host's perspective, there are some guest-system specific requirements:
