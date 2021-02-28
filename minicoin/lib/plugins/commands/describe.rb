@@ -16,8 +16,7 @@ module Minicoin
                 return if !argv
 
                 with_target_vms(argv) do |box|
-                    keys = box.config.instance_variable_get('@keys')
-                    minicoin = keys[:minicoin]
+                    minicoin = Minicoin.get_config(box)
                     puts minicoin.to_hash.to_yaml
                 end
             end

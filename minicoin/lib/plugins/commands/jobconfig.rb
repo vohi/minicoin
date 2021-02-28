@@ -33,8 +33,7 @@ module Minicoin
                 return if !argv
 
                 with_target_vms(argv, { :single_target => true }) do |box|
-                    keys = box.config.instance_variable_get('@keys')
-                    minicoin = keys[:minicoin]
+                    minicoin = Minicoin.get_config(box)
                     machine = minicoin.machine
 
                     job = Minicoin::Commands::Job.new(options, argv, @env)

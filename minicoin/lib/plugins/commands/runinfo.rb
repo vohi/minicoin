@@ -16,8 +16,7 @@ module Minicoin
                 return if !argv
 
                 with_target_vms(argv) do |vm|
-                    keys = vm.config.instance_variable_get('@keys')
-                    minicoin = keys[:minicoin]
+                    minicoin = Minicoin.get_config(vm)
                     machine = minicoin.machine
 
                     name = machine["name"]

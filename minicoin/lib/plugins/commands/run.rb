@@ -475,8 +475,7 @@ module Minicoin
             end
 
             def guest_dir(vm, project_dir)
-                keys = vm.config.instance_variable_get('@keys')
-                minicoin = keys[:minicoin]
+                minicoin = Minicoin.get_config(vm)
                 machine = minicoin.machine
 
                 guest_dir = nil
@@ -543,8 +542,7 @@ module Minicoin
             public
 
             def jobconfig(options, vm)
-                keys = vm.config.instance_variable_get('@keys')
-                minicoin = keys[:minicoin]
+                minicoin = Minicoin.get_config(vm)
                 machine = minicoin.machine
                 return {} if machine["jobconfigs"].nil?
 
