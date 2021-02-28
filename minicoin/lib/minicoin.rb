@@ -48,6 +48,10 @@ module Minicoin
     def self.requested_boxes
         @@requested_boxes
     end
+    def self.get_config(machine)
+        keys = machine.config.instance_variable_get('@keys')
+        return keys[:minicoin]
+    end
 
     # find out if the machine's name matches the parameters
     def self.skip?(machine)

@@ -98,8 +98,6 @@ module Minicoin
                             machine.ui.error("Failed to remove SSH key for #{SyncedFolderMutagen.ssh_hostname(ssh_info)}")
                         end
                     end
-                else
-                    keys = machine.config.instance_variable_get('@keys')[:minicoin]
                 end
             end
 

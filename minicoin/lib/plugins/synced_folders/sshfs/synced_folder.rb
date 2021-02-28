@@ -14,12 +14,26 @@ module Minicoin
             end
             # This plugin requires a local SSH server
             def usable?(machine, raise_error=false)
-                return false if machine.box.nil?
-                if machine.box.provider != :virtualbox
+                provider = nil
+                boxname = nil
+                if machine.box.nil?
+                    # box not yet available, make a guess
+                    if machine.provider.class.to_s.downcase.include?("virtualbox")
+                        provider = :virtualbox
+                    else
+                        provider = machine.provider.class
+                    end
+                    minicoin = Minicoin.get_config(machine)
+                    boxname = minicoin.machine["box"]
+                else
+                    provider = machine.box.provider
+                    boxname = machine.box.name
+                end
+                if provider != :virtualbox
                     @logger.debug "SSHFS mounting only needed on virtualbox"
                     return false
                 end
-                unless machine.box.name =~ /macos/
+                unless boxname =~ /macos/
                     @logger.debug "SSHFS mounting only needed for macOS guests"
                     return false
                 end

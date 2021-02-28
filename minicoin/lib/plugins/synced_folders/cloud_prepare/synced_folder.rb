@@ -13,15 +13,27 @@ module Minicoin
 
             def usable?(machine, raise_error=false)
                 error_message = nil
-                if machine.box.provider == :azure
+                provider = nil
+                if machine.box.nil?
+                    # box not yet available, make a guess
+                    if machine.provider.class.to_s == "VagrantPlugins::Azure::Provider"
+                        provider = :azure
+                    else
+                        provider = machine.provider.class
+                    end
+                else
+                    provider = machine.box.provider
+                end
+                if provider == :azure
                     if !SyncedFolder.azure_cli()
                         error_message = "The Azure CLI is not installed"
                     elsif !$AZURE_CREDENTIALS
                         error_message = "Failed to read Azure credentials"
                     end
-                elsif machine.box.provider == :aws
-                    machine.ui.error "AWS might need some stuff as well"
+                elsif provider == :aws
                     error_message = "AWS not implemented"
+                else
+                    error_message = "Unknown cloud provider #{provider}"
                 end
 
                 return true if !error_message

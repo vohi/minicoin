@@ -31,6 +31,7 @@ module Minicoin
                     result.fs_mappings = fs_mappings.merge(other.fs_mappings)
                     result.actual_shared_folders = actual_shared_folders.merge(other.actual_shared_folders)
                     result.guest_homes = other.guest_homes if @guest_homes == UNSET_VALUE
+                    result.machine = {} if machine == UNSET_VALUE && other.machine == UNSET_VALUE
                 end
             end
 
