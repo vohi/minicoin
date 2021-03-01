@@ -24,6 +24,40 @@ jobconfigs: &testconfigs
       spacey: foo bar
       quoted: hello "world"
 
+  - job: test
+    name: colored
+    options:
+      param1: text
+      param2: status
+      param3: alert
+      param4: warn
+    matchers:
+      - pattern: stdout 1
+        options:
+          color: yellow
+      - pattern: stdout 2
+        options:
+          color: magenta
+      - pattern: stdout 3
+        options:
+          color: cyan
+      - pattern: --.*
+        channel: detail
+        options:
+          color: blue
+          bold: true
+          new_line: false
+      - pattern: ^\'.*\'$
+        channel: detail
+        options:
+          color: blue
+          bold: false
+      - pattern: .*
+        channel: detail
+        options:
+          color: white
+          bold: false
+
 roles: &mutagentest
   - role: mutagen
     paths:

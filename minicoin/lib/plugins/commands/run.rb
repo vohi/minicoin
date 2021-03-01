@@ -158,6 +158,7 @@ module Minicoin
                 @run_options = options
                 @job_name = @run_options[:jobname]
                 @job_path = @run_options[:jobpath]
+                @last_options = {}
                 super(argv, env)
             end
             
@@ -211,7 +212,7 @@ module Minicoin
                 return if !argv
                 raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
-                @run_options[:machine_ui] = argv.count > 1
+                @run_options[:machine_ui] = argv.count > 1 && @run_options[:parallel]
                 Thread.report_on_exception = true
                 threads = []
                 exit_code = 0
@@ -385,6 +386,15 @@ module Minicoin
                         next
                     end
                     matcher[:regexp] = re
+                    matcher["options"] = {}.tap do |options|
+                        (matcher["options"] || {}).each do |key, value|
+                            if value.is_a?(String)
+                                options[key.to_sym] = value.to_sym
+                            else
+                                options[key.to_sym] = value
+                            end
+                        end
+                    end
                 end
 
                 buffer = []
@@ -397,13 +407,15 @@ module Minicoin
                         log_verbose(vm.ui, "Job has process ID #{thread.pid} on guest")
                         next
                     end
-                    # s/guest_dir/host_dir
                     data.split("\n").each do |line|
                         channel = type
+                        options = {}
                         if type == :stdout
                             matchers.each do |matcher|
                                 if matcher[:regexp] && matcher[:regexp].match?(line)
                                     channel = matcher["channel"]
+                                    options = matcher["options"] || {}
+                                    # s/guest_dir/host_dir
                                     line.gsub!(job_args[0], job_args[1]) if matcher["replace"]
                                     break # first matcher wins
                                 end
@@ -412,10 +424,10 @@ module Minicoin
 
                         # batch data up
                         if thread.interrupted?
-                            buffer << [ channel, line ]
-                            next
+                            buffer << [ channel, line, options ]
+                        else
+                            echo(vm.ui, channel, line, options)
                         end
-                        echo(vm.ui, channel, line)
                     end
                 end
                 log_verbose(vm.ui, "Executing command '#{run_command}'")
@@ -447,20 +459,22 @@ module Minicoin
                 thread.exit_code
             end
 
-            def echo(ui, type, data)
-                if type.is_a?(String)
-                    if @run_options[:machine_ui]
-                        ui.send(type, *data)
-                    else
-                        @env.ui.send(type, *data)
-                    end
-                elsif type == :stderr
-                    ui.error data
-                elsif @run_options[:machine_ui]
-                    ui.detail data
+            def echo(ui, type, data, options={})
+                if @run_options[:machine_ui] # if we need per-machine output, then we can't skip newlines
+                    options[:prefix] = true
+                    options[:new_line] = true
                 else
-                    @env.ui.detail data
+                    ui.clear_line if @last_options[:new_line] == false && options[:new_line] == false
+                    ui.detail "", { prefix: false, newline: true } if @last_options[:new_line] == false && (options[:new_line].nil? || options[:new_line] == true)
                 end
+                if type.is_a?(String)
+                    ui.send(type, data, options)
+                elsif type == :stderr
+                    ui.error data, options
+                elsif
+                    ui.detail data, options
+                end
+                @last_options = options
             end
 
             def log_verbose(ui, message)
