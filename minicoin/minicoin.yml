@@ -34,20 +34,43 @@ matchers:
       replace: true
       channel: detail
     - pattern: ".*"
-      replace: true
+      replace: false
       channel: success
-  - cpp: &cpp
-    - pattern: "(.*):(\\d+): warning:\\s+(.*)$"
+  - gcc: &gcc # works also for clang
+    - pattern: "(.*):(\\d+):(\\d+): warning:\\s+(.*)$"
       replace: true
       channel: warn
-    - pattern: "(.*):(\\d+): error:\\s+(.*)$"
+    - pattern: "(.*):(\\d+):(\\d+): error:\\s+(.*)$"
       replace: true
       channel: error
     - pattern: "^\\[\\d+/\\d+\\].*$"
       replace: true
       channel: detail
+      options:
+        new_line: false
+        color: cyan
     - pattern: ".*"
+      replace: false
+      channel: success
+      options:
+        color: blue
+  - msvc: &msvc
+    - pattern: "(.*)\\((\\d+)\\): warning\\s+(.*):\\s+(.*)$"
       replace: true
+      channel: warn
+    - pattern: "(.*)\\((\\d+)\\): error\\s+(.*):\\s+(.*)$"
+      replace: true
+      channel: error
+    - pattern: "(.*): fatal error\\s+(.*):\\s+(.*)$"
+      replace: true
+      channel: error
+    - pattern: "^\\[\\d+/\\d+\\].*$"
+      replace: true
+      options:
+        new_line: false
+      channel: detail
+    - pattern: ".*"
+      replace: false
       channel: success
 
 # machine definitions
@@ -91,6 +114,11 @@ machines:
       - windows-tools
       - msvc2019
     gui: false
+    jobconfigs:
+      - name: qt
+        default: true
+        job: build
+        matchers: *msvc
 
 ### Mac - nothing provisioned yet
   - name: macos1014
@@ -111,7 +139,7 @@ machines:
       - name: host
         description: builds and installs host-side tools for Qt
         job: build
-        matchers: *cpp
+        matchers: *gcc
         options:
           configure: -release -prefix ~/android-host
           target: "host_tools"
@@ -119,7 +147,7 @@ machines:
       - name: android
         description: cross-platform build of Qt for Android
         job: build
-        matchers: *cpp
+        matchers: *gcc
         options:
           configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
           build: android
@@ -139,12 +167,16 @@ machines:
       - linux-builder
       - doc-server
     jobconfigs:
+      - name: qt
+        job: build
+        description: build Qt
+        matchers: *gcc
       - name: qdoc
         job: build
         description: build qdoc and tools
         configure: -release -developer-build
         target: qdoc qtattributionsscanner
-        matchers: *cpp
+        matchers: *gcc
       - name: documentation
         job: build
         default: true
