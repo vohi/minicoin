@@ -312,16 +312,23 @@ module Minicoin
                                 sudo: true
                             }
                             if vm.guest.name == :windows
-                                vm.communicate.sudo("pskill -t #{@pid}", opts)
+                                killcmd = "psexec -i 1 -u vagrant -p vagrant taskkill /PID #{@pid}"
+                                if @level > 1
+                                    killcmd += " /F"
+                                end
+                                killcmd += "; taskkill /PID #{@pid}"
+                                if @level > 1
+                                    killcmd += " /F"
+                                end
                             else
                                 if @level == 1
-                                    signal = "SIGTERM"
+                                    killcmd = "kill -SIGTERM #{@pid}"
                                 else
-                                    signal = "SIGKILL"
+                                    killcmd = "kill -SIGKILL #{@pid}"
                                 end
-                                vm.ui.warn "Sending #{signal} to process #{@pid}"
-                                vm.communicate.sudo("kill -#{signal} #{@pid}", opts)
                             end
+                            vm.ui.warn "Sending kill signal to process"
+                            vm.communicate.sudo(killcmd, opts)
                         rescue StandardError => e
                             vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
                         end
