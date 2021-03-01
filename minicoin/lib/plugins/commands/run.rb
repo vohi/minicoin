@@ -24,7 +24,8 @@ module Minicoin
                         # any line starting with -- creates a new option
                         if line.start_with?("--")
                             current = {}
-                            current["name"] = line.delete_prefix("--")
+                            current["name"], varname = line.delete_prefix("--").split(" ")
+                            current["type"] = "string" unless varname.nil?
                             options << current
                             next
                         elsif current.nil?
@@ -182,13 +183,12 @@ module Minicoin
                     if help["options"]
                         option.separator "Options:"
                         option.separator ""
-                            help["options"].each do |help_option|
-                            var = ""
+                        help["options"].each do |help_option|
                             var = help_option["name"].upcase if help_option["type"] == "string"
                             var_tag = "--#{help_option["name"]}"
                             option.on("#{var_tag} #{var}", help_option["description"]) do |o|
                                 job_options[:job_args] << var_tag
-                                job_options[:job_args] << o if help_option["type"] == "string"
+                                job_options[:job_args] << o unless var.nil?
                             end
                         end
                         option.separator ""
@@ -201,6 +201,7 @@ module Minicoin
                 split_index = @argv.index("--")
                 if split_index
                     job_options[:job_args] << @argv.drop(split_index + 1)
+                    job_options[:job_args].flatten!
                     @argv = @argv.take(split_index)
                 end
 
