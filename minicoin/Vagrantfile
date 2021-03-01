@@ -30,7 +30,25 @@ $MINICOIN_PROJECT_DIR = ENV["MINICOIN_PROJECT_DIR"] || Dir.pwd
 $PWD = File.dirname(__FILE__) #
 ENV["PWD"] = $PWD if ENV["PWD"].nil?
 
+def check_for_updates()
+  if File.exist?("../.git/FETCH_HEAD")
+    days = (Time.now - File.stat("../.git/FETCH_HEAD").mtime).to_f / 86400.0
+  else
+    days = 100
+  end
+  if days > 2
+    old_newest=`git describe --abbrev=0`.strip
+    `git fetch --tags`
+    new_newest=`git describe --abbrev=0`.strip
+    if old_newest != new_newest
+      ui = Vagrant::UI::Colored.new
+      ui.warn "New minicoin version #{new_newest} available, run 'minicoin update' when ready!"
+    end
+  end
+end
+
 Vagrant.configure("2") do |config|
+  check_for_updates()
   config.vagrant.sensitive = [ ENV["minicoin_key"] ]
   Minicoin.machines = load_minicoin()
 
