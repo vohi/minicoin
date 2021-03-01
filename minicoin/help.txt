@@ -1,0 +1,32 @@
+Controls the minicoin environment by forwarding calls to vagrant or executing
+a job on machines, operating on the code in the current working environment.
+
+Usage: $(basename $0) <command> [options]
+
+Common commands:
+
+  run [options] job [job-args] machine1 machine2 ... [-- extra job-args]
+
+    Runs a job on one or more machines using the appropriate remoting mechanism.
+
+  list
+
+    Quickly lists the available machines, highlighting created machines.
+
+  ls [--path path] machine1 [machine2]
+
+    Shows the contents of 'path' for each machine.
+
+  update
+
+    Fetches the latest version of minicoin and rebases the local version to it.
+
+  <vagrant-command> [options] [machines...]
+    status      outputs status of the machines
+    up          starts and provisions the machines
+    halt        stops the machines
+    destroy     stops and deletes all traces of the machines
+    ssh         connects to a machine via SSH
+
+  For help on any individual command run 'minicoin help <command>'.
+  To see all commands, run 'minicoin list-commands'.

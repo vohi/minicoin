@@ -13,89 +13,48 @@ fi
 minicoin_dir=$(dirname $source)
 project_dir="$PWD"
 [[ -z $MINICOIN_PROJECT_DIR ]] && export MINICOIN_PROJECT_DIR="$PWD"
+cd $minicoin_dir
 
-function run() {
-  cd $minicoin_dir
-  "$@"
-  error=$?
-  cd "$project_dir"
-  return $error
-}
-
-minicoin_command=
-min_args=1
-
-if [[ $# > 0 ]]; then
-  if [ $1 == "update" ]; then
-    minicoin_command=minicoin_update
-    min_args=0
-    shift
-  elif [[ "$1" == "help" && "$2" == "" ]]; then
-    minicoin_command="vagrant help"
-    min_arg=0
-    shift
-  elif [[ $minicoin_command == "" ]]; then
-    run vagrant "$@"
-    exit $?
-  fi
-fi
-
-if [ "$#" -lt $min_args ]; then
-  echo "Controls the minicoin environment by forwarding calls to vagrant or executing"
-  echo "a job on machines, operating on the code in the current working environment."
-  echo
-  echo "Usage: $(basename $0) <command> [options]"
-  echo
-  echo "Common commands:"
-  echo "  run [options] job [job-args] machine1 machine2 ... [-- extra job-args]"
-  echo
-  echo "    Runs a job on one or more machines using the appropriate remoting mechanism."
-  echo
-  echo "  list"
-  echo
-  echo "    Quickly lists the available machines, highlighting created machines."
-  echo
-  echo "  ls [--path path] machine1 [machine2]"
-  echo
-  echo "    Shows the contents of 'path' for each machine."
-  echo
-  echo "  update"
-  echo
-  echo "    Fetches the latest version of minicoin and rebases the local version to it."
-  echo
-  echo "  <vagrant-command> [options] [machines...]"
-  echo "    status      outputs status of the machines"
-  echo "    up          starts and provisions the machines"
-  echo "    halt        stops the machines"
-  echo "    destroy     stops and deletes all traces of the machines"
-  echo "    ssh         connects to a machine via SSH"
-  echo
-  echo "  For help on any individual command run 'minicoin help <command>'."
-  echo "  To see all commands, run 'minicoin list-commands'."
-  echo
-  exit 1
-fi
-
-machines=()
-job="-1"
-script_args=()
-args=()
-
-for arg in "${@}"; do
-  args+=("$arg")
-  if [[ "$arg" = "--" ]]; then
-    job="--"
-  elif [[ "$job" = '-1' ]]; then
-    machines+=("$arg")
-  else
-    script_args+=("$arg")
-  fi
-done
-
-function minicoin_update()
+function update_minicoin()
 {
-  run git pull --rebase --autostash
+  git fetch --all --tags 2> /dev/null > /dev/null
+  if [ $? == 0 ]; then
+    if [ "$1" == "" ]; then
+      minicoin_version=`git describe --abbrev=0`
+    else
+      minicoin_version=$1
+    fi
+  else
+    >&2 echo "Failed to fetch tags, can't update minicoin!"
+  fi
+  if [ ! -z "$minicoin_version" ]; then
+    echo "Checking out version $minicoin_version"
+    git stash > /dev/null
+    output=`git checkout $minicoin_version 2>&1`
+    error=$?
+    if [ $error -gt 0 ]; then
+      >&2 echo "$error"
+    fi
+  fi
+  return $?
 }
 
-$minicoin_command
-exit $?
+function show_help()
+{
+  cat help.txt
+}
+
+if [ $1 == "update" ]; then
+  shift
+  update_minicoin "$@"
+  error=$?
+elif [[ "$1" == "help" && "$2" == "" ]]; then
+  show_help
+  error=0
+else
+  vagrant "$@"
+  error=$?
+fi
+
+cd "$project_dir"
+exit $error
