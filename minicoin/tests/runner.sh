@@ -90,24 +90,33 @@ then
     cd -
 fi
 
-if [ $# -eq 0 ]
-then
-    echo "For additional tests, provide names of running machines!"
-    finish
-    exit $error
-fi
-
 echo "============================> Testing job running <============================"
 
 if (run_case run)
 then
-    machines=( "${@}" )
+    IFS=$'\n' machines=( `minicoin list --machine-readable | grep '*' | cut -d, -f 6` )
 
     count=${#machines[@]}
+    if [ $count -eq 0 ]; then
+        echo "No machines running, bring up test machines for more tests"
+    fi
+
     echo "Running test on $count machines in sequence"
-    minicoin run --jobconfig 0 test ${machines[@]} -- error 2> /dev/null > /dev/null
+    stdout=""
+    stderr=""
+    minicoin run --jobconfig 0 test ${machines[@]} -- error > .std.out 2> .std.err
     return=$?
+
+    stdout=`grep "Hello" .std.out`
+    stderr=`grep "error code" .std.err`
+    rm .std.out
+    rm .std.err
+
     assert $return $count
+    assert `echo "$stdout" | head -n 1` "Hello runner!"
+    assert `echo "$stderr" | head -n 1` "Exiting with error code 1"
+    assert `echo "$stdout" | wc -l | xargs` $count
+    assert `echo "$stderr" | wc -l | xargs` $count
 
     if [ $count -gt 1 ]
     then
@@ -116,12 +125,17 @@ then
             printf "${RED}Skipping advanced tests due to earlier errors${NOCOL}\n"
         else
             echo "Running test on $count machines in parallel"
-            minicoin run --parallel --jobconfig 0 test "${machines[@]}" 2> /dev/null > /dev/null
+            minicoin run --parallel --jobconfig 0 test "${machines[@]}" > .std.out 2> .std.err
             return=$?
+            rm .std.out
+            rm .std.err
             assert $return 0
 
-            minicoin run --parallel --jobconfig 0 test "${machines[@]}" -- error 2> /dev/null > /dev/null
+            minicoin run --parallel --jobconfig 0 test "${machines[@]}" -- error > .std.out 2> .std.err
             return=$?
+            rm .std.out
+            rm .std.err
+
             assert $return $count
         fi
     fi
