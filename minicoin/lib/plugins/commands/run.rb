@@ -386,14 +386,12 @@ module Minicoin
                         next
                     end
                     matcher[:regexp] = re
-                    matcher["options"] = {}.tap do |options|
-                        (matcher["options"] || {}).each do |key, value|
-                            if value.is_a?(String)
-                                options[key.to_sym] = value.to_sym
-                            else
-                                options[key.to_sym] = value
-                            end
-                        end
+                    matcher[:options] = {}.tap do |options|
+                        options[:color] = matcher["color"].to_sym if matcher["color"]
+                        options[:new_line] = matcher["newline"] ? !!matcher["newline"] : true
+                        options[:bold] = matcher["bold"] ? !!matcher["bold"] : false
+                        options[:replace] = !!matcher["replace"]
+                        options[:channel] = matcher["error"] ? :error : :detail
                     end
                 end
 
@@ -408,25 +406,29 @@ module Minicoin
                         next
                     end
                     data.split("\n").each do |line|
-                        channel = type
                         options = {}
                         if type == :stdout
                             matchers.each do |matcher|
                                 if matcher[:regexp] && matcher[:regexp].match?(line)
-                                    channel = matcher["channel"]
-                                    options = matcher["options"] || {}
+                                    if matcher["continue"]
+                                        options = @last_options
+                                    else
+                                        options = matcher[:options]
+                                    end
                                     # s/guest_dir/host_dir
-                                    line.gsub!(job_args[0], job_args[1]) if matcher["replace"]
+                                    line.gsub!(job_args[0], job_args[1]) if options[:replace]
                                     break # first matcher wins
                                 end
                             end
+                        else # all stderr goes to the error channel
+                            options[:channel] = :stderr
                         end
 
                         # batch data up
                         if thread.interrupted?
-                            buffer << [ channel, line, options ]
+                            buffer << [ line, options ]
                         else
-                            echo(vm.ui, channel, line, options)
+                            echo(vm.ui, line, options)
                         end
                     end
                 end
@@ -459,20 +461,22 @@ module Minicoin
                 thread.exit_code
             end
 
-            def echo(ui, type, data, options={})
+            def echo(ui, data, options={})
                 if @run_options[:machine_ui] # if we need per-machine output, then we can't skip newlines
                     options[:prefix] = true
                     options[:new_line] = true
                 else
+                    options[:prefix] = false
                     ui.clear_line if @last_options[:new_line] == false && options[:new_line] == false
                     ui.detail "", { prefix: false, newline: true } if @last_options[:new_line] == false && (options[:new_line].nil? || options[:new_line] == true)
                 end
-                if type.is_a?(String)
-                    ui.send(type, data, options)
-                elsif type == :stderr
-                    ui.error data, options
-                elsif
-                    ui.detail data, options
+                if options[:color].nil?
+                    options[:color] = :red if options[:channel] == :error
+                end
+                if options[:channel] == :stderr
+                    ui.error(data, options)
+                else
+                    ui.detail(data, options)
                 end
                 @last_options = options
             end
