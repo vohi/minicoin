@@ -26,52 +26,46 @@ matchers:
   - qdoc: &qdoc
     - pattern: "(.*):(\\d+): \\(qdoc\\) warning:\\s+(.*)$"
       replace: true
-      channel: warn
+      error: true
     - pattern: "(.*):(\\d+): \\(qdoc\\) error:\\s+(.*)$"
       replace: true
-      channel: error
+      error: true
     - pattern: "^\\[\\d+/\\d+\\].*$"
+      newline: false
       replace: true
-      channel: detail
     - pattern: ".*"
       replace: false
-      channel: success
   - gcc: &gcc # works also for clang
     - pattern: "(.*):(\\d+):(\\d+): warning:\\s+(.*)$"
       replace: true
-      channel: warn
+      color: yellow
+      error: true
     - pattern: "(.*):(\\d+):(\\d+): error:\\s+(.*)$"
       replace: true
-      channel: error
+      error: true
+    - pattern: "[\\s\\d]+\\|\\s"
+      continue: true
     - pattern: "^\\[\\d+/\\d+\\].*$"
       replace: true
-      channel: detail
-      options:
-        new_line: false
-        color: cyan
+      newline: false
     - pattern: ".*"
       replace: false
-      channel: success
-      options:
-        color: blue
   - msvc: &msvc
     - pattern: "(.*)\\((\\d+)\\): warning\\s+(.*):\\s+(.*)$"
       replace: true
-      channel: warn
+      color: yellow
+      error: true
     - pattern: "(.*)\\((\\d+)\\): error\\s+(.*):\\s+(.*)$"
       replace: true
-      channel: error
+      error: true
     - pattern: "(.*): fatal error\\s+(.*):\\s+(.*)$"
       replace: true
-      channel: error
+      error: true
     - pattern: "^\\[\\d+/\\d+\\].*$"
       replace: true
-      options:
-        new_line: false
-      channel: detail
+      newline: false
     - pattern: ".*"
       replace: false
-      channel: success
 
 # machine definitions
 machines:

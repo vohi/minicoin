@@ -33,30 +33,24 @@ jobconfigs: &testconfigs
       param4: warn
     matchers:
       - pattern: stdout 1
-        options:
-          color: yellow
+        color: yellow
       - pattern: stdout 2
-        options:
-          color: magenta
+        color: magenta
       - pattern: stdout 3
-        options:
-          color: cyan
+        color: cyan
+      - pattern: stderr
+        color: green
+        error: true
       - pattern: --.*
-        channel: detail
-        options:
-          color: blue
-          bold: true
-          new_line: false
+        color: blue
+        bold: true
+        newline: false
       - pattern: ^\'.*\'$
-        channel: detail
-        options:
-          color: blue
-          bold: false
+        color: blue
+        bold: false
       - pattern: .*
-        channel: detail
-        options:
-          color: white
-          bold: false
+        color: white
+        bold: false
 
 roles: &mutagentest
   - role: mutagen
