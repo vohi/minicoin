@@ -51,6 +51,7 @@ jobconfigs: &testconfigs
       - pattern: .*
         color: white
         bold: false
+        replace: true
 
 roles: &mutagentest
   - role: mutagen
