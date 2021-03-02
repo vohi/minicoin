@@ -168,12 +168,14 @@ machines:
       - name: qdoc
         job: build
         description: build qdoc and tools
-        configure: -release -developer-build
-        target: qdoc qtattributionsscanner
+        options:
+          configure: -release -developer-build
+          target: qdoc qtattributionsscanner
         matchers: *gcc
       - name: documentation
         job: build
         default: true
         description: build the documentation
-        target: html_docs
+        options:
+          target: html_docs
         matchers: *qdoc
