@@ -194,7 +194,9 @@ module Minicoin
                         help["options"].each do |help_option|
                             var = help_option["name"].upcase if help_option["type"] == "string"
                             var_tag = "--#{help_option["name"]}"
-                            option.on("#{var_tag} #{var}", help_option["description"]) do |o|
+                            var_str = "#{var_tag}"
+                            var_str += " #{var}" unless var.nil?
+                            option.on(var_str, help_option["description"]) do |o|
                                 job_options[:job_args] << var_tag
                                 job_options[:job_args] << o unless var.nil?
                             end
@@ -400,16 +402,16 @@ module Minicoin
                         matcher[:regexp] = re
                         matcher[:options] = {}.tap do |options|
                             options[:color] = matcher["color"].to_sym if matcher["color"]
-                            options[:new_line] = matcher["newline"] ? !!matcher["newline"] : true
-                            options[:bold] = matcher["bold"] ? !!matcher["bold"] : false
-                            options[:replace] = !!matcher["replace"]
+                            options[:new_line] = false if matcher["newline"] == false
+                            options[:bold] = true if matcher["bold"] == true
+                            options[:replace] = true if matcher["replace"] == true
                             options[:channel] = matcher["error"] ? :error : :detail
                         end
                     end
 
                     @buffer = []
                     @job.log_verbose(@vm.ui, "Executing command '#{run_command}'")
-                    Vagrant::Util::Busy.busy(Proc.new{ thread.interrupt! }) do
+                    Vagrant::Util::Busy.busy(Proc.new{ interrupt!() }) do
                         begin
                             opts = {
                                 error_check: false,
@@ -425,7 +427,7 @@ module Minicoin
                         end
                     end
                     if interrupted?()
-                        buffer.each do |entry|
+                        @buffer.each do |entry|
                             echo(entry[0], entry[1])
                         end
                         @vm.ui.warn "Job exited after interruption"
@@ -470,7 +472,7 @@ module Minicoin
 
                         # batch data up
                         if interrupted?()
-                            buffer << [ line, options ]
+                            @buffer << [ line, options ]
                         else
                             echo(line, options)
                         end
@@ -598,12 +600,13 @@ module Minicoin
                     default_config = nil
                     jobconfigs = jobconfigs.select do |jc|
                         res = true
-                        res &&= jc["job"] == @job.name
+                        res &&= jc["job"] == @job.run_options[:jobname]
                         res &&= jc["name"] == @job.run_options[:jobconfig] if @job.run_options.key?(:jobconfig)
                         res &&= jc[:_index] == @job.run_options[:jobconfig_index] if @job.run_options.key?(:jobconfig_index)
                         default_config = jc if res && jc["default"]
                         res
                     end
+                    @job.log_verbose(@vm.ui, "Candidates: #{jobconfigs}")
                     
                     if jobconfigs.count == 0
                         jobconfig = {}
