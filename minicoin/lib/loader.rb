@@ -53,7 +53,7 @@ def merge_yaml(first, second)
     return second
 end
 
-def load_settings(yaml, user_yaml)
+def merge_settings(yaml, user_yaml)
     # a hash
     $settings = yaml["settings"]
     $settings = {} if $settings.nil?
@@ -69,7 +69,7 @@ def load_settings(yaml, user_yaml)
     yaml["settings"] = $settings
 end
 
-def load_urls(yaml, user_yaml)
+def merge_urls(yaml, user_yaml)
     # a hash of arrays
     $urls = yaml["urls"]
     user_urls = user_yaml["urls"] unless user_yaml.nil?
@@ -77,7 +77,7 @@ def load_urls(yaml, user_yaml)
     yaml["urls"] = $urls
 end
 
-def load_boxes(yaml, user_yaml)
+def merge_machines(yaml, user_yaml)
     machines = yaml["machines"]
 
     user_machines = user_yaml["machines"] unless user_yaml.nil?
@@ -118,7 +118,6 @@ def load_boxes(yaml, user_yaml)
     end
 
     yaml["machines"] = machines
-    return machines
 end
 
 def load_includes(yaml, basedir)
@@ -142,8 +141,8 @@ def load_includes(yaml, basedir)
     return yaml
 end
 
-def merge_roles(machines)
-    # post processing of roles: if a role is defined multiple times, merge them
+def combine_roles(machines)
+    # post processing of roles: if a role is defined multiple times, combine them
     machines.each do |machine|
         roles = machine["roles"]
         unless roles.nil?
@@ -175,7 +174,7 @@ def merge_roles(machines)
     end
 end
 
-def merge_boxes(machines)
+def extend_machines(machines)
     machines.each do |machine|
         index = machines.rindex {|m| m["name"] == machine["name"] && m != machine}
         unless index.nil?
@@ -205,7 +204,7 @@ def merge_boxes(machines)
 end
 
 def find_config(root, config_name)
-    while !Dir.exist?("#{root}/#{config_name}") do
+    while !Dir.exist?(File.join(root, config_name)) do
         old_root = root
         root = File.dirname(root)
         if File.identical?(root, old_root)
@@ -258,46 +257,48 @@ def load_minicoin()
     
     global_file = File.join($PWD, 'minicoin.yml')
     yaml = YAML.load_file(global_file)
-    
+    yaml = load_includes(yaml, $PWD)
+
     user_file = File.join($HOME, 'minicoin/minicoin.yml')
     user_yaml = nil
     if File.file?(user_file)
         user_yaml = YAML.load_file(user_file)
     end
-    
+    user_yaml = load_includes(user_yaml, $HOME)
+
     local_yaml = nil
-    project_dir = ENV['MINICOIN_PROJECT_DIR']
-    if project_dir && project_dir != $PWD && project_dir != $HOME
-        local_file = File.join(project_dir, '.minicoin/minicoin.yml')
-        if File.file?(local_file)
-            local_yaml = YAML.load_file(local_file)
+    if $MINICOIN_PROJECT_DIR
+        project_dir = find_config($MINICOIN_PROJECT_DIR, ".minicoin")
+        if project_dir && project_dir != $PWD && project_dir != $HOME
+            local_file = File.join(project_dir, '.minicoin/minicoin.yml')
+            if File.file?(local_file)
+                local_yaml = YAML.load_file(local_file)
+                puts local_file
+            end
         end
     end
-
-    yaml = load_includes(yaml, $PWD)
-    user_yaml = load_includes(user_yaml, $HOME)
     local_yaml = load_includes(local_yaml, project_dir)
 
-    load_settings(yaml, user_yaml)
-    load_settings(yaml, local_yaml)
+    merge_settings(yaml, user_yaml)
+    merge_settings(yaml, local_yaml)
+    merge_urls(yaml, user_yaml)
+    merge_urls(yaml, local_yaml)
 
     yaml.each do |key, value|
         begin
             require_relative "#{key}_loader.rb"
-            eval("machines = load_boxes(yaml, load_#{key}(yaml))")
+            eval("merge_machines(yaml, load_#{key}(yaml))")
         rescue LoadError => e
         end
     end
-    machines = load_boxes(yaml, user_yaml)
-    machines = load_boxes(yaml, local_yaml)
+    merge_machines(yaml, user_yaml)
+    merge_machines(yaml, local_yaml)
+    machines = yaml["machines"]
 
     # inheritance after override resolution
-    merge_boxes(machines)
+    extend_machines(machines)
     # role merging once each box is fully defined
-    merge_roles(machines)
-
-    load_urls(yaml, user_yaml)
-    load_urls(yaml, local_yaml)
+    combine_roles(machines)
 
     preprocess(yaml)
 

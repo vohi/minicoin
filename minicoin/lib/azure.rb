@@ -16,9 +16,8 @@ end
 
 # Azure specific settings
 def azure_setup(box, machine)
-    if $AZURE_CLI_INSTALLED == false
-        return
-    end
+    return unless Vagrant.has_plugin?('vagrant-azure')
+    return if $AZURE_CLI_INSTALLED == false
 
     box.vm.provider :azure do |azure, override|
         location = "northeurope"
@@ -45,14 +44,10 @@ def azure_setup(box, machine)
                 unless stderr.start_with?("Please ensure you have network connection")
                     stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
                     stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
-                    if status != 0
-                        STDERR.puts "Failed to generate azure account credentials"
-                    end
+                    STDERR.puts "Failed to generate azure account credentials" if status != 0
                 end
             end
-            if status == 0
-                $AZURE_CREDENTIALS = JSON.parse(stdout)
-            end
+            $AZURE_CREDENTIALS = JSON.parse(stdout) if status == 0
         end
 
         next if $AZURE_CREDENTIALS.nil?

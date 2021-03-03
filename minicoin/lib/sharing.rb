@@ -34,14 +34,10 @@ def share_folders(box, machine, shares)
     shares = Marshal.load(Marshal.dump(shares))
     exp_shares = []
     shares.each do |share|
-        if share.nil?
-            next
-        end
+        next if share.nil?
         share.each do |host, guest|
             host = expand_env(host, nil)
-            if (host == $PWD)
-                host = "." # this prevents duplicate PWD sharing from vagrant
-            end
+            host = "." if host == $PWD # this prevents duplicate PWD sharing from vagrant
             guest = expand_env(guest, box)
             if guest.nil? || host.nil?
                 STDERR.puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
@@ -69,7 +65,5 @@ def share_folders(box, machine, shares)
             box.vm.synced_folder host, guest
         end
     end
-    if box.vm.guest == :windows
-        win_link_folders(box, win_links)
-    end
+    win_link_folders(box, win_links) if box.vm.guest == :windows
 end

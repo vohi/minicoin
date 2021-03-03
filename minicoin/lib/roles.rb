@@ -13,18 +13,14 @@ end
 def insert_disk(box, disk_filename, role_params)
     disk_data = YAML.load_file(disk_filename)
     disk_file = disk_data["file"]
-    disk_archive = disk_data["archive"]
+    disk_archive = disk_data["archive"] || disk_file
     disk_urls = disk_data["urls"]
     if disk_urls.is_a?(String)
         disk_urls = [disk_urls]
     end
     disk_urls = [] if disk_urls.nil?
     disk_urls += $urls["disks"] unless $urls["disks"].nil?
-    
-    if disk_archive.nil?
-        disk_archive = disk_file
-    end
-    
+
     disk_cache = "#{$PWD}/.diskcache"
     if ["up", "provision", "reload"].include? ARGV[0]
         Dir.mkdir(disk_cache) unless Dir.exist?(disk_cache)
@@ -34,9 +30,7 @@ def insert_disk(box, disk_filename, role_params)
                 disk_urls.each do |server|
                     url = URI("#{server}/disks/#{disk_archive}")
                     puts "Downloading '#{url}'..."
-                    if fetch_file(url, "#{disk_cache}/#{disk_archive}")
-                        break
-                    end
+                    break if fetch_file(url, "#{disk_cache}/#{disk_archive}")
                 end
             end
             if !File.file?("#{disk_cache}/#{disk_archive}")
@@ -57,9 +51,8 @@ def insert_disk(box, disk_filename, role_params)
         end
         
         disk_settings = disk_data["settings"] unless disk_data.nil?
-        if disk_settings.nil?
-            disk_settings = {}
-        end
+        disk_settings = {} if disk_settings.nil?
+
         # default settings, disks can override
         disk_settings["storagectl"] = "SATA" unless !disk_settings["storagectl"].nil?
         
@@ -137,9 +130,8 @@ end
 
 ## Add role as provisioning step for box
 def add_role(box, role, name, machine)
-    if !role.is_a?(Hash)
-        role = { "role" => role }
-    end
+    role = { "role" => role } unless role.is_a?(Hash)
+
     role_params = role
     role, role_name = role.shift
     if role == "role"
@@ -149,9 +141,7 @@ def add_role(box, role, name, machine)
     end
     
     role_params.each do |key, value|
-        if value.nil?
-            next
-        end
+        next if value.nil?
         if value.is_a?(String)
             new_value = expand_env(value, box)
             if new_value.nil?
@@ -307,9 +297,7 @@ def add_role(box, role, name, machine)
                 else
                     array.each do |value|
                         script_args << "#{arg_marker}#{key}" unless combine_array
-                        if value.is_a?(Hash)
-                            value = value.to_json;
-                        end
+                        value = value.to_json if value.is_a?(Hash)
                         script_args << "#{value}" unless value.nil?
                     end
                 end
@@ -345,7 +333,6 @@ def add_role(box, role, name, machine)
             type: :local_command,
             code: post_provision
     end
-    if ! activity
-        STDERR.puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!"
-    end
+
+    STDERR.puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!" unless activity
 end

@@ -1,5 +1,6 @@
 
 def vmware_setup(box, machine)
+    return unless Vagrant.has_plugin?("vagrant-vmware-desktop")
     box.vm.provider :vmware_desktop do |vmware|
         vmware.gui = machine["gui"] unless machine["gui"].nil?
         vmware.vmx["memsize"] = machine["memory"] unless machine["memory"].nil?
