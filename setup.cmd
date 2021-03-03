@@ -4,16 +4,26 @@ setlocal enabledelayedexpansion
 set "oldpwd=%cd%"
 cd %TEMP%
 
-VBoxManage --version 2> NUL > NUL
+vagrant --version 2> NUL > NUL
 if NOT %errorlevel% == 0 (
-    echo VirtualBox not found
-    choco install --confirm virtualbox
-    call refreshenv
+    echo vagrant not found, installing
 
-    powershell -Command "(new-object net.webclient).DownloadFile('https://download.virtualbox.org/virtualbox/6.1.18/Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack', 'Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack')"
-    echo yes | C:\Program Files\Oracle\VirtualBox\VBoxManage.exe extpack install --accept-license=yes Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack
+    VBoxManage --version 2> NUL > NUL
+    if NOT %errorlevel% == 0 (
+        echo VirtualBox not found
+        choco install --confirm virtualbox
+        call refreshenv
+
+        powershell -Command "(new-object net.webclient).DownloadFile('https://download.virtualbox.org/virtualbox/6.1.18/Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack', 'Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack')"
+        echo yes | C:\Program Files\Oracle\VirtualBox\VBoxManage.exe extpack install --accept-license=yes Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack
+    ) else (
+        FOR /F "tokens=* USEBACKQ" %%F IN (`VBoxManage --version`) DO echo VirtualBox version %%F found
+    )
+
+    choco install --confirm vagrant
+    call refreshenv > NUL
 ) else (
-    FOR /F "tokens=* USEBACKQ" %%F IN (`VBoxManage --version`) DO echo VirtualBox version %%F found
+    FOR /F "tokens=* USEBACKQ" %%F IN (`vagrant --version`) DO echo Vagrant version %%F found
 )
 
 mutagen version 2> NUL > NUL
@@ -29,16 +39,6 @@ if NOT %errorlevel% == 0 (
     FOR /F "tokens=* USEBACKQ" %%F IN (`mutagen version`) DO echo Mutagen version %%F found
 )
 
-vagrant --version 2> NUL > NUL
-if NOT %errorlevel% == 0 (
-    echo vagrant not found, installing
-
-    choco install --confirm vagrant
-    call refreshenv > NUL
-) else (
-    FOR /F "tokens=* USEBACKQ" %%F IN (`vagrant --version`) DO echo Vagrant version %%F found
-)
-
 where minicoin 2> NUL > NUL
 if NOT %errorlevel% == 0 (
     echo Adding %~dp0%minicoin to the PATH
@@ -47,6 +47,7 @@ if NOT %errorlevel% == 0 (
 )
 
 cd %oldpwd%
+call minicoin update
 
 endlocal
 call refreshenv 2> NUL > NUL

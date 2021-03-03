@@ -25,22 +25,25 @@ using the qtbase that was built just before.
 
 # Setup
 
-You need to install [Vagrant](https://vagrantup.com), and a virtual machine
-provider that vagrant supports, like [VirtualBox](https://virtualbox.org),
-or an account with a cloud provider.
-See [provider specific details](minicoin/docs/provider-notes.md) for more
-information about providers.
-
-Clone this repository, and if on macOS or Linux, run the `setup.sh` script to
-install `minicoin` in `/usr/local/bin`:
+Clone this repository, and if on macOS or a Debian Linux, and run the `setup.sh`
+script to install `minicoin` and its dependencies:
 
 ```
 $ cd minicoin
 $ ./setup.sh
 ```
 
-On Windows, run the `setup.cmd` script instead.
+On macOS, this requires homebrew. On Windows, run the `setup.cmd` script instead,
+which will use the `chocolatey` package manager.
 
+To set things up manually, install [Vagrant](https://vagrantup.com). Vagrant
+requires a virtual machine provider, like [VirtualBox](https://virtualbox.org),
+or an account with a cloud provider.
+
+See [provider specific details](minicoin/docs/provider-notes.md) for more
+information about providers.
+
+If you want to host macOS VMs, you will need to run an SSH server on your host.
 See the [Platform Notes and System Requirements](minicoin/docs/platform-notes.md)
 for platform specific details.
 
@@ -51,18 +54,13 @@ experience, install the following on your host as well:
 
 * [mutagen.io](https://mutagen.io/documentation/introduction/installation)
 
-Mutagen provides very fast synchronization of your local file system to the guest, and is used
-by the [mutagen](https://git.qt.io/vohilshe/minicoin/-/tree/master/minicoin/roles#mutagen-file-system-sync)
+The setup scripts will install mutagen, which provides very fast synchronization of your local
+file system to the guest. It is used by the [mutagen](minicoin/roles/README.md#mutagen-file-system-sync)
 role. Installing mutagen on the host is the preferred solution - minicoin will establish the
 sync-point on the host. A good practice is to add those folders that you work with regularly to
 the default configuration in your personal `~/minicoin/minicoin.yml` file.
 
-If not installed on the host, the role will try to install mutagen on the guest, and "call back"
-to the host, which requires an SSH server to run on the host, and a somewhat complex exchange of
-authorization keys.
-
-Machines hosted on the cloud cannot call back to the host, so using machines on e.g. Azure
-requires a local mutagen installation.
+Using machines in the cloud requires a local mutagen installation.
 
 * [Ansible](https://docs.ansible.com/ansible/latest/installation_guide)
 
