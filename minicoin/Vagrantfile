@@ -31,6 +31,7 @@ $PWD = File.dirname(__FILE__) #
 ENV["PWD"] = $PWD if ENV["PWD"].nil?
 
 def check_for_updates()
+  return unless File.exist?(".git")
   if File.exist?("../.git/FETCH_HEAD")
     days = (Time.now - File.stat("../.git/FETCH_HEAD").mtime).to_f / 86400.0
   else
