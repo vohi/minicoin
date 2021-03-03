@@ -330,7 +330,7 @@ module Minicoin
                                 sudo: true
                             }
                             if vm.guest.name == :windows
-                                killcmd = "psexec -i 1 -u vagrant -p vagrant taskkill /PID #{@pid}"
+                                killcmd = "psexec -i 1 -u vagrant -p vagrant -h taskkill /PID #{@pid}"
                                 if @level > 1
                                     killcmd += " /F"
                                 end
@@ -447,6 +447,7 @@ module Minicoin
                     return if data.nil?
                     data.chomp!
                     if !@pid && data.start_with?("minicoin.process.id=")
+                        @job.log_verbose(@vm.ui, "Received process info '#{data}'")
                         @pid = data.delete_prefix("minicoin.process.id=")
                         @job.log_verbose(@vm.ui, "Job has process ID #{@pid} on guest")
                         return
