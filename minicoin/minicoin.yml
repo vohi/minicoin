@@ -26,6 +26,7 @@ matchers:
   - qdoc: &qdoc
     - pattern: "(.*):(\\d+): \\(qdoc\\) warning:\\s+(.*)$"
       replace: true
+      color: yellow
       error: true
     - pattern: "(.*):(\\d+): \\(qdoc\\) error:\\s+(.*)$"
       replace: true
