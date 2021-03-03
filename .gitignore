@@ -6,3 +6,5 @@
 **/.logs/*
 *.box
 *.retry
+.std.out
+.std.err

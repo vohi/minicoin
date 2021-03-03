@@ -6,6 +6,12 @@ module Vagrant
     @@config = MockConfig.new unless @@config
     @@config
   end
+  def self.version?(x)
+    true
+  end
+  def self.has_plugin?(x)
+    true
+  end
 
   class OptionParser
   end

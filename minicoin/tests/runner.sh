@@ -6,6 +6,13 @@ YELLOW="\e[0;33m"
 RED="\033[0;31m"
 NOCOL="\033[0m"
 
+trap ctrl_c INT
+
+function ctrl_c() {
+    printf "${YELLOW}Existing due to interrupt!${NOCOL}\n"
+    exit
+}
+
 testcases=()
 if [ "$1" == "--tests" ]
 then
