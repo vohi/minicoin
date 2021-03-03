@@ -616,34 +616,35 @@ module Minicoin
                     elsif jobconfigs.count > 1
                         # start dialog if multiple configurations, otherwise 
                         @job.log_verbose(@vm.ui, "#{jobconfigs.count} matching configurations found for job '#{name()}'")
-                        if @env.ui.is_a?(Vagrant::UI::MachineReadable) || @env.ui.is_a?(Vagrant::UI::NonInteractive)
+                        if @vm.ui.is_a?(Vagrant::UI::MachineReadable) || @vm.ui.is_a?(Vagrant::UI::NonInteractive)
                             raise Vagrant::Errors::UIExpectsTTY
                         end
-                        ui_channel = { :channel => :error }
-                        @env.ui.output "Multiple job configurations are available:", ui_channel
-                        @env.ui.output "", ui_channel
+                        ui_channel = { channel: :error }
+                        ui_channel[:prefix] = @job.run_options[:machine_ui]
+                        @vm.ui.output "Multiple job configurations are available:", ui_channel
+                        @vm.ui.detail "", ui_channel
                         jobconfigs.each do |jobconfig|
-                            line = "#{jobconfig['_index']}) #{jobconfig['name']}"
+                            line = "#{jobconfig[:_index]}) #{jobconfig['name']}"
                             line += " - #{jobconfig['description']} " unless jobconfig['description'].nil?
-                            @env.ui.output line, ui_channel
+                            @vm.ui.detail line, ui_channel
                         end
-                        @env.ui.output "", ui_channel
+                        @vm.ui.detail "", ui_channel
                         jobconfig = nil
                         while !jobconfig
-                            if @env.ui.stdin.tty?
-                                selection = @env.ui.ask "Selection: ", ui_channel
+                            if @vm.ui.stdin.tty?
+                                selection = @vm.ui.ask "Selection: ", ui_channel.merge({bold: true})
                             else
-                                @env.ui.output "Selection: ", ui_channel
-                                selection = @env.ui.stdin.gets.chomp
+                                @vm.ui.output "Selection: ", ui_channel
+                                selection = @vm.ui.stdin.gets.chomp
                             end
                             filtered = jobconfigs.select do |jc|
                                 jc[:_index].to_s == selection
                             end
                             jobconfig = filtered.first if filtered.count == 1
                             # no point in asking again if the input was piped
-                            raise Vagrant::Errors::UIExpectsTTY if !jobconfig && !@env.ui.stdin.tty?
+                            raise Vagrant::Errors::UIExpectsTTY if !jobconfig && !@vm.ui.stdin.tty?
                         end
-                        @env.ui.output "Selected: '#{jobconfig['name']}' (run job '#{jobconfig['job']}' with --jobconfig #{jobconfig['name']} to skip this dialog)\n", ui_channel
+                        @vm.ui.info "Selected: '#{jobconfig['name']}' (run job '#{jobconfig['job']}' with '--jobconfig #{jobconfig['name']}' to skip this dialog)\n", ui_channel
                     else
                         jobconfig = jobconfigs.first
                     end
