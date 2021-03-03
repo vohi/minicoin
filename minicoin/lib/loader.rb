@@ -273,7 +273,6 @@ def load_minicoin()
             local_file = File.join(project_dir, '.minicoin/minicoin.yml')
             if File.file?(local_file)
                 local_yaml = YAML.load_file(local_file)
-                puts local_file
             end
         end
     end
