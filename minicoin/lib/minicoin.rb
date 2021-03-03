@@ -32,7 +32,9 @@ module Minicoin
     end
 
     # use the default Vagrant option parser class in Minicoin commands
-    OptionParser = Vagrant::OptionParser
+    if Vagrant.version?(">= 2.2.14")
+        OptionParser = Vagrant::OptionParser
+    end
 
     @@machines = []
     @@ui = ui_class.new
