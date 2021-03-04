@@ -23,21 +23,44 @@ module Minicoin
         def self.mutagen_path
             @@mutagen_path
         end
-        def self.find_session(machine)
+        def self.parse_sessions(machine)
             stdout, stderr, status = self.call_mutagen("list", machine.name)
-            return nil if status != 0 # got nothing
-            status = stdout.split("\n")
-            re = nil
-            port = nil
-            ip = nil
-            status.each do |line|
-                line.strip!
-                if /Beta:/.match?(line)
-                    re = Regexp.new /URL:\s+(?<user>.*?)@(?<host>.*?):((?<port>.*?):)?(?<path>.*\/.*?)/
-                    next
+            machine.ui.error stderr if status != 0
+            sessions = [].tap do |sessions|
+                stdout.strip.split(/-{3,}/).each do |block|
+                    next if block.empty?
+                    sections = {}
+                    section = nil
+                    block.split("\n").each do |line|
+                        line.rstrip!
+                        next if line.empty?
+                        md = /^([A-Za-z]+?):\s?(.*)$/.match(line)
+                        if md
+                            section = md[1]
+                            sections[section] = md[2].nil? || md[2].empty? ? {} : md[2]
+                        elsif sections[section].is_a?(Hash)
+                            md = /^([A-Za-z\s]+?):\s(.*)$/.match(line.lstrip)
+                            if md
+                                sections[section][md[1]] = md[2]
+                            else
+                                machine.ui.error "Wrongly formatted data: #{line}"
+                            end
+                        else
+                            machine.ui.error "Unexpected data: #{line}"
+                        end
+                    end
+                    sessions << sections
                 end
-                next unless re
-                matchdata = re.match(line)
+            end
+            sessions
+        end
+        def self.find_guest(machine)
+            sessions = self.parse_sessions(machine)
+            return nil if sessions.empty?
+            sessions.each do |session|
+                beta = session["Beta"]["URL"]
+                re = Regexp.new /(?<user>.*?)@(?<host>.*?):((?<port>.*?):)?(?<path>.*\/.*?)/
+                matchdata = re.match(beta)
                 if matchdata
                     user, host, port, path = matchdata.captures
                     return [ host, port ]
@@ -47,7 +70,8 @@ module Minicoin
         end
 
         def self.call_mutagen(command, label, params=nil)
-            Open3.capture3("#{SyncedFolderMutagen.mutagen_path} sync #{command} --label-selector minicoin=#{label} #{params}")
+            label_str = "--label-selector minicoin=#{label}" if label
+            Open3.capture3("#{SyncedFolderMutagen.mutagen_path} sync #{command} #{label_str} #{params}")
         end
 
         # returns the hostname used by the ssh tools
@@ -94,6 +118,11 @@ module Minicoin
             action_hook("mutagen_resume", :machine_action_up) do |hook|
                 require_relative "actions.rb"
                 hook.append(MutagenResume)
+            end
+
+            command(:mutagen) do
+                require_relative "command.rb"
+                Command
             end
         end
     end

@@ -89,7 +89,7 @@ module Minicoin
                     # machine is being destroyed
                     ssh_info = machine.ssh_info || {}
                     if ssh_info[:host].nil?
-                        ssh_info[:host], ssh_info[:port] = SyncedFolderMutagen.find_session(machine)
+                        ssh_info[:host], ssh_info[:port] = SyncedFolderMutagen.find_guest(machine)
                     end
                     SyncedFolderMutagen.call_mutagen("terminate", machine.name)
                     unless ssh_info[:host].nil?
