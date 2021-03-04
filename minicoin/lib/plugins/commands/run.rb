@@ -255,11 +255,8 @@ module Minicoin
                         threads << thread
                     else
                         log_verbose(vm.ui, "Waiting for #{vm.name} #{thread.status}")
-                        while thread.alive?
-                            thread.check_interrupted()
-                        end
-                        log_verbose(vm.ui, "Ending thread")
                         thread.join
+                        log_verbose(vm.ui, "Thread finished")
                         exit_code += thread.exit_code
                     end
                     break if thread.interrupted?
@@ -267,19 +264,10 @@ module Minicoin
                 # wait for all threads (parallel is set)
                 if threads.count > 0
                     log_verbose(@env.ui, "Waiting for #{threads.count} jobs to finish")
-                    any_alive = true
-                    while any_alive
-                        any_alive = false
-                        threads.each do |thread|
-                            if thread.alive?
-                                thread.check_interrupted()
-                                any_alive = true
-                            else
-                                thread.join
-                                exit_code += thread.exit_code
-                                thread.exit_code = 0
-                            end
-                        end
+                    threads.each do |thread|
+                        thread.join
+                        exit_code += thread.exit_code
+                        thread.exit_code = 0
                     end
                 end
                 exit_code
@@ -308,6 +296,16 @@ module Minicoin
                     super
                 end
     
+                def interrupted?()
+                    @level > 0 || @interrupt > 0
+                end
+                def pid()
+                    @pid
+                end
+                def pid=(id)
+                    @pid = id
+                end
+    
                 def interrupt!()
                     @interrupt += 1
                     if @interrupt == 1
@@ -319,45 +317,34 @@ module Minicoin
                         @exit_code=255
                         exit
                     end
-                end
-                def interrupted?()
-                    @level > 0 || @interrupt > 0
-                end
-                def pid()
-                    @pid
-                end
-                def pid=(id)
-                    @pid = id
-                end
     
-                def check_interrupted()
-                    sleep 1
                     if @interrupt > @level && @pid
-                        vm.ui.warn "Attempting to interrupt job #{@pid} running on #{vm.name}"
                         @level = @interrupt
-                        begin
-                            opts = {
-                                error_check: false,
-                                sudo: true
-                            }
-                            if vm.guest.name == :windows
-                                killcmd = "psexec -i 1 -u vagrant -p vagrant -h taskkill /PID #{@pid}"
-                                if @level > 1
-                                    killcmd += " /F"
-                                end
-                                killcmd += "; taskkill /PID #{@pid}"
-                                if @level > 1
-                                    killcmd += " /F"
-                                end
-                            else
-                                if @level == 1
-                                    killcmd = "kill -SIGTERM #{@pid}"
-                                else
-                                    killcmd = "kill -SIGKILL #{@pid}"
-                                end
+                        if @guest_os == :windows
+                            killcmd = ""
+                            unless @job.run_options[:console]
+                                killcmd += "psexec -i 1 -u vagrant -p vagrant -h taskkill /PID #{@pid} /T"
+                                killcmd += " /F" if @level > 1
                             end
-                            vm.ui.warn "Sending kill signal to process"
-                            vm.communicate.sudo(killcmd, opts)
+                            killcmd += "; taskkill /PID #{@pid} /T"
+                            killcmd += " /F" if @level > 1
+                        else
+                            if @level == 1
+                                killcmd = "kill -SIGTERM #{@pid}"
+                            else
+                                killcmd = "kill -SIGKILL #{@pid}"
+                            end
+                        end
+                        begin
+                            vm.ui.warn "Attempting to interrupt job #{@pid} running on #{vm.name}"
+                            Thread.new do
+                                begin
+                                    vm.communicate.sudo(killcmd, { error_check: false, sudo: true })
+                                    vm.communicate.sudo(@cleanup_command, { error_check: false, sudo: true })
+                                rescue => e
+                                    @job.log_verbose(@vm.ui, "Failed to kill: #{e}")
+                                end
+                            end    
                         rescue StandardError => e
                             vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
                         end
@@ -368,6 +355,7 @@ module Minicoin
                     options = job_options.dup
 
                     if @vm.guest.name == :windows
+                        @guest_os = :windows
                         options[:ext] = "ps1"
                         options[:ext] = "cmd" if File.exist?(File.join(@job.path, "main.cmd"))
                         run_command = "C:\\minicoin\\util\\run_helper.ps1 "
@@ -378,13 +366,13 @@ module Minicoin
                         run_command += "-console " if @job.run_options[:console]
                         target_path = ".minicoin\\jobs"
                         run_command += "Documents\\#{target_path}\\#{@job.name}\\"
-                        cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job.name}"
+                        @cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job.name}"
                     else
                         options[:ext] = "sh"
                         run_command = "chmod -R +x .minicoin/jobs && "
                         target_path = ".minicoin/jobs"
                         run_command += "#{target_path}/#{@job.name}/"
-                        cleanup_command = "rm -rf #{target_path}/#{@job.name}"
+                        @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
                     end
                     script_file = "main.#{options[:ext]}"
                     if !File.exist?(File.join(@job.path, script_file))
@@ -463,7 +451,6 @@ module Minicoin
                         rescue StandardError => e
                             @job.log_verbose(@vm.ui, "Received error from command:")
                             @job.log_verbose(@vm.ui, e)
-                            raise e
                         end
                     end
                     if interrupted?()
@@ -475,8 +462,11 @@ module Minicoin
                     if @exit_code != 0
                         @vm.ui.error "Job finished with non-zero exit code #{@exit_code}"
                     end
-                    @job.log_verbose(vm.ui, "Cleaning up via '#{cleanup_command}'")
-                    @vm.communicate.sudo(cleanup_command)
+                    begin
+                        @job.log_verbose(vm.ui, "Cleaning up via '#{@cleanup_command}'")
+                        @vm.communicate.sudo(@cleanup_command, { error_check: false, sudo: true })
+                    rescue
+                    end
 
                     run_local("post")
                     @exit_code
