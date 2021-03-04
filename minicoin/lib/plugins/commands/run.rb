@@ -493,7 +493,14 @@ module Minicoin
                                         options = matcher[:options]
                                     end
                                     # s/guest_dir/host_dir
-                                    line.gsub!(@job_args[0], @job_args[1]) if options[:replace]
+                                    if options[:replace]
+                                        line.gsub!(@job_args[0], @job_args[1])
+                                        if @guest_os == :windows && !Vagrant::Util::Platform.windows?
+                                            line.gsub!("\\", "/")
+                                        elsif @guest_os != :windows && Vagrant::Util::Platform.windows?
+                                            line.gsub!("/", "\\")
+                                        end
+                                    end
                                     break # first matcher wins
                                 end
                             end
