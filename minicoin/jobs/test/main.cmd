@@ -47,7 +47,7 @@ echo Testing stdout and stderr
 for %%I in (1,2,3) do (
     echo - stdout %%I
     >&2 echo - stderr %%I
-    timeout /t 1 /NOBREAK > nul
+    waitfor something /T 1 2> NULL
 )
 
 if "!errorcode!" == "0" (
