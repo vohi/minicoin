@@ -1,7 +1,9 @@
 param (
     [string]$script,
+    [int]$repeat,
     [switch]$privileged,
-    [switch]$verbose
+    [switch]$verbose,
+    [switch]$console
 )
 
 function Write-StdErr {
@@ -39,8 +41,7 @@ function Repeat-Output {
     Start-Sleep -Milliseconds 250
 }
 
-$outpath = New-TemporaryFile
-$errpath = New-TemporaryFile
+Set-Location $env:USERPROFILE
 $script = $env:USERPROFILE + "\" + $script
 
 # quote parameters with whitespace again for cmd
@@ -90,7 +91,7 @@ if ($privileged) {
     $jobargs += @("-h")
 }
 $jobargs += @(
-    "-w", "$env:USERPROFILE"
+    "-w", "$env:USERPROFILE",
     "cmd.exe", "/C"
 )
 
@@ -102,72 +103,116 @@ if ($script.ToLower().EndsWith("ps1")) {
 }
 
 $jobargs += @(
-    "$script", "$cmdargs", "> $outpath", "2> $errpath"
+    "$script", "$cmdargs"
 )
 
-try {
-    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $pinfo.FileName = "psexec.exe"
-    $pinfo.CreateNoWindow = $true
-    $pinfo.UseShellExecute = $true
-    $pinfo.Arguments = $jobargs
+$success_count = 0
+$exit_code = 0
+for ($i = 0; $i -lt $repeat; $i++) {
+    try {
+        if ($console) {
+            if ($verbose) {
+                Write-StdErr "Calling $script with Arguments: $cmdargs"
+            }
+            & $script $cmdargs | Write-Output
+            $exit_code = $LASTEXITCODE
+        } else {
+            $outpath = New-TemporaryFile
+            $errpath = New-TemporaryFile
 
-    if ($verbose) {
-        Write-StdErr "Calling $($pinfo.FileName) with Arguments:"
-        Write-StdErr "$jobargs"
+            $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+            $pinfo.FileName = "psexec.exe"
+            $pinfo.CreateNoWindow = $true
+            $pinfo.UseShellExecute = $true
+            $pinfo.Arguments = $jobargs + @("> $outpath", "2> $errpath")
+
+            if ($verbose) {
+                Write-StdErr "Calling $($pinfo.FileName) with Arguments:"
+                Write-StdErr "$jobargs"
+            }
+
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $pinfo
+
+            $process.Start() | Out-Null
+            if ($verbose) {
+                Write-StdErr "Process started with id $($process.id)"
+            }
+        }
+    } catch {
+        Write-StdErr "Failure to start '$script' through psexec - aborting"
+        Write-StdErr "Error message: $($_.ToString())"
+        $PSItem.InvocationInfo | Format-List *
+        exit $LASTEXITCODE
     }
 
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo = $pinfo
+    if (!$console) {
+        if ($verbose) {
+            Write-StdErr "Reading $outpath and $errpath"
+        }
 
-    $process.Start() | Out-Null
-    if ($verbose) {
-        Write-StdErr "Process started with id $($process.id)"
+        $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
+        $stdout = New-Object System.IO.StreamReader($stdout_file)
+        $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
+        $stderr = New-Object System.IO.StreamReader($stderr_file)
+
+        try {
+            if ($verbose) {
+                Write-StdErr "Waiting for $process"
+            }
+            while (!$process.HasExited) {
+                Repeat-Output $stdout $stderr
+            }
+            Repeat-Output $stdout $stderr
+        } catch {
+            Write-StdErr "Exception while reading process output - exiting"
+            Write-StdErr "Error message: $($_.ToString())"
+            $PSItem.InvocationInfo | Format-List *
+        }
+
+        if ($verbose) {
+            Write-StdErr "Cleaning up $outpath and $errpath"
+        }
+
+        $stdout.Dispose();
+        $stdout_file.Close();
+        $stderr.Dispose();
+        $stderr_file.Close();
+
+        try {
+            Remove-Item $outpath | Out-Null
+            Remove-Item $errpath | Out-Null
+        } catch {
+            Write-StdErr "Error removing temporary files"
+        }
+
+        $process.WaitForExit()
+        $exit_code = $process.ExitCode
     }
-} catch {
-    Write-StdErr "Failure to start '$script' through psexec - aborting"
-    Write-StdErr "Error message: $($_.ToString())"
-    $PSItem.InvocationInfo | Format-List *
-    exit $LASTEXITCODE
-}
-
-if ($verbose) {
-    Write-StdErr "Reading $outpath and $errpath"
-}
-
-$stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
-$stdout = New-Object System.IO.StreamReader($stdout_file)
-$stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
-$stderr = New-Object System.IO.StreamReader($stderr_file)
-
-try {
-    if ($verbose) {
-        Write-StdErr "Waiting for $process"
+    if ($exit_code -ne 0) {
+        Write-StdErr "Process exited with $exit_code"
+    } else {
+        $success_count++
     }
-    while (!$process.HasExited) {
-        Repeat-Output $stdout $stderr
+
+    if ($repeat -gt 1) {
+        if ($exit_code -ne 0) {
+            $printer="Write-StdErr"
+        } else {
+            $printer="Write-Output"
+        }
+        Invoke-Expression -Command "$printer 'Run $($i + 1)/${repeat}: Exit code ${exit_code}'"
     }
-    Repeat-Output $stdout $stderr
-} catch {
-    Write-StdErr "Exception while reading process output - exiting"
-    Write-StdErr "Error message: $($_.ToString())"
-    $PSItem.InvocationInfo | Format-List *
 }
 
-if ($verbose) {
-    Write-StdErr "Cleaning up $outpath and $errpath"
+if ($repeat -gt 1) {
+    if ($success_count -lt $repeat) {
+        $printer="Write-StdErr"
+    } else {
+        $printer="Write-Output"
+    }
+    Invoke-Expression -Command "$printer 'Success rate is ${success_count}/${repeat}'"
+    exit $repeat - $success_count
+} else {
+    exit $exit_code
 }
-
-$stdout.Dispose();
-$stdout_file.Close();
-$stderr.Dispose();
-$stderr_file.Close();
-
-Remove-Item $outpath
-Remove-Item $errpath
-
-$process.WaitForExit()
-if ($process.ExitCode -ne 0) {
-    Write-StdErr "Process exited with $($process.ExitCode)"
-}
-exit $process.ExitCode

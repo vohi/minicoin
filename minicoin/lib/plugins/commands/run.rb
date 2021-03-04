@@ -69,9 +69,14 @@ module Minicoin
             def initialize(argv, env)
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
                 # special case, since we have a main command argument that takes a value
-                if @argv[-1] == "--jobconfig"
-                    @argv << @job_name
-                    @job_name = @job_args.delete_at(0)
+                ["--repeat", "--jobconfig"].each do |option|
+                    if @argv[-1] == option
+                        loop do
+                            @argv << @job_name
+                            @job_name = @job_args.delete_at(0)
+                            break unless @job_name.start_with?("-")
+                        end
+                    end
                 end
                 super(@argv, env)
 
@@ -119,6 +124,12 @@ module Minicoin
                     end
                     option.on("--parallel", "Run the job on several machines in parallel") do |o|
                         options[:parallel] = o
+                    end
+                    option.on("--repeat COUNT", "Run the job in a loop, keeping track of results") do |o|
+                        options[:repeat] = o
+                    end
+                    option.on("--console", "Run the job as a console session") do |o|
+                        options[:console] = o
                     end
                     option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
                         options[:jobconfig] = o
@@ -363,6 +374,8 @@ module Minicoin
                         # enable verbosity and privileged execution in run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]
                         run_command += "-privileged " if @job.run_options[:privileged]
+                        run_command += "-repeat #{@job.run_options[:repeat] || 1} "
+                        run_command += "-console " if @job.run_options[:console]
                         target_path = ".minicoin\\jobs"
                         run_command += "Documents\\#{target_path}\\#{@job.name}\\"
                         cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job.name}"
@@ -388,6 +401,33 @@ module Minicoin
                     job_config = jobconfig(options)
                     @job_args = job_arguments(options, job_config)
                     run_command += " #{@job_args.join(" ")}"
+
+                    if options[:ext] == "sh" && @job.run_options[:repeat]
+                        loop_envelope = <<-WHILE
+                            repeat=#{@job.run_options[:repeat]}
+                            success=0
+                            total=0
+                            while [[ $total -lt $repeat ]]
+                            do
+                                #{run_command}
+                                exit_code=$?
+                                if [ $exit_code -eq 0 ]
+                                then
+                                    success=$(( $success + 1 ))
+                                    out=1
+                                else
+                                    out=2
+                                fi
+                                total=$(( $total + 1 ))
+                                >&${out} echo "Run $total/$repeat: Exit code $exit_code"
+                            done
+                            [ $success -lt $total ] && out=2 || out=1
+                            >&${out} echo "Success rate is ${success}/${total}"
+                            exit_code=$(( $repeat - $success ))
+                            exit $exit_code
+                        WHILE
+                        run_command = loop_envelope
+                    end
 
                     @vm.ui.info "Running '#{@job.name}' with arguments #{@job_args.join(" ")}"
 
@@ -446,7 +486,7 @@ module Minicoin
                     data.rstrip!
                     return if data.nil?
                     data.chomp!
-                    if !@pid && data.start_with?("minicoin.process.id=")
+                    if data.start_with?("minicoin.process.id=")
                         @job.log_verbose(@vm.ui, "Received process info '#{data}'")
                         @pid = data.delete_prefix("minicoin.process.id=")
                         @job.log_verbose(@vm.ui, "Job has process ID #{@pid} on guest")
