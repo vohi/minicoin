@@ -158,6 +158,7 @@ machines:
 
   - name: doc-server
     box: generic/ubuntu2004
+    if: Which.which("ansible")
     roles:
       - linux-builder
       - doc-server
