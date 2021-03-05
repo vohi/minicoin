@@ -62,11 +62,8 @@ Vagrant.configure("2") do |config|
     if !machine_box.nil?
       if machine_box.include?("$minicoin_key")
         minicoin_key = ENV['minicoin_key']
-        if minicoin_key.nil?
-          if ["validate"].include? ARGV[0]
-            ui.warn "Box is private, but key is not set. Set 'minicoin_key' environment variable!"
-          end
-          next
+        if minicoin_key.empty?
+          machine[:disabled] = "Box is private, minicoin_key not set"
         end
         machine_url = machine_box.gsub("$minicoin_key", minicoin_key)
         machine_box.gsub!("$minicoin_key/", "")
@@ -79,6 +76,11 @@ Vagrant.configure("2") do |config|
     end
 
     next if ARGV[0] == "list" # shortcut
+
+    if machine[:disabled] && !Minicoin.requested_boxes.empty?
+      ui.warn "Machine is not available: #{machine[:disabled]}"
+      next
+    end
 
     config.vm.define name, autostart: false do |box|
       box.minicoin.machine = machine

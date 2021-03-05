@@ -216,31 +216,35 @@ def find_config(root, config_name)
     return root
 end
 
-def preprocess(data)
+def preprocess(data, path)
     return true unless data.is_a?(Hash)
     data.each do |key, value|
         if key == "if"
             begin
                 exp = eval(value)
                 data.delete(key) if exp
-                return exp
+                return [exp, "#{value} => #{exp ? exp : false}"]
             rescue => error
                 STDERR.puts "Error in expression #{value}:"
                 STDERR.puts "\t#{error}"
                 return false
             end
         elsif value.is_a?(Hash)
-            if !preprocess(value)
-                data.delete(key)
-            end
+            exp, reason = preprocess(value, path + "#{key}/")
+            data.delete(key) if !exp
         elsif value.is_a?(Array)
             index = 0
             value.each do |entry|
-                if !preprocess(entry)
-                    value.delete_at(index)
-                else
-                    index += 1
+                exp, reason = preprocess(entry, path + "#{key}/#{index}/")
+                if !exp
+                    if "#{path}#{key}" == "/machines" && value[index].is_a?(Hash)
+                        value[index][:disabled] = reason
+                    else
+                        value.delete_at(index)
+                        index -= 1
+                    end
                 end
+                index += 1
             end
         end
     end
@@ -299,7 +303,7 @@ def load_minicoin()
     # role merging once each box is fully defined
     combine_roles(machines)
 
-    preprocess(yaml)
+    preprocess(yaml, "/")
 
     $TEST_OUTPUT=yaml
 
