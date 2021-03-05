@@ -321,7 +321,7 @@ def add_role(box, role, name, machine)
 
         provisioning_name = "#{role}:script"
         box.vm.provision provisioning_name,
-            attributes
+            **attributes
     end
     
     # check for post--provisioning script to run locally
