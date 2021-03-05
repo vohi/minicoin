@@ -60,6 +60,7 @@ then
     then
         echo "Installing winrm Ruby gem..."
         sudo gem install winrm
+        sudo gem install winrm-elevated
     fi
 else
     echo "vagrant version ${vagrant_version} found!"
