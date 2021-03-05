@@ -21,7 +21,7 @@ else
 fi
 
 case $distro in
-    ubuntu*)
+    ubuntu|neon*)
         apt-get update
         install_command="apt-get -qq -y install"
         ;;
@@ -29,7 +29,8 @@ case $distro in
         install_command="brew install"
         ;;
     *)
-        install_command="printf \"Don't know how to install package on %s: %s\" ${distro}"
+        print "Don't know how to install packages on $distro."
+        exit 1
         ;;
 esac
 
