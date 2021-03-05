@@ -40,6 +40,7 @@ then
     then
         echo "VirtualBox not found, installing first..."
         $install_command virtualbox
+        VBoxManage hostonlyif create # workaround https://github.com/hashicorp/vagrant/issues/3083
         vbox_version=`VBoxManage --version`
     else
         echo "VirtualBox version ${vbox_version} found!"
