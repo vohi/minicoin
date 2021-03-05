@@ -55,3 +55,7 @@ call refreshenv 2> NUL > NUL
 echo.
 echo Minicoin set up!
 call minicoin list
+
+if not defined minicoin_key (
+    echo No minicoin_key set, some boxes will not be available!
+)
