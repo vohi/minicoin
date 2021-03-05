@@ -98,6 +98,10 @@ if exist build.ninja (
   )
 )
 
+if defined PARAM_testargs (
+  set TESTARGS=!PARAM_testargs!
+)
+
 echo Building '!JOBDIR!' using '!maketool! !target!'
 !maketool! !target!
 set error=%ERRORLEVEL%

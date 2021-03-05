@@ -111,6 +111,8 @@ else
   exit 1
 fi
 
+[[ -z $PARAM_testargs ]] || export TESTARGS=$PARAM_testargs
+
 echo "Building '$JOBDIR' using '$maketool $target'"
 $maketool $target
 error=$?

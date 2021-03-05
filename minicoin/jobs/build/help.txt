@@ -44,3 +44,7 @@ The job then builds the default target.
 
   $ minicoin run ubuntu1804 build -- -cc /usr/bin/clang-10 --cxx /usr/bin/clang++10
   $ minicoin run windows10 build -- -cc cl --cxx cl
+
+--testargs ARGS
+
+  Sets the TESTARGS environment variable
