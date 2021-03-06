@@ -114,7 +114,13 @@ for ($i = 0; $i -lt $repeat; $i++) {
             if ($verbose) {
                 Write-StdErr "Calling $script with Arguments: $cmdargs"
             }
-            & $script $cmdargs | Write-Output
+            if ($script.ToLower().EndsWith("ps1")) {
+                $ErrorActionPreference="SilentlyContinue"
+                & $script $cmdargs 2>&1
+                $ErrorActionPreference="Continue"
+            } else {
+                & $script $cmdargs
+            }
             $exit_code = $LASTEXITCODE
         } else {
             $outpath = New-TemporaryFile

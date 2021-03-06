@@ -134,6 +134,9 @@ module Minicoin
                     option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
                         options[:jobconfig] = o
                     end
+                    option.on("--powershell", "Prefer a powershell main script on Windows guests") do |o|
+                        options[:powershell] = o
+                    end
 
                     option.separator ""
                     option.separator "Standard options:"
@@ -357,7 +360,7 @@ module Minicoin
                     if @vm.guest.name == :windows
                         @guest_os = :windows
                         options[:ext] = "ps1"
-                        options[:ext] = "cmd" if File.exist?(File.join(@job.path, "main.cmd"))
+                        options[:ext] = "cmd" if File.exist?(File.join(@job.path, "main.cmd")) && !@job.run_options[:powershell]
                         run_command = "C:\\minicoin\\util\\run_helper.ps1 "
                         # enable verbosity and privileged execution in run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]
@@ -524,15 +527,15 @@ module Minicoin
                     else
                         options[:prefix] = false
                         @vm.ui.clear_line if @last_options[:new_line] == false && options[:new_line] == false
-                        @vm.ui.detail "", { prefix: false, newline: true } if @last_options[:new_line] == false && (options[:new_line].nil? || options[:new_line] == true)
+                        @vm.ui.detail "", **{prefix: false, newline: true} if @last_options[:new_line] == false && (options[:new_line].nil? || options[:new_line] == true)
                     end
                     if options[:color].nil?
                         options[:color] = :red if options[:channel] == :error
                     end
                     if options[:channel] == :stderr
-                        @vm.ui.error(data, options)
+                        @vm.ui.error(data, **options)
                     else
-                        @vm.ui.detail(data, options)
+                        @vm.ui.detail(data, **options)
                     end
                     @last_options = options
                 end
