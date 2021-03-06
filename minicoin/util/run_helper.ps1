@@ -201,6 +201,9 @@ for ($i = 0; $i -lt $repeat; $i++) {
     }
     if ($exit_code -ne 0) {
         Write-StdErr "Process exited with $exit_code"
+        if ($exit_code -eq 71) {
+            Write-StdErr "System doesn't accept any new tasks, this should resolve itself in a few minutes!"
+        }
     } else {
         $success_count++
     }
