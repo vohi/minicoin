@@ -30,15 +30,19 @@ function Repeat-Output {
     while (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
         $out_line = $stdout.ReadLine();
         $err_line = $stderr.ReadLine();
+        $havedata = $false
         if (![String]::IsNullOrEmpty($out_line)) {
             write-host $out_line
+            $havedata = $true
         }
         if (![String]::IsNullOrEmpty($err_line)) {
             Write-StdErr $err_line
+            $havedata = $true
         }
-        Start-Sleep -Milliseconds 25
+        if (!$havedata) {
+            Start-Sleep -Milliseconds 25
+        }
     }
-    Start-Sleep -Milliseconds 250
 }
 
 Set-Location $env:USERPROFILE
