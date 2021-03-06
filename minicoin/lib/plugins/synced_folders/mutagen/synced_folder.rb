@@ -6,13 +6,13 @@ module Minicoin
         class SyncedFolder < Vagrant.plugin("2", :synced_folder)
             def initialize()
                 super
-                @public_key = "#{$HOME}/.ssh/id_rsa.pub"
             end
 
             def usable?(machine, raise_error=false)
-                return true if SyncedFolderMutagen.mutagen_path() && File.exist?(@public_key)
+                return true if SyncedFolderMutagen.mutagen_path() && File.exist?(SyncedFolderMutagen.public_key())
                 return false if !raise_error
-                raise Vagrant::Errors::MutagenNotFound
+                raise Minicoin::Errors::MutagenNotFound if !SyncedFolderMutagen.mutagen_path()
+                raise Minicoin::Errors::NoSshKey if !File.exist?(SyncedFolderMutagen.public_key())
             end
 
             def enable(machine, folders, opts)
@@ -36,17 +36,9 @@ module Minicoin
                 end
 
                 # revoke the trust from any old keys we might have for this machine
-                revoke_trust(machine)
+                SyncedFolderMutagen.revoke_trust(machine)
                 # make the guest trust the host's user
-                if machine.config.vm.guest == :windows
-                    mutagen_key_destination = "..\\.ssh\\#{$USER}.pub"
-                    mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
-                else
-                    mutagen_key_destination = ".ssh/#{$USER}.pub"
-                    mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
-                end
-                machine.communicate.upload(@public_key, mutagen_key_destination)
-                machine.communicate.execute(mutagen_key_add)
+                SyncedFolderMutagen.upload_key(machine)
 
                 command = "#{SyncedFolderMutagen.mutagen_path} sync create --sync-mode one-way-replica --name minicoin --label minicoin=#{machine.name}"
                 folders.each do |id, folder_opts|
@@ -71,7 +63,7 @@ module Minicoin
 
                     if status != 0
                         machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}: #{stderr}")
-                        raise Vagrant::Errors::MutagenSyncFail
+                        raise Minicoin::Errors::MutagenSyncFail
                     end
                 end
             end
@@ -102,28 +94,6 @@ module Minicoin
             end
 
             private
-
-            def revoke_trust(machine)
-                return if !machine.ssh_info
-
-                ssh_hostname = SyncedFolderMutagen.ssh_hostname(machine.ssh_info)
-                Vagrant.global_logger.debug("Finding registered key for #{ssh_hostname}")
-                stdout, stderr, status = Open3.capture3("ssh-keygen -F #{ssh_hostname}")
-                ssh_registered = stdout.strip.split("\n")
-                Vagrant.global_logger.debug("No keys registered for #{ssh_hostname}")
-                return if ssh_registered.empty?
-
-                Vagrant.global_logger.debug("Scanning key from #{machine.ssh_info}")
-                stdout, stderr, status = Open3.capture3("ssh-keyscan -4 -p #{machine.ssh_info[:port]} #{machine.ssh_info[:host]}")
-                if status != 0
-                    machine.ui.warn("Couldn't scan public key from #{machine.name}")
-                else
-                    if (stdout.strip.split("\n") & ssh_registered).empty?
-                        machine.ui.warn("Guest's host identification changed, revoking old keys for #{ssh_hostname}")
-                        stdout, stderr, status = Open3.capture3("ssh-keygen -R #{ssh_hostname}")
-                    end
-                end
-            end
 
             # work around mutagen bug with Windows 20H2's OpenSSH server
             def upload_mutagen_agent(machine)

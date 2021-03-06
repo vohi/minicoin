@@ -90,13 +90,17 @@ def mutagen_provision(box, name, role_params, machine)
         alphas << alpha
         if box.vm.guest == :windows
             if role_params["reverse"] == true
-                beta = beta.gsub("/", "\\").gsub("~", "#{box.minicoin.guest_homes}\\vagrant")
+                beta.gsub!("~", "#{box.minicoin.guest_homes}\\vagrant")
+                beta.gsub!($HOME, "#{box.minicoin.guest_homes}\\vagrant")
+                beta.gsub!("/", "\\")
             else
-                beta = beta.gsub("~", "#{box.minicoin.guest_homes}/vagrant")
-                beta = beta.gsub("\\", "/")
+                beta.gsub!("~", "#{box.minicoin.guest_homes}/vagrant")
+                beta.gsub!($HOME, "#{box.minicoin.guest_homes}/vagrant")
+                beta.gsub!("\\", "/")
             end
         else
-            beta = beta.gsub("~", "#{box.minicoin.guest_homes}/vagrant")
+            beta.gsub!("~", "#{box.minicoin.guest_homes}/vagrant")
+            beta.gsub!($HOME, "#{box.minicoin.guest_homes}/vagrant")
         end
         betas << beta
         sessions[alpha] = beta

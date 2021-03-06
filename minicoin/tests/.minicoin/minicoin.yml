@@ -56,7 +56,7 @@ jobconfigs: &testconfigs
 roles: &mutagentest
   - role: mutagen
     paths:
-      - ~/dev/minicoin/minicoin/tests
+      - $PWD/tests
     options: --ignore-vcs
     ignores: "*-build"
 

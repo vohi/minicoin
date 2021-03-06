@@ -100,6 +100,9 @@ module Minicoin
 
                 with_target_vms(argv) do |vm|
                     raise Vagrant::Errors::MachineGuestNotReady if !vm.ssh_info
+                    sessions = SyncedFolderMutagen.parse_sessions(vm)
+                    SyncedFolderMutagen.upload_key(vm) if sessions.empty?
+
                     dirname = File.dirname(beta)
                     dirname = "../#{dirname}" if vm.guest.name == :windows
 
@@ -110,11 +113,9 @@ module Minicoin
                     opt_str += " --label minicoin=#{vm.name}"
                     beta_str = "#{vm.ssh_info[:username]}@#{vm.ssh_info[:host]}:#{vm.ssh_info[:port]}:#{beta}"
 
-                    stdout, stderr, status = Open3.capture3("#{SyncedFolderMutagen.mutagen_path} sync create #{opt_str} #{alpha} #{beta_str}")
+                    stdout, stderr, status = Open3.capture3("echo yes | #{SyncedFolderMutagen.mutagen_path} sync create #{opt_str} #{alpha} #{beta_str}")
                     if status != 0
                         vm.ui.error stderr.strip
-                    else
-                        vm.ui.detail stdout.strip
                     end
                 end
             end
@@ -150,13 +151,22 @@ module Minicoin
                         vm.ui.detail stdout unless stdout.empty?
                     else
                         sessions = SyncedFolderMutagen.parse_sessions(vm)
+                        found = false
                         sessions.each do |session|
                             if /#{options[:alpha]}/.match?(session["Alpha"]["URL"])
+                                found = true
                                 stdout, stderr, status = SyncedFolderMutagen.call_mutagen("terminate", nil, session["Identifier"])
                                 vm.ui.error stderr.strip if status != 0
+                                stdout.strip!
                                 vm.ui.detail stdout unless stdout.empty?
                             end
+                            vm.ui.warn "No matching session found" unless found
                         end
+                    end
+                    sessions = SyncedFolderMutagen.parse_sessions(vm)
+                    if sessions.empty?
+                        vm.ui.warn "Last session to #{vm.name} terminated, removing from list of known hosts"
+                        SyncedFolderMutagen.revoke_trust(vm, force: true)
                     end
                 end
             end
@@ -233,13 +243,12 @@ module Minicoin
                             end
                         end
                         if waiting
-                            puts waiting
                             options = { new_line: false }
                             waitcount += 1
                             vm.ui.clear_line
                             alpha = waiting["Alpha"]
                             options[:color] = alpha["Connection state"] != "Connected" ? :yellow : :green
-                            vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", options
+                            vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", **options
                             sleep(3)
                         end
                     end

@@ -1,21 +1,24 @@
 require "open3"
 
-module Vagrant
+module Minicoin
     module Errors
-        class MutagenNotFound < VagrantError
+        class MutagenNotFound < Vagrant::Errors::VagrantError
             def error_message
-                "Mutagen not found"
+                "Mutagen is not installed on the host"
             end
         end
-        class MutagenSyncFail < VagrantError
+        class NoSshKey < Vagrant::Errors::VagrantError
+            def error_message
+                "User has no SSH key in ~/.ssh"
+            end
+        end
+        class MutagenSyncFail < Vagrant::Errors::VagrantError
             def error_message
                 "Mutagen failed to create the sync session"
             end
         end
     end
-end
 
-module Minicoin
     module SyncedFolderMutagen
         include Vagrant::Util
 
@@ -23,6 +26,42 @@ module Minicoin
         def self.mutagen_path
             @@mutagen_path
         end
+        def self.public_key
+            "#{$HOME}/.ssh/id_rsa.pub"
+        end
+        def self.upload_key(machine)
+            if machine.config.vm.guest == :windows
+                mutagen_key_destination = "..\\.ssh\\#{$USER}.pub"
+                mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
+            else
+                mutagen_key_destination = ".ssh/#{$USER}.pub"
+                mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
+            end
+            machine.communicate.upload(SyncedFolderMutagen.public_key(), mutagen_key_destination)
+            machine.communicate.execute(mutagen_key_add)
+        end
+        def self.revoke_trust(machine, force=false)
+            return if !machine.ssh_info
+
+            ssh_hostname = SyncedFolderMutagen.ssh_hostname(machine.ssh_info)
+            Vagrant.global_logger.debug("Finding registered key for #{ssh_hostname}")
+            stdout, stderr, status = Open3.capture3("ssh-keygen -F #{ssh_hostname}")
+            ssh_registered = stdout.strip.split("\n")
+            Vagrant.global_logger.debug("No keys registered for #{ssh_hostname}")
+            return if ssh_registered.empty?
+
+            Vagrant.global_logger.debug("Scanning key from #{machine.ssh_info}")
+            stdout, stderr, status = Open3.capture3("ssh-keyscan -4 -p #{machine.ssh_info[:port]} #{machine.ssh_info[:host]}")
+            if status != 0
+                machine.ui.warn("Couldn't scan public key from #{machine.name}")
+            else
+                if (stdout.strip.split("\n") & ssh_registered).empty? || force
+                    machine.ui.warn("Guest's host identification changed, revoking old keys for #{ssh_hostname}") unless force
+                    stdout, stderr, status = Open3.capture3("ssh-keygen -R #{ssh_hostname}")
+                end
+            end
+        end
+
         def self.parse_sessions(machine)
             stdout, stderr, status = self.call_mutagen("list", machine.name)
             machine.ui.error stderr if status != 0
@@ -45,11 +84,9 @@ module Minicoin
                             else
                                 machine.ui.error "Wrongly formatted data: #{line}"
                             end
-                        else
-                            machine.ui.error "Unexpected data: #{line}"
                         end
                     end
-                    sessions << sections
+                    sessions << sections unless sections.empty?
                 end
             end
             sessions
