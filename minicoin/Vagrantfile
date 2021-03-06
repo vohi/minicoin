@@ -61,7 +61,7 @@ Vagrant.configure("2") do |config|
     machine_url = machine_box
     if !machine_box.nil?
       if machine_box.include?("$minicoin_key")
-        minicoin_key = ENV['minicoin_key']
+        minicoin_key = ENV['minicoin_key'] || ""
         if minicoin_key.empty?
           machine[:disabled] = "Box is private, minicoin_key not set"
         end
@@ -88,6 +88,7 @@ Vagrant.configure("2") do |config|
         box.vm.provider machine["provider"]
       end
 
+      next if machine[:disabled] # only declare disabled machines if we get here
       if machine["os"].nil?
         is_windows = ((name =~ /windows/i) || (machine_box =~ /windows/i)) != nil
         is_mac = ((name =~ /mac/i) || (machine_box =~ /mac/i)) != nil
