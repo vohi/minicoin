@@ -13,6 +13,9 @@ module Minicoin
                     option.separator ""
                     option.separator "Options:"
                     option.separator ""
+                    option.on("--quiet", "Suppress all output") do |o|
+                        options[:quiet] = o
+                    end
                     option.on("-- command", "The command to execute on the guest")
                 end
 
@@ -31,22 +34,22 @@ module Minicoin
                     return
                 end
 
+                exit_code = 0
                 with_target_vms(argv) do |vm|
                     unless vm.communicate.ready?
                         vm.ui.error "Machine not ready"
                         next
                     end
                     vm.ui.info "Running '#{command}'"
-                    if vm.guest.name == :windows
-                        vm.communicate.execute("cd \$Env:USERPROFILE; #{command}") do |type, data|
-                            echo(vm.ui, type, data.rstrip)
-                        end
-                    else
-                        vm.communicate.execute(command) do |type, data|
-                            echo(vm.ui, type, data.chomp)
-                        end
+                    opts = {}
+                    opts = {error_check: false} if options[:quiet]
+                    command = "cd \$Env:USERPROFILE; #{command}" if vm.guest.name == :windows
+                    exit_code = vm.communicate.execute(command, opts) do |type, data|
+                        echo(vm.ui, type, data.rstrip.chomp) unless options[:quiet]
                     end
                 end
+                vm.ui.status "#{command} finished with #{exit_code}"
+                exit_code
             end
 
             private
