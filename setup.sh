@@ -16,7 +16,7 @@ fi
 
 case $distro in
     ubuntu*|neon*)
-        sudo apt-get update
+        sudo apt-get update > /dev/null
         install_command="sudo apt-get -qq -y install"
         ;;
     Darwin*)
@@ -28,19 +28,25 @@ case $distro in
         ;;
 esac
 
+# recommended versions
+vbox_version_good=6.1.16
+vagrant_version_good=2.2.14
+mutagen_version_good=0.11.8
+
 cd /tmp
 
 vagrant_version=`vagrant --version 2> /dev/null`
+vbox_version=`VBoxManage --version 2> /dev/null`
 if [ $? -gt 0 ]
 then
     echo "vagrant not found, installing..."
 
-    vbox_version=`VBoxManage --version 2> /dev/null`
-    if [ $? -gt 0 ]
+    if [ -z $vbox_version ]
     then
         echo "VirtualBox not found, installing first..."
         $install_command virtualbox
-        VBoxManage hostonlyif create # workaround https://github.com/hashicorp/vagrant/issues/3083
+        default_dhcp=$(VBoxManage list dhcpservers | grep NetworkName: | awk '{print $2}')
+        VBoxManage dhcpserver remove --netname ${default_dhcp} # workaround https://github.com/hashicorp/vagrant/issues/3083
         vbox_version=`VBoxManage --version`
     else
         echo "VirtualBox version ${vbox_version} found!"
@@ -52,17 +58,26 @@ then
     fi
     echo "Installing VirtualBox extension pack. This requires sudo, your password may be required"
     filename="Oracle_VM_VirtualBox_Extension_Pack-${vbox_version}.vbox-extpack"
-    curl "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}" -o "${filename}"
+    curl -L -O "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}"
     sudo VBoxManage extpack install "${filename}"
 
-    $install_command ruby-dev
-    $install_command vagrant
+    case $distro in
+        ubuntu*|neon*)
+            $install_command ruby-dev
+            curl -L -O https://releases.hashicorp.com/vagrant/${vagrant_version_good}/vagrant_${vagrant_version_good}_`arch`.deb
+            $install_command ./vagrant_${vagrant_version_good}_`arch`.deb
+            ;;
+        *)
+            $install_command vagrant
+            ;;
+    esac
     if [ $? -eq 0 ]
     then
         echo "Installing winrm Ruby gem..."
         sudo gem install winrm
         sudo gem install winrm-elevated
     fi
+    vagrant_version=`vagrant --version | awk '{print $2}'`
 else
     echo "vagrant version ${vagrant_version} found!"
 fi
@@ -75,15 +90,15 @@ then
     then
         brew install mutagen-io/mutagen/mutagen
     else
-        mutagen_version="0.11.8"
-        filename="mutagen_linux_amd64_v${mutagen_version}.tar.gz"
-        sudo curl -L https://github.com/mutagen-io/mutagen/releases/download/v${mutagen_version}/${filename} -o "${filename}"
+        filename="mutagen_linux_amd64_v${mutagen_version_good}.tar.gz"
+        sudo curl -O -L https://github.com/mutagen-io/mutagen/releases/download/v${mutagen_version_good}/${filename}
         sudo mkdir -p /opt/mutagen
         sudo tar -xf "${filename}" -C /opt/mutagen
         [ $? -eq 0 ] && sudo ln -s /opt/mutagen/mutagen /usr/local/bin/mutagen
     fi
+    mutagen_version=`mutagen version`
 else
-    echo "mutagen version ${mutage_version} found!"
+    echo "mutagen version ${mutagen_version} found!"
 fi
 
 cd - > /dev/null
@@ -93,10 +108,15 @@ then
     sudo ln -fs $PWD/minicoin/minicoin /usr/local/bin/minicoin
 fi
 
-minicoin update
+minicoin update 2> /dev/null
 
-echo
-echo "Minicoin set up!"
+printf "\nMinicoin set up!\n"
+printf "%s: %s\n" "- vagrant version" "$vagrant_version"
+[[ "${vagrant_version}" < "${vagrant_version_good}" ]] && echo "   You might need to upgrade to version ${vagrant_version_good}!"
+printf "%s: %s\n" "- VirtualBox version" "$vbox_version"
+[[ "${vbox_version}" < "${vbox_version_good}" ]] && echo "   You might need to upgrade to version ${vagrant_version_good}!"
+printf "%s: %s\n" "- mutagen version" "$mutagen_version"
+[[ "${mutagen_version}" < "${mutagen_version_good}" ]] && echo "   You might need to upgrade to version ${mutagen_version_good}!"
 minicoin list
 
 [[ -z $minicoin_key ]] && printf "\nNote: 'minicoin_key' not set, some boxes will not be available!\n"
