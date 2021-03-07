@@ -170,10 +170,9 @@ for ($i = 0; $i -lt $repeat; $i++) {
             if ($verbose) {
                 Write-StdErr "Waiting for $process"
             }
-            while (!$process.HasExited) {
+            do {
                 Repeat-Output $stdout $stderr
-            }
-            Repeat-Output $stdout $stderr
+            } while (!$process.HasExited)
         } catch {
             Write-StdErr "Exception while reading process output - exiting"
             Write-StdErr "Error message: $($_.ToString())"
