@@ -216,39 +216,49 @@ def find_config(root, config_name)
     return root
 end
 
-def preprocess(data, path)
-    return true unless data.is_a?(Hash)
-    data.each do |key, value|
-        if key == "if"
-            begin
-                exp = eval(value)
-                data.delete(key) if exp
-                return [exp, "#{value} => #{exp ? exp : false}"]
-            rescue => error
-                STDERR.puts "Error in expression #{value}:"
-                STDERR.puts "\t#{error}"
-                return false
-            end
-        elsif value.is_a?(Hash)
-            exp, reason = preprocess(value, path + "#{key}/")
-            data.delete(key) if !exp
-        elsif value.is_a?(Array)
-            index = 0
-            value.each do |entry|
-                exp, reason = preprocess(entry, path + "#{key}/#{index}/")
-                if !exp
-                    if "#{path}#{key}" == "/machines" && value[index].is_a?(Hash)
-                        value[index][:disabled] = reason
-                    else
-                        value.delete_at(index)
-                        index -= 1
+module Minicoin
+    class Context
+        attr_accessor :machines
+        attr_accessor :machine
+        def initialize()
+            @machines = nil
+            @machine = nil
+        end
+        def preprocess(data, path)
+            return true unless data.is_a?(Hash)
+            data.each do |key, value|
+                if key == "if"
+                    begin
+                        exp = eval(value)
+                        data.delete(key) if exp
+                        return [exp, "#{value} => #{exp ? exp : false}"]
+                    rescue => error
+                        STDERR.puts "Error in expression #{value}:"
+                        STDERR.puts "\t#{error}"
+                        return false
+                    end
+                elsif value.is_a?(Hash)
+                    exp, reason = preprocess(value, path + "#{key}/")
+                    data.delete(key) if !exp
+                elsif value.is_a?(Array)
+                    pre = value.dup
+                    value.clear
+                    pre.each_with_index do |entry, index|
+                        exp, reason = preprocess(entry, path + "#{key}/#{index}/")
+                        if !exp
+                            if "#{path}#{key}" == "/machines" && entry.is_a?(Hash)
+                                value << entry
+                                value.last[:disabled] = reason
+                            end
+                        else
+                            value << entry
+                        end
                     end
                 end
-                index += 1
             end
+            true
         end
     end
-    true
 end
 
 def load_minicoin()
@@ -303,7 +313,9 @@ def load_minicoin()
     # role merging once each box is fully defined
     combine_roles(machines)
 
-    preprocess(yaml, "/")
+    context = Minicoin::Context.new
+    context.machines = machines
+    context.preprocess(yaml, "/")
 
     $TEST_OUTPUT=yaml
 

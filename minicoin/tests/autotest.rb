@@ -248,6 +248,58 @@ class Tester
     end
   end
 
+  def test_if()
+    matcher_data = [
+      {"if" => "machine[\"os\"] == :windows", "pattern" => "stderr"},
+      {"if" => "machine[\"os\"] == :linux", "color" => "black" },
+      {"if" => "machine[\"os\"] == :windows", "color" => "blue" },
+      {"if" => "machine[\"os\"] == :macos", "color" => "gray" }
+    ]
+    test_data =
+      { "set1: machines" => [
+        {
+          "machines" => [
+            {"name" => "active", "if" => "true"},
+            {"name" => "disabled", "if" => "false"},
+            {"pattern" => "stdout", "if" => "2 + 2 == 4"},
+          ]
+        }, {
+          "machines" => [
+            {"name" => "active"},
+            {"name" => "disabled", "if" => "false", :disabled => "false => false"},
+            {"pattern" => "stdout"}
+          ]
+        }],
+        "set2: matcher for linux" => [
+          { "matchers" => matcher_data},
+          { "matchers" => [{"color" => "black"}] },
+          { "@machine" => { "os" => :linux } }
+        ],
+        "set3: matcher for windows" => [
+          { "matchers" => matcher_data},
+          { "matchers" => [{"pattern" => "stderr"}, {"color" => "blue"}] },
+          { "@machine" => { "os" => :windows } }
+        ]
+      }
+    test_data.each do |key, data|
+      @data_count += 1
+      context = Minicoin::Context.new
+      input = Marshal.load(Marshal.dump(data[0])) # extra deep copy
+      expected = data[1]
+      context_data = data[2] || []
+      context_data.each do |variable, value|
+        context.instance_variable_set(variable, value)
+      end
+      context.preprocess(input, "/")
+      if input != expected
+        STDERR.puts "Fail! for #{key}"
+        STDERR.puts "=> Produced: #{input}"
+        STDERR.puts "=> Expected: #{expected}"
+        @error_count += 1
+      end
+    end
+  end
+
   def errors()
     return @error_count
   end
@@ -265,6 +317,8 @@ class Tester
     test_expand_env()
     puts "=== Testing loading"
     test_loading()
+    puts "=== Testing if"
+    test_if()
   end
 end
 
