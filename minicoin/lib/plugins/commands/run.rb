@@ -452,18 +452,19 @@ module Minicoin
                     matchers += @job.matchers(@vm)
                     matchers.each do |matcher|
                         begin
-                            re = Regexp.new(matcher["pattern"])
+                            matcher[:regexp] =  Regexp.new(matcher["pattern"])
                         rescue RegexpError => e
                             vm.ui.warn "#{matcher["pattern"]} is not a valid regular expression: #{e}"
                             next
                         end
-                        matcher[:regexp] = re
                         matcher[:options] = {}.tap do |options|
+                            options[:suppress] = matcher["suppress"] == true
                             options[:color] = matcher["color"].to_sym if matcher["color"]
-                            options[:new_line] = false if matcher["newline"] == false
-                            options[:bold] = true if matcher["bold"] == true
-                            options[:replace] = true if matcher["replace"] == true
+                            options[:new_line] = matcher["newline"] != false
+                            options[:bold] = matcher["bold"] == true
+                            options[:replace] = matcher["replace"] == true
                             options[:channel] = matcher["error"] ? :error : :detail
+                            options[:continue] = matcher["continue"] == true
                         end
                     end
 
@@ -539,6 +540,7 @@ module Minicoin
                         else # all stderr goes to the error channel
                             options[:channel] = :stderr
                         end
+                        break if options[:suppress]
 
                         # batch data up
                         if interrupted?()
