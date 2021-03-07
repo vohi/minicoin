@@ -334,29 +334,31 @@ module Minicoin
                             # @killcmd += " /F" if @level > 1
                             @killcmd = "psexec -i 1 -u vagrant -p vagrant -h #{@killcmd}" unless @job.run_options[:console]
                         else
-                            if @level == 1
-                                @killcmd = "kill -SIGTERM #{@pid}"
-                            else
-                                @killcmd = "kill -SIGKILL #{@pid}"
-                            end
+                            signal = @level == 1 ? "SIGTERM" : "SIGKILL"
+                            @killcmd = "PGID=$(ps -o pgid= #{@pid} | grep -o [0-9]*); echo \"Killing group $PGID\"; kill -#{signal} -- -\"${PGID}\""
                         end
                         begin
                             vm.ui.warn "Attempting to interrupt process #{@pid} running on #{vm.name}"
                             @job.log_verbose(vm.ui, "killing with: '#{@killcmd}")
                             if @guest_os == :windows
+                                if @job.run_options[:repeat]
+                                    @job.log_verbose(vm.ui, "Removing job to prevent more runs: '#{@cleanup_command}")
+                                    stdout, stderr, status = Open3.capture3("minicoin cmd --quiet #{vm.name.to_s} -- '\{@cleanup_command}'")
+                                end
                                 stdout, stderr, status = Open3.capture3("minicoin cmd #{vm.name.to_s} -- '#{@killcmd}'")
-                                if status == 0
-                                    if @job.run_options[:repeat]
-                                        stdout, stderr, status = Open3.capture3("minicoin cmd --quiet #{vm.name.to_s} -- '\{@cleanup_command}'")
-                                    end
-                                else
+                                if status != 0
                                     if alive?() && @exit_code.nil?
                                         vm.ui.error "Failed to kill process #{@pid}, try again with Ctrl-C"
                                     end
                                 end
                             else
-                                vm.communicate.execute(@killcmd, {error_check: false})
-                                vm.communicate.sudo(@cleanup_command, { error_check: false, sudo: true })
+                                if @job.run_options[:repeat]
+                                    @job.log_verbose(vm.ui, "Removing job to prevent more runs: '#{@cleanup_command}")
+                                    vm.communicate.execute(@cleanup_command, { error_check: false, sudo: true })
+                                end
+                                vm.communicate.execute(@killcmd, {error_check: false, sudo: true}) do |type, data|
+                                    @job.log_verbose(vm.ui, data)
+                                end
                             end
                         rescue StandardError => e
                             vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
@@ -495,7 +497,8 @@ module Minicoin
                     end
                     begin
                         @job.log_verbose(vm.ui, "Cleaning up via '#{@cleanup_command}'")
-                        @vm.communicate.sudo(@cleanup_command, { error_check: false, sudo: true }) do |type, error|
+                        @vm.communicate.sudo(@cleanup_command, { error_check: false, sudo: true }) do |type, data|
+                            @job.log_verbose(vm.ui, data)
                         end
                     rescue => e
                         @job.log_verbose(vm.ui, "Error cleaning up: #{e}")
