@@ -22,46 +22,6 @@ includes:
   - lib/coin.yml
   - lib/github.yml
 
-matchers:
-  - qdoc: &qdoc
-    - pattern: "(.*):(\\d+): \\(qdoc\\) warning:\\s+(.*)$"
-      replace: true
-      color: yellow
-      error: true
-    - pattern: "(.*):(\\d+): \\(qdoc\\) error:\\s+(.*)$"
-      replace: true
-      error: true
-    - pattern: "^\\[\\d+/\\d+\\].*$"
-      newline: false
-      replace: true
-  - gcc: &gcc # works also for clang
-    - pattern: "(.*):(\\d+):(\\d+): warning:\\s+(.*)$"
-      replace: true
-      color: yellow
-      error: true
-    - pattern: "(.*):(\\d+):(\\d+): error:\\s+(.*)$"
-      replace: true
-      error: true
-    - pattern: "[\\s\\d]+\\|\\s"
-      continue: true
-    - pattern: "^\\[\\d+/\\d+\\].*$"
-      replace: true
-      newline: false
-  - msvc: &msvc
-    - pattern: "(.*)\\((\\d+)\\): warning\\s+(.*):\\s+(.*)$"
-      replace: true
-      color: yellow
-      error: true
-    - pattern: "(.*)\\((\\d+)\\): error\\s+(.*):\\s+(.*)$"
-      replace: true
-      error: true
-    - pattern: "(.*): fatal error\\s+(.*):\\s+(.*)$"
-      replace: true
-      error: true
-    - pattern: "^\\[\\d+/\\d+\\].*$"
-      replace: true
-      newline: false
-
 # machine definitions
 machines:
 
@@ -103,11 +63,6 @@ machines:
       - windows-tools
       - msvc2019
     gui: false
-    jobconfigs:
-      - name: qt
-        default: true
-        job: build
-        matchers: *msvc
 
 ### Mac - nothing provisioned yet
   - name: macos1014
@@ -128,7 +83,6 @@ machines:
       - name: host
         description: builds and installs host-side tools for Qt
         job: build
-        matchers: *gcc
         options:
           configure: -release -prefix ~/android-host
           target: "host_tools"
@@ -136,7 +90,6 @@ machines:
       - name: android
         description: cross-platform build of Qt for Android
         job: build
-        matchers: *gcc
         options:
           configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_SDK_ROOT/android-ndk-r21d -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
           build: android
@@ -160,18 +113,15 @@ machines:
       - name: qt
         job: build
         description: build Qt
-        matchers: *gcc
       - name: qdoc
         job: build
         description: build qdoc and tools
         options:
           configure: -release -developer-build
           target: qdoc qtattributionsscanner
-        matchers: *gcc
       - name: documentation
         job: build
         default: true
         description: build the documentation
         options:
           target: html_docs
-        matchers: *qdoc

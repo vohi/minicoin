@@ -1,0 +1,55 @@
+---
+matchers:
+# ninja build progress
+  - pattern: "^\\[\\d+/\\d+\\].*$"
+    newline: false
+    replace: true
+# gcc, works also for clang
+  - pattern: "(.*):(\\d+):(\\d+): warning:\\s+(.*)$"
+    replace: true
+    color: yellow
+    error: true
+  - pattern: "(.*):(\\d+):(\\d+): error:\\s+(.*)$"
+    replace: true
+    error: true
+  - pattern: "[\\s\\d]+\\|\\s"
+    continue: true
+# msvc
+  - pattern: "(.*)\\((\\d+)\\): warning\\s+(.*):\\s+(.*)$"
+    replace: true
+    color: yellow
+    error: true
+  - pattern: "(.*)\\((\\d+)\\): error\\s+(.*):\\s+(.*)$"
+    replace: true
+    error: true
+  - pattern: "(.*): fatal error\\s+(.*):\\s+(.*)$"
+    replace: true
+    error: true
+# test
+  - pattern: ^\d:\sPASS\s+:.*
+    color: green
+    bold: true
+  - pattern: ^\d:\sBPASS\s+:.*
+    color: green
+  - pattern: ^\d:\sSKIP\s+:.*$
+    color: yellow
+  - pattern: ^\d:\sBFAIL\s+:.*$
+    color: yellow
+    bold: true
+  - pattern: ^\d:\sFAIL!\s+:.*$
+    color: red
+    bold: true
+  - pattern: ^100% tests passed.*
+    color: green
+  - pattern: ^\d+% tests passed.*
+    color: yellow
+  - pattern: ".* : failure location"
+    replace: true
+# qdoc
+  - pattern: "(.*):(\\d+): \\(qdoc\\) warning:\\s+(.*)$"
+    replace: true
+    color: yellow
+    error: true
+  - pattern: "(.*):(\\d+): \\(qdoc\\) error:\\s+(.*)$"
+    replace: true
+    error: true
