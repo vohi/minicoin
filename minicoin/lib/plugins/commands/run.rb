@@ -260,7 +260,7 @@ module Minicoin
                         log_verbose(vm.ui, "Waiting for #{vm.name} #{thread.status}")
                         wait_for_thread(thread)
                         log_verbose(vm.ui, "Thread finished")
-                        exit_code += thread.exit_code
+                        exit_code += thread.exit_code || 128
                     end
                     break if thread.interrupted?
                 end
@@ -269,7 +269,7 @@ module Minicoin
                     log_verbose(@env.ui, "Waiting for #{threads.count} jobs to finish")
                     threads.each do |thread|
                         wait_for_thread(thread)
-                        exit_code += thread.exit_code
+                        exit_code += thread.exit_code || 128
                         thread.exit_code = 0
                     end
                 end
