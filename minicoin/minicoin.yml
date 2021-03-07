@@ -34,8 +34,6 @@ matchers:
     - pattern: "^\\[\\d+/\\d+\\].*$"
       newline: false
       replace: true
-    - pattern: ".*"
-      replace: false
   - gcc: &gcc # works also for clang
     - pattern: "(.*):(\\d+):(\\d+): warning:\\s+(.*)$"
       replace: true
@@ -49,8 +47,6 @@ matchers:
     - pattern: "^\\[\\d+/\\d+\\].*$"
       replace: true
       newline: false
-    - pattern: ".*"
-      replace: false
   - msvc: &msvc
     - pattern: "(.*)\\((\\d+)\\): warning\\s+(.*):\\s+(.*)$"
       replace: true
@@ -65,8 +61,6 @@ matchers:
     - pattern: "^\\[\\d+/\\d+\\].*$"
       replace: true
       newline: false
-    - pattern: ".*"
-      replace: false
 
 # machine definitions
 machines:

@@ -187,6 +187,17 @@ module Minicoin
                 path()
             end
 
+            def matchers(vm)
+                minicoin = Minicoin.get_config(vm)
+                context = Minicoin::Context.new
+                context.machine = minicoin.machine
+
+                matcherfile = File.join(@run_options[:jobpath], "matchers.yml")
+                matchers = File.exist?(matcherfile) ? YAML.load_file(matcherfile) : {}
+                context.preprocess(matchers, "/")
+                matchers["matchers"] || []
+            end
+
             def execute()
                 job_options = {}
                 job_options[:job_args] = []
@@ -438,6 +449,7 @@ module Minicoin
                     @vm.ui.info "Running '#{@job.name}' with arguments #{@job_args.join(" ")}"
 
                     matchers = job_config["matchers"] || []
+                    matchers += @job.matchers(@vm)
                     matchers.each do |matcher|
                         begin
                             re = Regexp.new(matcher["pattern"])
