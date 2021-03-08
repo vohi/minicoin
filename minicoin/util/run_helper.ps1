@@ -172,8 +172,10 @@ for ($i = 0; $i -lt $repeat; $i++) {
         $handle = $process.Handle # cache so that we can get the exit code
         do {
             Repeat-Output $stdout $stderr
+            Start-Sleep -Milliseconds 50
         } while (!$process.HasExited)
         $process.WaitForExit()
+        Repeat-Output $stdout $stderr
         $exit_code = $process.ExitCode
 
         if ($verbose) {
