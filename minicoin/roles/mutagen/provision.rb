@@ -77,11 +77,11 @@ def mutagen_provision(box, name, role_params, machine)
     betas = []
     sessions = {}
     if paths.is_a?(String)
-        paths = { paths => paths }
+        paths = { paths.dup => paths.dup }
     elsif paths.is_a?(Array)
         paths_hash = {}
         paths.each do |path|
-            paths_hash[path] = path
+            paths_hash[path] = path.dup
         end
         paths = paths_hash
     end
