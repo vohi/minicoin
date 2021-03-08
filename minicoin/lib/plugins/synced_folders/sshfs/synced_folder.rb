@@ -43,13 +43,14 @@ module Minicoin
                         s = TCPSocket.new("127.0.0.1", 22)
                         s.close
                     rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
-                        machine.env.ui.error "No local SSH server, can't mount!"
-                        raise Vagrant::Errors::SSHConnectionRefused # always raise error
+                        raise Minicoin::SyncedFolderSSHFS::NOSSHServerOnHost if raise_error
+                        machine.env.ui.error Minicoin::SyncedFolderSSHFS::NOSSHServerOnHost.new.error_message
+                        return false
                     end
                 end
                 rescue Timeout::Error
-                    machine.env.ui.error "Connecting to local SSH server timed out!"
-                    raise Vagrant::Errors::SSHConnectionTimeout if raise_error
+                    raise Minicoin::SyncedFolderSSHFS::SSHConnectionTimeout if raise_error
+                    machine.env.ui.error Minicoin::SyncedFolderSSHFS::SSHConnectionTimeout.new.error_message
                     return false
                 end
 
