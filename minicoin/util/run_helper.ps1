@@ -67,7 +67,7 @@ if (Test-Path env:ADMIN_PASSWORD) {
 }
 
 $jobargs = @(
-    "-nobanner"
+    "-nobanner", "-d"
 )
 
 try {
@@ -89,6 +89,7 @@ try {
     }
 } catch {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
+    $console = $true
 }
 
 if ($privileged) {
@@ -113,71 +114,67 @@ $jobargs += @(
 $success_count = 0
 $exit_code = 0
 for ($i = 0; $i -lt $repeat; $i++) {
-    try {
-        if ($console) {
-            if ($verbose) {
-                Write-StdErr "Calling $script with Arguments: $cmdargs"
-            }
-            if ($script.ToLower().EndsWith("ps1")) {
-                $ErrorActionPreference="SilentlyContinue"
-                & $script $cmdargs 2>&1
-                $ErrorActionPreference="Continue"
-            } else {
-                & $script $cmdargs
-            }
-            $exit_code = $LASTEXITCODE
-        } else {
-            $outpath = New-TemporaryFile
-            $errpath = New-TemporaryFile
-
-            $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-            $pinfo.FileName = "psexec.exe"
-            $pinfo.CreateNoWindow = $true
-            $pinfo.UseShellExecute = $true
-            $pinfo.Arguments = $jobargs + @("> $outpath", "2> $errpath")
-
-            if ($verbose) {
-                Write-StdErr "Calling $($pinfo.FileName) with Arguments:"
-                Write-StdErr "$jobargs"
-            }
-
-            $process = New-Object System.Diagnostics.Process
-            $process.StartInfo = $pinfo
-
-            $process.Start() | Out-Null
-            if ($verbose) {
-                Write-StdErr "Process started with id $($process.id)"
-            }
+    if ($console) {
+        if ($verbose) {
+            Write-StdErr "Calling $script with Arguments: $cmdargs"
         }
-    } catch {
-        Write-StdErr "Failure to start '$script' through psexec - aborting"
-        Write-StdErr "Error message: $($_.ToString())"
-        $PSItem.InvocationInfo | Format-List *
-        exit $LASTEXITCODE
-    }
+        # minicoin process protocol
+        Write-Host "minicoin.process.id=${PID}"
+        if ($script.ToLower().EndsWith("ps1")) {
+            $ErrorActionPreference="SilentlyContinue"
+            & $script $cmdargs 2>&1
+            $ErrorActionPreference="Continue"
+        } else {
+            & $script $cmdargs
+        }
+        $exit_code = $LASTEXITCODE
+    } else {
+        $outpath = New-TemporaryFile
+        $errpath = New-TemporaryFile
 
-    if (!$console) {
+        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pinfo.FileName = "psexec.exe"
+        $pinfo.CreateNoWindow = $true
+        $pinfo.UseShellExecute = $false
+        $pinfo.RedirectStandardOutput = $true
+        $pinfo.RedirectStandardError = $true
+        $pinfo.Arguments = $jobargs + @("> $outpath", "2> $errpath")
+
+        if ($verbose) {
+            Write-StdErr "Calling psexec.exe with arguments:"
+            Write-StdErr "$jobargs"
+        }
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $pinfo
+
+        $process.Start() | Out-Null
+        $process.WaitForExit()
+        $jobpid = $process.ExitCode # feature of psexec
+
+        if ($jobpid -eq 0) {
+            Write-StdErr "Failure to run '$jobargs' through psexec - aborting"
+            exit 1
+        }
+        # minicoin process protocol
+        Write-Host "minicoin.process.id=$jobpid"
+        $process = Get-Process -Pid $jobpid
+        Write-Host "minicoin.process.sid=$($process.SessionId)"
         if ($verbose) {
             Write-StdErr "Reading $outpath and $errpath"
         }
-
         $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
         $stdout = New-Object System.IO.StreamReader($stdout_file)
         $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
         $stderr = New-Object System.IO.StreamReader($stderr_file)
-
-        try {
-            if ($verbose) {
-                Write-StdErr "Waiting for $process"
-            }
-            do {
-                Repeat-Output $stdout $stderr
-            } while (!$process.HasExited)
-        } catch {
-            Write-StdErr "Exception while reading process output - exiting"
-            Write-StdErr "Error message: $($_.ToString())"
-            $PSItem.InvocationInfo | Format-List *
+        if ($verbose) {
+            Write-StdErr "Waiting for $($process | Out-String)"
         }
+        $handle = $process.Handle # cache so that we can get the exit code
+        do {
+            Repeat-Output $stdout $stderr
+        } while (!$process.HasExited)
+        $process.WaitForExit()
+        $exit_code = $process.ExitCode
 
         if ($verbose) {
             Write-StdErr "Cleaning up $outpath and $errpath"
@@ -194,12 +191,11 @@ for ($i = 0; $i -lt $repeat; $i++) {
         } catch {
             Write-StdErr "Error removing temporary files"
         }
-
-        $process.WaitForExit()
-        $exit_code = $process.ExitCode
     }
     if ($exit_code -ne 0) {
-        Write-StdErr "Process exited with $exit_code"
+        if ($verbose) {
+            Write-StdErr "Process exited with $exit_code"
+        }
         if ($exit_code -eq 71) {
             Write-StdErr "System doesn't accept any new tasks, this should resolve itself in a few minutes!"
         }

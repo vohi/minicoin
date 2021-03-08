@@ -331,34 +331,24 @@ module Minicoin
                         @level = @interrupt
                         if @guest_os == :windows
                             @killcmd = "taskkill /PID #{@pid} /T /F" # works very unreliably without /F
-                            # @killcmd += " /F" if @level > 1
-                            @killcmd = "psexec -i 1 -u vagrant -p vagrant -h #{@killcmd}" unless @job.run_options[:console]
+                            @killcmd = "psexec -i #{@sid} -u vagrant -p vagrant -h #{@killcmd}" if @sid
                         else
                             signal = @level == 1 ? "SIGTERM" : "SIGKILL"
-                            @killcmd = "PGID=$(ps -o pgid= #{@pid} | grep -o [0-9]*); echo \"Killing group $PGID\"; kill -#{signal} -- -\"${PGID}\""
+                            @killcmd = "setsid kill -#{signal} -- -#{@pid}"
                         end
                         begin
                             vm.ui.warn "Attempting to interrupt process #{@pid} running on #{vm.name}"
                             @job.log_verbose(vm.ui, "killing with: '#{@killcmd}")
-                            if @guest_os == :windows
+                
+                            begin
+                                @kill_communicator.wait_for_ready(5)
                                 if @job.run_options[:repeat]
+                                    @kill_communicator.sudo(@cleanup_command, { error_check: false})
                                     @job.log_verbose(vm.ui, "Removing job to prevent more runs: '#{@cleanup_command}")
-                                    stdout, stderr, status = Open3.capture3("minicoin cmd --quiet #{vm.name.to_s} -- '\{@cleanup_command}'")
                                 end
-                                stdout, stderr, status = Open3.capture3("minicoin cmd #{vm.name.to_s} -- '#{@killcmd}'")
-                                if status != 0
-                                    if alive?() && @exit_code.nil?
-                                        vm.ui.error "Failed to kill process #{@pid}, try again with Ctrl-C"
-                                    end
-                                end
-                            else
-                                if @job.run_options[:repeat]
-                                    @job.log_verbose(vm.ui, "Removing job to prevent more runs: '#{@cleanup_command}")
-                                    vm.communicate.execute(@cleanup_command, { error_check: false, sudo: true })
-                                end
-                                vm.communicate.execute(@killcmd, {error_check: false, sudo: true}) do |type, data|
-                                    @job.log_verbose(vm.ui, data)
-                                end
+                                @kill_communicator.sudo(@killcmd, { error_check: false})
+                            rescue
+                                raise
                             end
                         rescue StandardError => e
                             vm.ui.warn "Received error #{e} when killing job on #{vm.name}"
@@ -383,6 +373,8 @@ module Minicoin
                 end
     
                 def do_execute(job_options)
+                    @kill_communicator = @vm.communicate.class.new(@vm)
+                    @kill_communicator.reset!
                     options = job_options.dup
 
                     if @vm.guest.name == :windows
@@ -400,9 +392,8 @@ module Minicoin
                         @cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job.name}"
                     else
                         options[:ext] = "sh"
-                        run_command = "chmod -R +x .minicoin/jobs && "
                         target_path = ".minicoin/jobs"
-                        run_command += "#{target_path}/#{@job.name}/"
+                        run_command = "#{target_path}/#{@job.name}/"
                         @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
                     end
                     script_file = "main.#{options[:ext]}"
@@ -421,31 +412,41 @@ module Minicoin
                     @job_args = job_arguments(options, job_config)
                     run_command += " #{@job_args.join(" ")}"
 
-                    if options[:ext] == "sh" && @job.run_options[:repeat]
-                        loop_envelope = <<-WHILE
-                            repeat=#{@job.run_options[:repeat]}
-                            success=0
-                            total=0
-                            while [[ $total -lt $repeat ]]
-                            do
-                                #{run_command}
-                                exit_code=$?
-                                if [ $exit_code -eq 0 ]
-                                then
-                                    success=$(( $success + 1 ))
-                                    out=1
-                                else
-                                    out=2
-                                fi
-                                total=$(( $total + 1 ))
-                                >&${out} echo "Run $total/$repeat: Exit code $exit_code"
-                            done
-                            [ $success -lt $total ] && out=2 || out=1
-                            >&${out} echo "Success rate is ${success}/${total}"
-                            exit_code=$(( $repeat - $success ))
-                            exit $exit_code
-                        WHILE
-                        run_command = loop_envelope
+                    if options[:ext] == "sh"
+                        envelope = <<-BASH
+                            PID=$$
+                            chmod -R +x .minicoin/jobs
+                            PGID=$(($(ps -o pgid= $PID)))
+                            echo "minicoin.process.id=$PGID"
+                        BASH
+                        if @job.run_options[:repeat]
+                            envelope += <<-BASH
+                                repeat=#{@job.run_options[:repeat]}
+                                success=0
+                                total=0
+                                while [[ $total -lt $repeat ]]
+                                do
+                                    #{run_command}
+                                    exit_code=$?
+                                    if [ $exit_code -eq 0 ]
+                                    then
+                                        success=$(( $success + 1 ))
+                                        out=1
+                                    else
+                                        out=2
+                                    fi
+                                    total=$(( $total + 1 ))
+                                    >&${out} echo "Run $total/$repeat: Exit code $exit_code"
+                                done
+                                [ $success -lt $total ] && out=2 || out=1
+                                >&${out} echo "Success rate is ${success}/${total}"
+                                exit_code=$(( $repeat - $success ))
+                                exit $exit_code
+                            BASH
+                            run_command = envelope
+                        else
+                            run_command = envelope + "\n" + run_command
+                        end
                     end
 
                     @vm.ui.info "Running '#{@job.name}' with arguments #{@job_args.join(" ")}"
@@ -512,9 +513,10 @@ module Minicoin
                     data.rstrip!
                     return if data.nil?
                     data.chomp!
-                    if data.start_with?("minicoin.process.id=")
+                    if data.start_with?("minicoin.process.")
                         @job.log_verbose(@vm.ui, "Received process info '#{data}'")
-                        @pid = data.delete_prefix("minicoin.process.id=")
+                        @pid = data.delete_prefix("minicoin.process.id=") if data.start_with?("minicoin.process.id=")
+                        @sid = data.delete_prefix("minicoin.process.sid=") if data.start_with?("minicoin.process.sid=")
                         @job.log_verbose(@vm.ui, "Job has process ID #{@pid} on guest")
                         return
                     end

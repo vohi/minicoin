@@ -7,9 +7,6 @@ PASSTHROUGH=()
 count=()
 index=0
 
-PID=$$ # don't print process protocol if we are provisioning
-[[ $UID != 0 ]] && echo "minicoin.process.id=$PID"
-
 for arg in "${@}"; do
   count+=($index)
   index=$(( index + 1 ))

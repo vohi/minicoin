@@ -1,5 +1,4 @@
 @echo off
-powershell -Command "Write-Host "minicoin.process.id=$((Get-WmiObject Win32_Process -Filter ProcessId=$PID).ParentProcessId)"
 
 REM Needs to be set in the calling script
 REM setlocal ENABLEDELAYEDEXPANSION
