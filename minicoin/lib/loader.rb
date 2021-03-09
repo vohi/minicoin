@@ -297,13 +297,10 @@ def load_minicoin()
     merge_urls(yaml, user_yaml)
     merge_urls(yaml, local_yaml)
 
-    yaml.each do |key, value|
-        begin
-            require_relative "#{key}_loader.rb"
-            eval("merge_machines(yaml, load_#{key}(yaml))")
-        rescue LoadError => e
-        end
+    Vagrant::Plugin::V2::Plugin.manager.registered.each do |plugin|
+        merge_machines(yaml, plugin.load_minicoin) if plugin.respond_to?(:load_minicoin)
     end
+
     merge_machines(yaml, user_yaml)
     merge_machines(yaml, local_yaml)
     machines = yaml["machines"]

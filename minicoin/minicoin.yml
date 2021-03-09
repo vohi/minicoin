@@ -18,10 +18,6 @@ urls:
     - https://tqtcvagrantboxes-secondary.z16.web.core.windows.net
     - https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
 
-includes:
-  - lib/coin.yml
-  - lib/github.yml
-
 # machine definitions
 machines:
 
