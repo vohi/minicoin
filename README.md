@@ -5,7 +5,7 @@ using virtual machines that run either locally, or in the cloud.
 
 # Documentation
 
-For documentation of minicoin, see the [project wiki](-/wikis/home).
+For documentation of minicoin, see the [project wiki](../../wikis/home).
 
 # Teaser
 
