@@ -62,6 +62,21 @@ module Vagrant
       Vagrant.config
     end
   end
+
+  module Plugin
+    module V2
+      module Plugin
+        class MockManager
+          def registered
+            []
+          end
+        end
+        def self.manager
+          MockManager.new
+        end
+      end
+    end
+  end
 end
 
 class MockConfig
