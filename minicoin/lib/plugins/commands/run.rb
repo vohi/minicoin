@@ -125,8 +125,16 @@ module Minicoin
                     option.on("--parallel", "Run the job on several machines in parallel") do |o|
                         options[:parallel] = o
                     end
-                    option.on("--repeat COUNT", "Run the job in a loop, keeping track of results") do |o|
-                        options[:repeat] = o
+                    option.on("--repeat COUNT", "Run the job COUNT times, keeping track of results") do |o|
+                        begin
+                            options[:repeat] = Integer(o)
+                        rescue
+                            @env.ui.error "Argument error: --repeat COUNT needs to be a number"
+                            return 0
+                        end
+                    end
+                    option.on("--continuous", "Run the job in a loop, waiting for file system changes in between") do |o|
+                        options[:waitcommand] = o
                     end
                     option.on("--console", "Run the job as a console session") do |o|
                         options[:console] = o
@@ -368,7 +376,7 @@ module Minicoin
                     else
                         vm.ui.error("Hard exit, process #{@pid} might still be running on #{vm.name}")
                         @exit_code = 255
-                        exit
+                        abort
                     end
                 end
     
@@ -377,6 +385,7 @@ module Minicoin
                     @kill_communicator.reset!
                     options = job_options.dup
 
+                    waitcommand = nil
                     if @vm.guest.name == :windows
                         @guest_os = :windows
                         options[:ext] = "ps1"
@@ -387,14 +396,16 @@ module Minicoin
                         run_command += "-privileged " if @job.run_options[:privileged]
                         run_command += "-repeat #{@job.run_options[:repeat] || 1} "
                         run_command += "-console " if @job.run_options[:console]
+                        run_command += "-continuous " if @job.run_options[:waitcommand]
                         target_path = ".minicoin\\jobs"
                         run_command += "Documents\\#{target_path}\\#{@job.name}\\"
-                        @cleanup_command = "Remove-Item -Force -Recurse #{target_path}\\#{@job.name}"
+                        @cleanup_command = "if ($(Test-Path #{target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{target_path}\\#{@job.name} | Out-Null }"
                     else
                         options[:ext] = "sh"
                         target_path = ".minicoin/jobs"
                         run_command = "#{target_path}/#{@job.name}/"
                         @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
+                        waitcommand = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete" if @job.run_options[:waitcommand]
                     end
                     script_file = "main.#{options[:ext]}"
                     if !File.exist?(File.join(@job.path, script_file))
@@ -410,21 +421,28 @@ module Minicoin
                     run_command +=  "#{script_file}"
                     job_config = jobconfig(options)
                     @job_args = job_arguments(options, job_config)
-                    run_command += " #{@job_args.join(" ")}"
 
                     if options[:ext] == "sh"
+                        run_command += " #{@job_args.join(" ")}"
+
                         envelope = <<-BASH
                             PID=$$
                             chmod -R +x .minicoin/jobs
                             PGID=$(($(ps -o pgid= $PID)))
                             echo "minicoin.process.id=$PGID"
                         BASH
-                        if @job.run_options[:repeat]
+                        if @job.run_options[:repeat] || @job.run_options[:waitcommand]
+                            if waitcommand
+                                waitcommand = <<-BASH
+                                    echo "Waiting for file system changes in #{@job_args.first}"
+                                    #{waitcommand} #{@job_args.first}
+                                BASH
+                            end
                             envelope += <<-BASH
-                                repeat=#{@job.run_options[:repeat]}
+                                repeat=#{@job.run_options[:repeat] || "0"}
                                 success=0
                                 total=0
-                                while [[ $total -lt $repeat ]]
+                                while true
                                 do
                                     #{run_command}
                                     exit_code=$?
@@ -437,16 +455,23 @@ module Minicoin
                                     fi
                                     total=$(( $total + 1 ))
                                     >&${out} echo "Run $total/$repeat: Exit code $exit_code"
+                                    if [[ $repeat -gt 0 && $total -lt $repeat ]]
+                                    then
+                                        break
+                                    fi
+                                    #{waitcommand}
                                 done
                                 [ $success -lt $total ] && out=2 || out=1
                                 >&${out} echo "Success rate is ${success}/${total}"
-                                exit_code=$(( $repeat - $success ))
+                                [ $repeat -gt 0 ] && exit_code=$(( $repeat - $success ))
                                 exit $exit_code
                             BASH
                             run_command = envelope
                         else
                             run_command = envelope + "\n" + run_command
                         end
+                    else
+                        run_command += " -jobargs @('#{@job_args.join("', '")}')"
                     end
 
                     @vm.ui.info "Running '#{@job.name}' with arguments #{@job_args.join(" ")}"

@@ -1,9 +1,11 @@
 param (
     [string]$script,
-    [int]$repeat,
+    [string[]]$jobargs,
+    [int]$repeat = 0,
     [switch]$privileged,
     [switch]$verbose,
-    [switch]$console
+    [switch]$console,
+    [switch]$continuous
 )
 
 function Write-StdErr {
@@ -19,6 +21,13 @@ function Write-StdErr {
         [string[]] $line = @()
         $Input | % { $lines += $_.ToString() }
         [void] $outFunc.Invoke($lines -join "`r`n")
+    }
+}
+
+function Log-Verbose {
+    param ([PSObject] $InputObject)
+    if ($verbose) {
+        Write-StdErr $InputObject.ToString()
     }
 }
 
@@ -48,84 +57,78 @@ function Repeat-Output {
 Set-Location $env:USERPROFILE
 $script = $env:USERPROFILE + "\" + $script
 
-# quote parameters with whitespace again for cmd
-$cmdargs = @()
-ForEach ($arg in $args) {
-    if ($arg -match "\s+") {
-        $cmdargs += "`"$arg`""
-    } else {
-        $cmdargs += $arg
-    }
-    if ($arg -eq "--privileged") {
-        $privileged = $True
-    }
-}
-
 $admin_password = "vagrant"
 if (Test-Path env:ADMIN_PASSWORD) {
     $admin_password = $env:ADMIN_PASSWORD
 }
 
-$jobargs = @(
+$psexec_args = @(
     "-nobanner", "-d"
 )
 
 try {
-    if ($verbose) {
-        Write-StdErr "Searching active session for user 'vagrant'"
-    }
+    Log-Verbose "Searching active session for user 'vagrant'"
     $ErrorActionPreference="SilentlyContinue"
     $sessioninfo = (query user vagrant | Select-String Active).toString().split() | where {$_}
     $ErrorActionPreference="Continue"
     if (($sessioninfo -eq $null) -or ($sessioninfo.Length -eq 0)) {
         throw "No session found"
     }
-    $jobargs += @(
+    $psexec_args += @(
         "-i", $sessioninfo[2],
         "-u", "vagrant", "-p", $admin_password
     )
-    if ($verbose) {
-        Write-StdErr "Active session found: $sessioninfo"
-    }
+    Log-Verbose "Active session found: $sessioninfo"
 } catch {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
     $console = $true
 }
 
 if ($privileged) {
-    $jobargs += @("-h")
+    $psexec_args += @("-h")
 }
-$jobargs += @(
+$psexec_args += @(
     "-w", "$env:USERPROFILE",
     "cmd.exe", "/C"
 )
 
 if ($script.ToLower().EndsWith("ps1")) {
-    $jobargs += @(
+    $psexec_args += @(
         "powershell.exe", "-ExecutionPolicy", "Bypass",
         "-File"
     )
 }
 
-$jobargs += @(
-    "$script", "$cmdargs"
+$psexec_args += @(
+    "$script", "$jobargs"
 )
+
+if ($continuous) {
+    $watchpath = $jobargs[0]
+    Log-Verbose "Watching ${watchpath}"
+    $fsw = New-Object System.IO.FileSystemWatcher
+    $fsw.Path = $watchpath
+    $fsw.IncludeSubdirectories = $true
+}
 
 $success_count = 0
 $exit_code = 0
-for ($i = 0; $i -lt $repeat; $i++) {
+$total = 0
+do {
+    if (!$(Test-Path $script)) {
+        Log-Verbose "Script is gone, aborting"
+        exit 130 # interrupt exit code
+    }
     if ($console) {
-        if ($verbose) {
-            Write-StdErr "Calling $script with Arguments: $cmdargs"
-        }
+        Log-Verbose "Calling $script with Arguments: $jobargs"
         # minicoin process protocol
         Write-Host "minicoin.process.id=${PID}"
         if ($script.ToLower().EndsWith("ps1")) {
             $ErrorActionPreference="SilentlyContinue"
-            & $script $cmdargs 2>&1
+            & $script $jobargs 2>&1
             $ErrorActionPreference="Continue"
         } else {
-            & $script $cmdargs
+            & $script $jobargs
         }
         $exit_code = $LASTEXITCODE
     } else {
@@ -138,49 +141,47 @@ for ($i = 0; $i -lt $repeat; $i++) {
         $pinfo.UseShellExecute = $false
         $pinfo.RedirectStandardOutput = $true
         $pinfo.RedirectStandardError = $true
-        $pinfo.Arguments = $jobargs + @("> $outpath", "2> $errpath")
+        $pinfo.Arguments = $psexec_args + @("> $outpath", "2> $errpath")
 
-        if ($verbose) {
-            Write-StdErr "Calling psexec.exe with arguments:"
-            Write-StdErr "$jobargs"
-        }
+        Log-Verbose "Calling psexec.exe with arguments:"
+        Log-Verbose "$psexec_args"
+
         $process = New-Object System.Diagnostics.Process
         $process.StartInfo = $pinfo
 
         $process.Start() | Out-Null
         $process.WaitForExit()
-        $jobpid = $process.ExitCode # feature of psexec
+        switch ($process.ExitCode) {
+            {$_ -lt 7} { Write-StdErr "Failure to run '$psexec_args' through psexec - aborting"; exit 1 }
+            default { $jobpid = $process.ExitCode } # feature of psexec
+        }
 
-        if ($jobpid -eq 0) {
-            Write-StdErr "Failure to run '$jobargs' through psexec - aborting"
-            exit 1
+        $process = Get-Process -Pid $jobpid
+        if (! $process) {
+            Write-StdErr "Failure to receive process started with psexec '$psexec_args' - aborting"
+            exit 2
         }
         # minicoin process protocol
         Write-Host "minicoin.process.id=$jobpid"
-        $process = Get-Process -Pid $jobpid
         Write-Host "minicoin.process.sid=$($process.SessionId)"
-        if ($verbose) {
-            Write-StdErr "Reading $outpath and $errpath"
-        }
+        Log-Verbose "Reading $outpath and $errpath"
         $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
         $stdout = New-Object System.IO.StreamReader($stdout_file)
         $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
         $stderr = New-Object System.IO.StreamReader($stderr_file)
-        if ($verbose) {
-            Write-StdErr "Waiting for $($process | Out-String)"
-        }
+        Log-Verbose "Waiting for $($process | Out-String)"
         $handle = $process.Handle # cache so that we can get the exit code
         do {
             Repeat-Output $stdout $stderr
             Start-Sleep -Milliseconds 50
         } while (!$process.HasExited)
         $process.WaitForExit()
+        # from now on, kill this process
+        Write-Host "minicoin.process.id=${PID}"
         Repeat-Output $stdout $stderr
         $exit_code = $process.ExitCode
 
-        if ($verbose) {
-            Write-StdErr "Cleaning up $outpath and $errpath"
-        }
+        Log-Verbose "Cleaning up $outpath and $errpath"
 
         $stdout.Dispose();
         $stdout_file.Close();
@@ -188,16 +189,16 @@ for ($i = 0; $i -lt $repeat; $i++) {
         $stderr_file.Close();
 
         try {
+            $ErrorActionPreference="SilentlyContinue"
             Remove-Item $outpath | Out-Null
             Remove-Item $errpath | Out-Null
+            $ErrorActionPreference="Continue"
         } catch {
             Write-StdErr "Error removing temporary files"
         }
     }
     if ($exit_code -ne 0) {
-        if ($verbose) {
-            Write-StdErr "Process exited with $exit_code"
-        }
+        Log-Verbose "Process exited with $exit_code"
         if ($exit_code -eq 71) {
             Write-StdErr "System doesn't accept any new tasks, this should resolve itself in a few minutes!"
         }
@@ -205,17 +206,26 @@ for ($i = 0; $i -lt $repeat; $i++) {
         $success_count++
     }
 
-    if ($repeat -gt 1) {
+    $total += 1
+    if ($repeat -ne 1) {
         if ($exit_code -ne 0) {
             $printer="Write-StdErr"
         } else {
             $printer="Write-Output"
         }
-        Invoke-Expression -Command "$printer 'Run $($i + 1)/${repeat}: Exit code ${exit_code}'"
+        Invoke-Expression -Command "$printer 'Run ${total}/${repeat}: Exit code ${exit_code}'"
     }
-}
+    if ($total -ge $repeat -and $repeat -gt 0) {
+        break
+    }
+    if ($continuous) {
+        $watchpath = $fsw.Path
+        Write-Host "Waiting for file system changes in ${watchpath}"
+        $fsw.WaitForChanged(15) | Out-Null
+    }
+} while ($true)
 
-if ($repeat -gt 1) {
+if ($repeat -ne 1) {
     if ($success_count -lt $repeat) {
         $printer="Write-StdErr"
     } else {
