@@ -141,7 +141,7 @@ module Minicoin
                 raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 if !options[:all] && !options[:alpha]
-                    raise Vagrant::Errors::StandardError
+                    raise Minicoin::Errors::MutagenTerminateNoAlpha
                 end
 
                 with_target_vms(argv) do |vm|
@@ -160,8 +160,8 @@ module Minicoin
                                 stdout.strip!
                                 vm.ui.detail stdout unless stdout.empty?
                             end
-                            vm.ui.warn "No matching session found" unless found
                         end
+                        vm.ui.warn "No matching session found" unless found
                     end
                     sessions = SyncedFolderMutagen.parse_sessions(vm)
                     if sessions.empty?
@@ -224,6 +224,9 @@ module Minicoin
             def execute()
                 options = {}
                 parser = OptionParser.new do |option|
+                    option.on("--timeout TIMEOUT", "Wait for TIMEOUT seconds") do |o|
+                        options[:timeout] = o.to_i
+                    end
                 end
 
                 argv = parse_options(parser)
@@ -231,26 +234,34 @@ module Minicoin
                 raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 with_target_vms(argv) do |vm|
-                    sessions = SyncedFolderMutagen.parse_sessions(vm)
-                    waiting = ""
                     waitcount = 0
-                    while waiting
-                        waiting = nil
-                        sessions.each do |session|
-                            unless ["Watching for changes"].include?(session["Status"])
-                                waiting = session
+                    begin
+                        Timeout::timeout(options[:timeout]) do
+                        loop do
+                            waiting = nil
+                            SyncedFolderMutagen.parse_sessions(vm).each do |session|
+                                unless ["Watching for changes"].include?(session["Status"])
+                                    waiting = session
+                                    break
+                                end
+                            end
+                            if waiting
+                                options = { new_line: false }
+                                waitcount += 1
+                                vm.ui.clear_line
+                                alpha = waiting["Alpha"]
+                                options[:color] = alpha["Connection state"] != "Connected" ? :yellow : :green
+                                vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", **options
+                                sleep(3)
+                            else
                                 break
                             end
                         end
-                        if waiting
-                            options = { new_line: false }
-                            waitcount += 1
-                            vm.ui.clear_line
-                            alpha = waiting["Alpha"]
-                            options[:color] = alpha["Connection state"] != "Connected" ? :yellow : :green
-                            vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", **options
-                            sleep(3)
-                        end
+                    end
+                    rescue Timeout::Error
+                        vm.ui.detail "", **{ prefix: false } # flush newline
+                        vm.ui.error "Timed out waiting"
+                        return 1
                     end
                 end
             end

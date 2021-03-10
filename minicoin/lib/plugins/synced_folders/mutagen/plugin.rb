@@ -17,6 +17,9 @@ module Minicoin
                 "Mutagen failed to create the sync session"
             end
         end
+        class MutagenTerminateNoAlpha < Vagrant::Errors::VagrantError
+            def error_message; "Neither --alpha nor --all specified"; end
+        end
     end
 
     module SyncedFolderMutagen
