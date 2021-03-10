@@ -22,6 +22,9 @@ module Minicoin
                 @subcommands.register(:resume) do
                     Resume
                 end
+                @subcommands.register(:list) do
+                    List
+                end
                 @subcommands.register(:wait) do
                     Wait
                 end
@@ -216,6 +219,39 @@ module Minicoin
                 end
             end
         end
+        class List < Vagrant.plugin("2", :command)
+            def self.synopsis
+                "lists the sync sessions"
+            end
+            def execute()
+                options = {}
+                parser = OptionParser.new do |option|
+                end
+
+                argv = parse_options(parser)
+                return if !argv
+                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
+                with_target_vms(argv) do |vm|
+
+                    SyncedFolderMutagen.parse_sessions(vm).each do |session|
+                        def ui_opts(side)
+                            {}.tap do |uiopts|
+                                uiopts[:new_line] = false
+                                uiopts[:prefix] = false
+                                uiopts[:color] = side["Connection state"] == "Connected" ? :green : :yellow
+                            end
+                        end
+
+                        vm.ui.detail "", **{ new_line: false }
+                        vm.ui.detail "#{session["Alpha"]["URL"]}", **ui_opts(session["Alpha"])
+                        vm.ui.detail " => ", **{ new_line: false, prefix: false }
+                        vm.ui.detail "#{session["Beta"]["URL"]}", **ui_opts(session["Beta"])
+                        vm.ui.detail " (#{session["Status"]})", **{ prefix: false }
+                    end
+                end
+            end
+        end
+
         class Wait < Vagrant.plugin("2", :command)
             def self.synopsis
                 "waits for all sync sessions to be idle"
