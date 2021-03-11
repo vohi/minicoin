@@ -19,3 +19,7 @@ settings:
           # - ~/qt/6.0
     # all machines are created with four virtual CPUs
     cpus: 4
+    # all machines should have at least 4GB RAM
+    memory: 4096
+
+# for more settings, see the documentation!
