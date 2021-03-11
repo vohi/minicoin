@@ -405,7 +405,13 @@ module Minicoin
                         target_path = ".minicoin/jobs"
                         run_command = "#{target_path}/#{@job.name}/"
                         @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
-                        waitcommand = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete" if @job.run_options[:waitcommand]
+                        if @job.run_options[:waitcommand]
+                            if @vm.guest.name == :darwin
+                                waitcommand = "fswatch -1 -r"
+                            else
+                                waitcommand = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
+                            end
+                        end
                     end
                     script_file = "main.#{options[:ext]}"
                     if !File.exist?(File.join(@job.path, script_file))
