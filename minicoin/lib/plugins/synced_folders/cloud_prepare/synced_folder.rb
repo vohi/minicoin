@@ -42,7 +42,7 @@ module Minicoin
                     return false
                 end
 
-                raise Vagrant::Errors::CloudNotReady.new(error_message)
+                raise Minicoin::Errors::CloudNotReady.new(error_message)
             end
 
             def enable(machine, folders, opts)

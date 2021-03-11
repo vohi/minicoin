@@ -28,11 +28,7 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                
-                if !options.key?(:packages)
-                    @env.ui.error "No packages requested to be installed"
-                    return
-                end
+                raise Minicoin::Errors::MissingArgument.new("no package specified") if options[:packages].nil?
 
                 with_target_vms(argv) do |vm|
                     unless vm.communicate.ready?

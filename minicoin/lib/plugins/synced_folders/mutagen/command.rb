@@ -142,10 +142,7 @@ module Minicoin
                 argv = parse_options(parser)
                 return if !argv
                 raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
-
-                if !options[:all] && !options[:alpha]
-                    raise Minicoin::Errors::MutagenTerminateNoAlpha
-                end
+                raise Minicoin::Errors::MissingArgument.new("Neither --alpha nor --all specified") if !options[:all] && !options[:alpha]
 
                 with_target_vms(argv) do |vm|
                     if options[:all]

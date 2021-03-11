@@ -43,13 +43,13 @@ module Minicoin
                         s = TCPSocket.new("127.0.0.1", 22)
                         s.close
                     rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
-                        raise Minicoin::SyncedFolderSSHFS::NOSSHServerOnHost if raise_error
+                        raise Minicoin::Errors::NOSSHServerOnHost if raise_error
                         machine.env.ui.error Minicoin::SyncedFolderSSHFS::NOSSHServerOnHost.new.error_message
                         return false
                     end
                 end
                 rescue Timeout::Error
-                    raise Minicoin::SyncedFolderSSHFS::SSHConnectionTimeout if raise_error
+                    raise Minicoin::Errors::SSHConnectionTimeout if raise_error
                     machine.env.ui.error Minicoin::SyncedFolderSSHFS::SSHConnectionTimeout.new.error_message
                     return false
                 end
@@ -62,8 +62,7 @@ module Minicoin
                 begin
                     machine.communicate.execute("which sshfs")
                 rescue
-                    machine.ui.warn "SSHFS not found on guest"
-                    raise
+                    raise Minicoin::Errors::NOSSHFSOnGuest
                 end
                 upload_keys(machine)
                 mount_folders(machine, folders)

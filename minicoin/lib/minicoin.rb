@@ -1,6 +1,40 @@
 require 'find'
 
 module Minicoin
+    module Errors
+        class MinicoinError < Vagrant::Errors::VagrantError
+            def initialize(detail=nil)
+                @detail = detail
+                super
+            end
+            error_namespace("minicoin.errors")
+        end
+        class MissingArgument < MinicoinError
+            def error_message; "Missing argument: #{@detail}; see --help for instructions!"; end
+        end
+        class CloudNotReady < MinicoinError
+            def error_message; "Cloud provider not ready: #{@detail}"; end
+        end
+        class NOSSHServerOnHost < MinicoinError
+            error_message("No SSH server detected on host, can't mount host folder!")
+        end
+        class NOSSHFSOnGuest < MinicoinError
+            error_message("SSHFS is not installed on the guest, can't mount host folder!")
+        end
+        class SSHConnectionTimeout < MinicoinError
+            error_message("Connection to SSH server on host timed out")
+        end
+        class MutagenNotFound < MinicoinError
+            error_message("Mutagen is not installed on the host")
+        end
+        class NoSshKey < MinicoinError
+            error_message("User has no SSH key in ~/.ssh")
+        end
+        class MutagenSyncFail < MinicoinError
+            error_message("Mutagen failed to create the sync session")
+        end
+    end
+
     # startup argument parsing
     argv = ARGV.dup
     @@requested_boxes = []

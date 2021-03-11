@@ -1,27 +1,6 @@
 require "open3"
 
 module Minicoin
-    module Errors
-        class MutagenNotFound < Vagrant::Errors::VagrantError
-            def error_message
-                "Mutagen is not installed on the host"
-            end
-        end
-        class NoSshKey < Vagrant::Errors::VagrantError
-            def error_message
-                "User has no SSH key in ~/.ssh"
-            end
-        end
-        class MutagenSyncFail < Vagrant::Errors::VagrantError
-            def error_message
-                "Mutagen failed to create the sync session"
-            end
-        end
-        class MutagenTerminateNoAlpha < Vagrant::Errors::VagrantError
-            def error_message; "Neither --alpha nor --all specified"; end
-        end
-    end
-
     module SyncedFolderMutagen
         include Vagrant::Util
 

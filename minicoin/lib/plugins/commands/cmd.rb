@@ -31,11 +31,7 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                
-                if command.nil? || command.empty?
-                    @env.ui.error "No command provided"
-                    return
-                end
+                raise Minicoin::Errors::MissingArgument.new("No command provided") if command.nil? || command.empty?
 
                 exit_code = 0
                 with_target_vms(argv) do |vm|

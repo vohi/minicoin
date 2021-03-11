@@ -1,18 +1,3 @@
-module Vagrant
-    module Errors
-        class CloudNotReady < VagrantError
-            attr_accessor :message
-            def initialize(m)
-                @message = m
-            end
-            def error_message
-                @message
-            end
-        end
-    end
-end
-
-
 module Minicoin
     module CloudPrepare
         class Plugin < Vagrant.plugin("2")
