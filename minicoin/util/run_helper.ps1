@@ -5,7 +5,7 @@ param (
     [switch]$privileged,
     [switch]$verbose,
     [switch]$console,
-    [switch]$continuous
+    [switch]$fswait
 )
 
 function Write-StdErr {
@@ -103,7 +103,7 @@ $psexec_args += @(
     "$script", "$jobargs"
 )
 
-if ($continuous) {
+if ($fswait) {
     $watchpath = $jobargs[0]
     Log-Verbose "Watching ${watchpath}"
     $fsw = New-Object System.IO.FileSystemWatcher
@@ -218,7 +218,7 @@ do {
     if ($total -ge $repeat -and $repeat -gt 0) {
         break
     }
-    if ($continuous) {
+    if ($fswait) {
         $watchpath = $fsw.Path
         Write-Host "Waiting for file system changes in ${watchpath}"
         $fsw.WaitForChanged(15) | Out-Null

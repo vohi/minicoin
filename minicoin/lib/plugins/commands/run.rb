@@ -133,8 +133,8 @@ module Minicoin
                             return 0
                         end
                     end
-                    option.on("--continuous", "Run the job in a loop, waiting for file system changes in between") do |o|
-                        options[:waitcommand] = o
+                    option.on("--fswait", "Wait for file system changes in between repeated") do |o|
+                        options[:fswait] = o
                     end
                     option.on("--console", "Run the job as a console session") do |o|
                         options[:console] = o
@@ -385,7 +385,7 @@ module Minicoin
                     @kill_communicator.reset!
                     options = job_options.dup
 
-                    waitcommand = nil
+                    fswait = nil
                     if @vm.guest.name == :windows
                         @guest_os = :windows
                         options[:ext] = "ps1"
@@ -394,9 +394,9 @@ module Minicoin
                         # enable verbosity and privileged execution in run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]
                         run_command += "-privileged " if @job.run_options[:privileged]
-                        run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:waitcommand] ? 0 : 1)} "
+                        run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:fswait] ? 0 : 1)} "
                         run_command += "-console " if @job.run_options[:console]
-                        run_command += "-continuous " if @job.run_options[:waitcommand]
+                        run_command += "-fswait " if @job.run_options[:fswait]
                         target_path = ".minicoin\\jobs"
                         run_command += "Documents\\#{target_path}\\#{@job.name}\\"
                         @cleanup_command = "if ($(Test-Path #{target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{target_path}\\#{@job.name} | Out-Null }"
@@ -405,11 +405,11 @@ module Minicoin
                         target_path = ".minicoin/jobs"
                         run_command = "#{target_path}/#{@job.name}/"
                         @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
-                        if @job.run_options[:waitcommand]
+                        if @job.run_options[:fswait]
                             if @vm.guest.name == :darwin
-                                waitcommand = "fswatch -1 -r"
+                                fswait = "fswatch -1 -r"
                             else
-                                waitcommand = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
+                                fswait = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
                             end
                         end
                     end
@@ -437,11 +437,11 @@ module Minicoin
                             PGID=$(($(ps -o pgid= $PID)))
                             echo "minicoin.process.id=$PGID"
                         BASH
-                        if @job.run_options[:repeat] || @job.run_options[:waitcommand]
-                            if waitcommand
-                                waitcommand = <<-BASH
+                        if @job.run_options[:repeat] || @job.run_options[:fswait]
+                            if fswait
+                                fswait = <<-BASH
                                     echo "Waiting for file system changes in #{@job_args.first}"
-                                    #{waitcommand} #{@job_args.first}
+                                    #{fswait} #{@job_args.first}
                                 BASH
                             end
                             envelope += <<-BASH
@@ -465,7 +465,7 @@ module Minicoin
                                     then
                                         break
                                     fi
-                                    #{waitcommand}
+                                    #{fswait}
                                 done
                                 [ $success -lt $total ] && out=2 || out=1
                                 >&${out} echo "Success rate is ${success}/${total}"
