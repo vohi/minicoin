@@ -394,7 +394,7 @@ module Minicoin
                         # enable verbosity and privileged execution in run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]
                         run_command += "-privileged " if @job.run_options[:privileged]
-                        run_command += "-repeat #{@job.run_options[:repeat] || 1} "
+                        run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:waitcommand] ? 0 : 1)} "
                         run_command += "-console " if @job.run_options[:console]
                         run_command += "-continuous " if @job.run_options[:waitcommand]
                         target_path = ".minicoin\\jobs"
