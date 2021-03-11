@@ -13,6 +13,9 @@ module Minicoin
                     option.separator ""
                     option.separator "Options:"
                     option.separator ""
+                    option.on("--privileged", "Run command with elevated privileges") do |o|
+                        options[:privileged] = o
+                    end
                     option.on("--quiet", "Suppress all output") do |o|
                         options[:quiet] = o
                     end
@@ -40,15 +43,24 @@ module Minicoin
                         vm.ui.error "Machine not ready"
                         next
                     end
-                    vm.ui.info "Running '#{command}'"
-                    opts = {}
-                    opts = {error_check: false} if options[:quiet]
-                    command = "cd \$Env:USERPROFILE; #{command}" if vm.guest.name == :windows
-                    exit_code = vm.communicate.execute(command, opts) do |type, data|
+                    vm.ui.info "Running '#{command}'" unless options[:quiet]
+                    opts = {}.tap do |o|
+                        o[:error_check] = false
+                        o[:sudo] = true if options[:privileged]
+                    end
+                    do_command = "cd \$Env:USERPROFILE; #{command}" if vm.guest.name == :windows
+                    vm_exit_code = vm.communicate.execute(do_command, opts) do |type, data|
                         echo(vm.ui, type, data.rstrip.chomp) unless options[:quiet]
                     end
+                    unless options[:quiet]
+                        if vm_exit_code == 0
+                            vm.ui.success "'#{command}' finished with #{exit_code}"
+                        else
+                            vm.ui.error "'#{command}' finished with #{exit_code}"
+                        end
+                    end
+                    exit_code += vm_exit_code
                 end
-                vm.ui.status "#{command} finished with #{exit_code}"
                 exit_code
             end
 
