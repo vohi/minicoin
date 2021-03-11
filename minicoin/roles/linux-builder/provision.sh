@@ -20,6 +20,7 @@ case $distro in
 
     packages=(
             "build-essential"
+            "inotify-tools"
             "gcc-8 g++-8"
             "python"
             "perl"
@@ -55,7 +56,9 @@ case $distro in
     yum group install -y 'Development Tools' > /dev/null
     command="yum install -y"
 
-    packages=( "perl-core"
+    packages=(
+            "perl-core"
+            "inotify-tools"
             "zlib-devel"
             "libxcb.* libxcb-devel"
             "libX11.*"
@@ -76,6 +79,9 @@ do
     echo "Installing $package"
     $command $package > /dev/null
 done
+
+echo "fs.inotify.max_user_watches=1048576" >> /etc/sysctl.conf
+sysctl -p /etc/sysctl.conf
 
 mkdir -p /tmp
 cd /tmp
