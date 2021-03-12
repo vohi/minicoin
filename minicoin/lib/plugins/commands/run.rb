@@ -444,7 +444,7 @@ module Minicoin
                         if @job.run_options[:repeat] || @job.run_options[:fswait]
                             if fswait
                                 fswait = <<-BASH
-                                    echo "Waiting for file system changes in #{@job_args.first}"
+                                    echo "($(date '+%H:%M:%S')) Waiting for file system changes in #{@job_args.first}"
                                     #{fswait} #{@job_args.first}
                                 BASH
                             end

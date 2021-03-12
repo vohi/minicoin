@@ -220,7 +220,8 @@ do {
     }
     if ($fswait) {
         $watchpath = $fsw.Path
-        Write-Host "Waiting for file system changes in ${watchpath}"
+        $time = Get-Date -Format "HH:mm:ss"
+        Write-Host "(${time}) Waiting for file system changes in ${watchpath}"
         $fsw.WaitForChanged(15) | Out-Null
     }
 } while ($true)
