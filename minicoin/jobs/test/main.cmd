@@ -47,7 +47,7 @@ echo Testing stdout and stderr
 for %%I in (1,2,3) do (
     echo - stdout %%I
     >&2 echo - stderr %%I
-    waitfor something /T 1 2> NULL
+    waitfor something /T 1 2> NUL
 )
 
 if "!errorcode!" == "0" (
