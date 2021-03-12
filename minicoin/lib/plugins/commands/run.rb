@@ -276,9 +276,9 @@ module Minicoin
                     if @run_options[:parallel]
                         threads << thread
                     else
-                        log_verbose(vm.ui, "Waiting for #{vm.name} #{thread.status}")
+                        log_verbose(vm.ui, "Waiting for #{vm.name}")
                         wait_for_thread(thread)
-                        log_verbose(vm.ui, "Thread finished")
+                        log_verbose(vm.ui, "Thread with job ID #{thread.job_id} finished")
                         exit_code += thread.exit_code || 128
                     end
                     break if thread.interrupted?
@@ -315,6 +315,7 @@ module Minicoin
                 attr_accessor :vm
                 attr_accessor :exit_code
                 attr_accessor :job
+                attr_accessor :job_id
     
                 def initialize(job, vm)
                     @job = job
@@ -324,6 +325,7 @@ module Minicoin
                     @interrupt = 0
                     @level = 0
                     @exit_code = nil
+                    @job_id = nil
                     super
                 end
     
@@ -384,6 +386,8 @@ module Minicoin
                     @kill_communicator = @vm.communicate.class.new(@vm)
                     @kill_communicator.reset!
                     options = job_options.dup
+                    @job_id = sprintf("%20.10f", Time.now.to_f).delete('.').to_i.to_s(36)
+                    @job.log_verbose(@vm.ui, "Job ID is #{@job_id}")
 
                     fswait = nil
                     if @vm.guest.name == :windows
@@ -397,14 +401,14 @@ module Minicoin
                         run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:fswait] ? 0 : 1)} "
                         run_command += "-console " if @job.run_options[:console]
                         run_command += "-fswait " if @job.run_options[:fswait]
-                        target_path = ".minicoin\\jobs"
+                        target_path = ".minicoin\\jobs\\#{@job_id}"
                         run_command += "Documents\\#{target_path}\\#{@job.name}\\"
-                        @cleanup_command = "if ($(Test-Path #{target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{target_path}\\#{@job.name} | Out-Null }"
+                        @cleanup_command = "if ($(Test-Path #{target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{target_path} | Out-Null }"
                     else
                         options[:ext] = "sh"
-                        target_path = ".minicoin/jobs"
+                        target_path = ".minicoin/jobs/#{@job_id}"
                         run_command = "#{target_path}/#{@job.name}/"
-                        @cleanup_command = "rm -rf #{target_path}/#{@job.name}"
+                        @cleanup_command = "rm -rf #{target_path}"
                         if @job.run_options[:fswait]
                             if @vm.guest.name == :darwin
                                 fswait = "fswatch -1 -r"
