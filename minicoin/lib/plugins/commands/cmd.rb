@@ -35,6 +35,7 @@ module Minicoin
 
                 exit_code = 0
                 with_target_vms(argv) do |vm|
+                    ui = argv.count > 1 ? vm.ui : @env.ui
                     unless vm.communicate.ready?
                         vm.ui.error "Machine not ready"
                         next
@@ -44,9 +45,15 @@ module Minicoin
                         o[:error_check] = false
                         o[:sudo] = true if options[:privileged]
                     end
-                    do_command = "cd \$Env:USERPROFILE; #{command}" if vm.guest.name == :windows
+                    do_command = vm.guest.name == :windows ? "cd \$Env:USERPROFILE; #{command}" : command
                     vm_exit_code = vm.communicate.execute(do_command, opts) do |type, data|
-                        echo(vm.ui, type, data.rstrip.chomp) unless options[:quiet]
+                        next if options[:quiet]
+                        data.rstrip!.chomp!
+                        if type == :stderr
+                            ui.error data
+                        else
+                            ui.detail data
+                        end        
                     end
                     unless options[:quiet]
                         if vm_exit_code == 0
@@ -58,16 +65,6 @@ module Minicoin
                     exit_code += vm_exit_code
                 end
                 exit_code
-            end
-
-            private
-
-            def echo(ui, type, data)
-                if type == :stderr
-                    ui.error data
-                else
-                    ui.detail data
-                end
             end
         end
     end
