@@ -615,6 +615,8 @@ module Minicoin
                         @vm.ui.detail(data, **options)
                     end
                     @last_options = options
+                rescue => e
+                    STDERR.puts "Internal error: #{e}"
                 end
 
                 def run_local(type)
