@@ -87,7 +87,7 @@ mkdir -p /tmp
 cd /tmp
 
 # install latest cmake
-cmake_version=3.18
+cmake_version=3.19
 cmake_build=4
 echo "Installing cmake $cmake_version.$cmake_build"
 if [[ -z $(cmake --version | grep "cmake version $cmake_version.$cmake_build") ]]
