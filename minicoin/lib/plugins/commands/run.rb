@@ -176,9 +176,12 @@ module Minicoin
         end
 
         class Job < Vagrant.plugin("2", :command)
+            attr_accessor :tty_width
             def initialize(options, argv, env)
-                @run_options = options
                 super(argv, env)
+                @run_options = options
+                @tty_width = Minicoin.tty_size[:width]
+                log_verbose(@env.ui, "Terminal width is #{@tty_width}")
             end
             
             def path
@@ -599,6 +602,9 @@ module Minicoin
                         options[:prefix] = false
                         @vm.ui.clear_line if @last_options[:new_line] == false && options[:new_line] == false
                         @vm.ui.detail "", **{prefix: false, newline: true} if @last_options[:new_line] == false && (options[:new_line].nil? || options[:new_line] == true)
+                    end
+                    if @job.tty_width && options[:new_line] == false && data.length > @job.tty_width
+                        data = "#{data[0..@job.tty_width - 4]}..."
                     end
                     if options[:color].nil?
                         options[:color] = :red if options[:channel] == :error
