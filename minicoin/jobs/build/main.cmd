@@ -47,6 +47,14 @@ if NOT EXIST !build_dir! mkdir !build_dir!
 cd !build_dir!
 echo Building '!projectname!' from '!JOBDIR!' into '!build_dir!'
 
+if DEFINED FLAG_reconfigure (
+  if EXIST build.ninja del build.ninja
+  if EXIST CMakeCache.txt del CMakeCache.txt
+  if EXIST Makefile del Makefile
+  if EXIST .qmake.cache del .qmake.cache
+  if NOT DEFINED PARAM_configure set PARAM_configure=-redo
+)
+
 if EXIST build.ninja (
   echo Already configured with cmake - run with --clean to reconfigure
 ) else (

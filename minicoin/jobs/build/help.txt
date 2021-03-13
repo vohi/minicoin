@@ -17,6 +17,10 @@ The job then builds the default target.
 
   Overrides the default configuration options
 
+--reconfigure
+
+  Reconfigures, using the options used last (unless --configure is set)
+
 --target TARGET
 
   Builds a different target than the default

@@ -56,6 +56,12 @@ fi
 cd $build_dir
 echo "Building '$projectname' from '$JOBDIR' into '$build_dir'"
 
+if [ ! -z $FLAG_reconfigure ]
+then
+  rm build.ninja CMakeCache.txt Makefile .qmake.cache 2>&1 > /dev/null
+  [ -z $PARAM_configure ] && PARAM_configure="-redo"
+fi
+
 if [ -f build.ninja ]
 then
   echo "Already configured with cmake - run with --clean to reconfigure"
