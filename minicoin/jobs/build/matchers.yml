@@ -25,6 +25,10 @@ matchers:
   - pattern: "(.*): fatal error\\s+(.*):\\s+(.*)$"
     replace: true
     error: true
+  - pattern: "LINK.*performing full link"
+    suppress: true
+  - pattern: \s+Creating library.*
+    suppress: true
 # test
   - pattern: ^\d:\sPASS\s+:.*
     color: green
