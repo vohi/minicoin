@@ -32,6 +32,12 @@ module Minicoin
                 require_relative "run.rb"
                 Run
             end
+
+            command(:download) do
+                require_relative "download.rb"
+                Download
+            end
+
         end
     end
 end

@@ -33,6 +33,9 @@ module Minicoin
         class MutagenSyncFail < MinicoinError
             error_message("Mutagen failed to create the sync session")
         end
+        class DownloadError < MinicoinError
+            def error_message; "Could not download file: #{@detail}"; end
+        end
     end
 
     # startup argument parsing
