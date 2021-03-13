@@ -44,7 +44,7 @@ exitcode=0
 for arg in "${@}"; do
   echo \'$arg\'
   if [[ "$arg" = "error" ]]; then
-     exitcode=1
+     exitcode=42
   fi
 done
 
