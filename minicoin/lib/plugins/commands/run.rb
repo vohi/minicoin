@@ -340,17 +340,31 @@ module Minicoin
                 end
 
                 def kill_job()
-                    if @interrupt > @level && @pid
+                    if @interrupt > @level
                         @level = @interrupt
                         if @guest_os == :windows
-                            @killcmd = "taskkill /PID #{@pid} /T /F" # works very unreliably without /F
-                            @killcmd = "psexec -i #{@sid} -u vagrant -p vagrant -h #{@killcmd}" if @sid
+                            if @pid # the powershell run_helper needs killing
+                                @killcmd = "taskkill /PID #{@pid} /T /F" # works very unreliably without /F
+                            else # a task is running
+                                @killcmd = "Get-ScheduledTask -TaskPath \"\\minicoin-jobs\\\""
+                                if @job_id
+                                    @killcmd += "-TaskName \"#{@job_id}\""
+                                else
+                                    vm.ui.warn "No Job ID received, killing all minicoin jobs"
+                                end
+                                @killcmd += "| Stop-ScheduledTask"
+                            end
                         else
                             signal = @level == 1 ? "SIGTERM" : "SIGKILL"
-                            @killcmd = "setsid kill -#{signal} -- -#{@pid}"
+                            if @pid
+                                @killcmd = "setsid kill -#{signal} -- -#{@pid}"
+                            else
+                                vm.ui.warn "No PID received, killing all bash processes"
+                                @killcmd = "setsid killall -#{signal} bash"
+                            end
                         end
                         begin
-                            vm.ui.warn "Attempting to interrupt process #{@pid} running on #{vm.name}"
+                            vm.ui.warn "Attempting to interrupt process #{@pid || @job_id} running on #{vm.name}"
                             @job.log_verbose(vm.ui, "killing with: '#{@killcmd}")
                 
                             begin
@@ -398,9 +412,9 @@ module Minicoin
                         options[:ext] = "ps1"
                         options[:ext] = "cmd" if File.exist?(File.join(@job.path, "main.cmd")) && !@job.run_options[:powershell]
                         run_command = "C:\\minicoin\\util\\run_helper.ps1 "
-                        # enable verbosity and privileged execution in run_helper
+                        run_command += "-jobid #{@job_id} "
+                        # enable execution modes through run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]
-                        run_command += "-privileged " if @job.run_options[:privileged]
                         run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:fswait] ? 0 : 1)} "
                         run_command += "-console " if @job.run_options[:console]
                         run_command += "-fswait " if @job.run_options[:fswait]
@@ -515,7 +529,7 @@ module Minicoin
                         begin
                             opts = {
                                 error_check: false,
-                                sudo: @vm.guest.name != :windows && @job.run_options[:privileged]
+                                sudo: @job.run_options[:privileged]
                             }
                             @exit_code = @vm.communicate.execute(run_command, opts) do |type, data|
                                 process_output(matchers, type, data)
@@ -554,7 +568,7 @@ module Minicoin
                     if data.start_with?("minicoin.process.")
                         @job.log_verbose(@vm.ui, "Received process info '#{data}'")
                         @pid = data.delete_prefix("minicoin.process.id=") if data.start_with?("minicoin.process.id=")
-                        @sid = data.delete_prefix("minicoin.process.sid=") if data.start_with?("minicoin.process.sid=")
+                        @pid = nil if @pid && @pid.empty?
                         @job.log_verbose(@vm.ui, "Job has process ID #{@pid} on guest")
                         return
                     end
@@ -587,6 +601,7 @@ module Minicoin
 
                         # batch data up
                         if interrupted?()
+                            @job.log_verbose(@vm.ui, line)
                             @buffer << [ line, options ]
                         else
                             echo(line, options)

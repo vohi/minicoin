@@ -1,8 +1,8 @@
 param (
+    [string]$jobid,
     [string]$script,
     [string[]]$jobargs,
     [int]$repeat = 0,
-    [switch]$privileged,
     [switch]$verbose,
     [switch]$console,
     [switch]$fswait
@@ -57,15 +57,6 @@ function Repeat-Output {
 Set-Location $env:USERPROFILE
 $script = $env:USERPROFILE + "\" + $script
 
-$admin_password = "vagrant"
-if (Test-Path env:ADMIN_PASSWORD) {
-    $admin_password = $env:ADMIN_PASSWORD
-}
-
-$psexec_args = @(
-    "-nobanner", "-d"
-)
-
 try {
     Log-Verbose "Searching active session for user 'vagrant'"
     $ErrorActionPreference="SilentlyContinue"
@@ -74,34 +65,11 @@ try {
     if (($sessioninfo -eq $null) -or ($sessioninfo.Length -eq 0)) {
         throw "No session found"
     }
-    $psexec_args += @(
-        "-i", $sessioninfo[2],
-        "-u", "vagrant", "-p", $admin_password
-    )
     Log-Verbose "Active session found: $sessioninfo"
 } catch {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
     $console = $true
 }
-
-if ($privileged) {
-    $psexec_args += @("-h")
-}
-$psexec_args += @(
-    "-w", "$env:USERPROFILE",
-    "cmd.exe", "/C"
-)
-
-if ($script.ToLower().EndsWith("ps1")) {
-    $psexec_args += @(
-        "powershell.exe", "-ExecutionPolicy", "Bypass",
-        "-File"
-    )
-}
-
-$psexec_args += @(
-    "$script", "$jobargs"
-)
 
 if ($fswait) {
     $watchpath = $jobargs[0]
@@ -119,10 +87,10 @@ do {
         Log-Verbose "Script is gone, aborting"
         exit 130 # interrupt exit code
     }
+    # minicoin process protocol - interrupts kill this process
+    Write-Host "minicoin.process.id=${PID}"
     if ($console) {
         Log-Verbose "Calling $script with Arguments: $jobargs"
-        # minicoin process protocol
-        Write-Host "minicoin.process.id=${PID}"
         if ($script.ToLower().EndsWith("ps1")) {
             $ErrorActionPreference="SilentlyContinue"
             & $script $jobargs 2>&1
@@ -134,52 +102,51 @@ do {
     } else {
         $outpath = New-TemporaryFile
         $errpath = New-TemporaryFile
+        $taskpath = "\minicoin-jobs\"
+        $taskcommand = "cmd.exe"
 
-        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-        $pinfo.FileName = "psexec.exe"
-        $pinfo.CreateNoWindow = $true
-        $pinfo.UseShellExecute = $false
-        $pinfo.RedirectStandardOutput = $true
-        $pinfo.RedirectStandardError = $true
-        $pinfo.Arguments = $psexec_args + @("> $outpath", "2> $errpath")
-
-        Log-Verbose "Calling psexec.exe with arguments:"
-        Log-Verbose "$psexec_args"
-
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $pinfo
-
-        $process.Start() | Out-Null
-        $process.WaitForExit()
-        switch ($process.ExitCode) {
-            {$_ -lt 7} { Write-StdErr "Failure to run '$psexec_args' through psexec - aborting"; exit 1 }
-            default { $jobpid = $process.ExitCode } # feature of psexec
+        $taskargs = @("/C")
+        if ($script.ToLower().EndsWith("ps1")) {
+            $taskargs += @("powershell.exe", "-ExecutionPolicy", "Bypass", "-File")
         }
+        $taskargs += @($script)
+        $taskargs += $jobargs
+        $taskargs += @("> ${outpath} 2> ${errpath}")
 
-        $process = Get-Process -Pid $jobpid
-        if (! $process) {
-            Write-StdErr "Failure to receive process started with psexec '$psexec_args' - aborting"
-            exit 2
+        Log-Verbose "Running 'cmd.exe $taskargs'"
+        $taskAction = New-ScheduledTaskAction -Execute $taskcommand -Argument [string]$taskargs -WorkingDirectory $ENV:USERPROFILE
+        $task = Register-ScheduledTask -TaskPath $taskpath -Action $taskAction -TaskName $jobid -RunLevel Highest
+
+        if (!$task) {
+            Write-Error "Failed to register task, aborting"
+            exit 1
         }
-        # minicoin process protocol
-        Write-Host "minicoin.process.id=$jobpid"
-        Write-Host "minicoin.process.sid=$($process.SessionId)"
+        Log-Verbose "Registered task ${task}"
+        Start-ScheduledTask -InputObject $task
+        # from now on, interrupts stop the task
+        Write-Host "minicoin.process.id="
+
+        Log-Verbose $((Get-ScheduledTaskInfo -TaskPath $taskpath -TaskName $jobid).LastTaskResult)
         Log-Verbose "Reading $outpath and $errpath"
         $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
         $stdout = New-Object System.IO.StreamReader($stdout_file)
         $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
         $stderr = New-Object System.IO.StreamReader($stderr_file)
-        Log-Verbose "Waiting for $($process | Out-String)"
-        $handle = $process.Handle # cache so that we can get the exit code
+
+        $taskstate = 0
         do {
             Repeat-Output $stdout $stderr
             Start-Sleep -Milliseconds 50
-        } while (!$process.HasExited)
-        $process.WaitForExit()
-        # from now on, kill this process
+            $task = Get-ScheduledTask -TaskPath $taskpath -TaskName $jobid
+            $taskstate = $task.State
+        } while ($taskstate -eq 'Running')
+        # task finished, let interrupts kill this process again
         Write-Host "minicoin.process.id=${PID}"
+        $taskinfo = Get-ScheduledTaskInfo -TaskPath $taskpath -TaskName $jobid
+        $exit_code = $taskinfo.LastTaskResult
+
+        Unregister-ScheduledTask -TaskPath $taskpath -TaskName $jobid -Confirm:$false
         Repeat-Output $stdout $stderr
-        $exit_code = $process.ExitCode
 
         Log-Verbose "Cleaning up $outpath and $errpath"
 
@@ -215,6 +182,12 @@ do {
         }
         Invoke-Expression -Command "$printer 'Run ${total}/${repeat}: Exit code ${exit_code}'"
     }
+    if ($exit_code -eq 0x00041306) { # error code for "the last run of the task was terminated by the user"
+        Log-Verbose "The task was terminated by the user"
+        $exit_code = 130
+        break
+    }
+
     if ($total -ge $repeat -and $repeat -gt 0) {
         break
     }
