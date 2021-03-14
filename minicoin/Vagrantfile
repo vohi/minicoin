@@ -239,7 +239,7 @@ Vagrant.configure("2") do |config|
       # Definition of provisioning steps
       roles = machine["roles"] || []
       # some default provisioning at the very end
-      roles << "windows-setup" if box.vm.guest = :windows
+      roles << "windows-setup" if box.vm.guest == :windows
       roles.each do |role|
         begin
           add_role(box, role.dup, name, machine) unless role.nil?
