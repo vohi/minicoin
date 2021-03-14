@@ -68,3 +68,6 @@ bin/qtdiag
 bin/uic --version
 bin/moc --version
 bin/qmake -query
+
+[ -f bin/qmake ] && ln -sf $PWD/bin/qmake $HOME/qmake
+[ -f bin/qt-cmake ] && ln -sf $PWD/bin/qt-cmake $HOME/qt-cmake

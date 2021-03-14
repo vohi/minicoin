@@ -45,10 +45,21 @@ if not exist "%CD%\bin" (
     goto :GOUP
 )
 
-echo "Using Qt in %cd%"
+echo Using Qt in %cd%
 set PATH="%CD%\bin;%PATH%"
 
 bin\qtdiag
 bin\uic --version
 bin\moc --version
 bin\qmake -query
+
+if exist bin\qmake.exe (
+    echo @echo off > %USERPROFILE%\bin\qmake.bat
+    echo SET "PATH=%cd%\bin;%%PATH%%" >> %USERPROFILE%\bin\qmake.bat
+    echo call %cd%\bin\qmake %%* >> %USERPROFILE%\bin\qmake.bat
+)
+if exist bin\qt-cmake.bat (
+    echo @echo off > %USERPROFILE%\bin\qt-cmake.bat
+    echo SET "PATH=%cd%\bin;%%PATH%%" >> %USERPROFILE%\bin\qt-cmake.bat
+    echo call %cd%\bin\qt-cmake %%* >> %USERPROFILE%\bin\qt-cmake.bat
+)
