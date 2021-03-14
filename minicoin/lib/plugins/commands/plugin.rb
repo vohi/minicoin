@@ -38,6 +38,10 @@ module Minicoin
                 Download
             end
 
+            command(:gui) do
+                require_relative "gui.rb"
+                GUI
+            end
         end
     end
 end
