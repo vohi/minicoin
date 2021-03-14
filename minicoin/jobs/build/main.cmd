@@ -20,7 +20,7 @@ if EXIST "%binpath%\%toolname%" (
   set "toolbase=%~n1"
   set "toolext=%~x1"
   echo @echo off > %USERPROFILE%\bin\!toolbase!.bat
-  echo SET PATH=%binpath%;%%PATH%% >> %USERPROFILE%\bin\!toolbase!.bat
+  echo SET "PATH=%binpath%;%%PATH%%" >> %USERPROFILE%\bin\!toolbase!.bat
   echo %binpath%\!toolbase! %%* >> %USERPROFILE%\bin\!toolbase!.bat
 )
 exit /B
