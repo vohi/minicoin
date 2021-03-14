@@ -119,9 +119,9 @@ then
     rm .std.out
     rm .std.err
 
-    assert $return $count
+    assert $return $(( $count*42 ))
     assert `echo "$stdout" | head -n 1` "Hello runner!"
-    assert `echo "$stderr" | head -n 1` "Exiting with error code 1"
+    assert `echo "$stderr" | head -n 1` "Exiting with error code 42"
     assert `echo "$stdout" | wc -l | xargs` $count
     assert `echo "$stderr" | wc -l | xargs` $count
 
@@ -143,7 +143,7 @@ then
             rm .std.out
             rm .std.err
 
-            assert $return $count
+            assert $return $(( $count*42 ))
         fi
     fi
 fi

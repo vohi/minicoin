@@ -77,6 +77,14 @@ module Vagrant
       end
     end
   end
+  module Errors
+    class VagrantError
+      def self.error_namespace(x)
+      end
+      def self.error_message(m)
+      end
+    end
+  end
 end
 
 class MockConfig
