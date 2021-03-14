@@ -6,6 +6,7 @@ settings:
     shared_folders:
       - $PWD: /minicoin
       - $HOME_SHARE: $GUEST_HOMES/tester
+    no-hostname: true
 
 jobconfigs: &testconfigs
   - job: test
