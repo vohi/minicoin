@@ -11,6 +11,12 @@ if exist "Documents\qtaccount.ini" (
     exit /b 3
 )
 
+where cmake > NUL 2> NUL
+if %errorlevel% NEQ 0 (
+    choco install --no-progress --no-progress --limitoutput -y cmake
+    set "PATH=%PATH%;c:\Program Files\CMake\bin"
+)
+
 set "INSTALL_ROOT=!PARAM_install_root!"
 if not defined INSTALL_ROOT set "INSTALL_ROOT=Qt"
 

@@ -1,0 +1,9 @@
+---
+matchers:
+  # make all download progress indicators no generate a newline
+  - pattern: "--\\s\\[download \\d+% complete\\]"
+    newline: false
+    color: green
+  - pattern: "\\[.\\s\\d+%\\]"
+    newline: false
+    color: green
