@@ -5,7 +5,7 @@ command -v cmake &> /dev/null || install_cmake=1
 
 if [[ $(uname) =~ "Darwin" ]]
 then
-    [ $install_cmake -gt 0 ] brew install cmake
+    [ $install_cmake -gt 0 ] && brew install cmake
     account_path="$HOME/Library/Application Support/Qt"
 else
     if [ $install_cmake -gt 0 ]
