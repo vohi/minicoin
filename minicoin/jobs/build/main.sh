@@ -91,7 +91,6 @@ then
   fi
 elif [ -f $JOBDIR/$projectname.pro ]
 then
-  configure=${PARAM_configure:-"-GNinja"}
   echo "Configuring '$JOBDIR' with 'qmake ${configure}'"
   if [ ! -f ~/qmake ]
   then
@@ -111,7 +110,8 @@ then
   maketool=ninja
 elif [[ -f Makefile ]]
 then
-  maketool="make -j$(nsproc)"
+  cpus=$(nproc 2> /dev/null || sysctl -n hw.ncpu)
+  maketool="make -j${cpus}"
 else
   >&2 echo "No build system generated, aborting"
   exit 1
