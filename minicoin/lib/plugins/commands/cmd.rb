@@ -19,6 +19,9 @@ module Minicoin
                     option.on("--quiet", "Suppress all output") do |o|
                         options[:quiet] = o
                     end
+                    option.on("--powershell", "Run the command in powershell on Windows guests") do |o|
+                        options[:powershell] = o
+                    end
                     option.on("-- command", "The command to execute on the guest")
                 end
 
@@ -45,10 +48,21 @@ module Minicoin
                         o[:error_check] = false
                         o[:sudo] = true if options[:privileged]
                     end
-                    do_command = vm.guest.name == :windows ? "cd \$Env:USERPROFILE; #{command}" : command
+                    if vm.guest.name == :windows
+                        # even though the WinRM communicator has a :shell option, we always go through
+                        # powershell, as otherwise we lose the exit code. Downside is that we get the
+                        # un-catchable "NativeCommandError" for the first line of output to stderr.
+                        opts[:elevated] = true if options[:privileged]
+                        do_command = "cd $Env:USERPROFILE\n"
+                        do_command += options[:powershell] ? command : "& cmd /C \"#{command}\""
+                    else
+                        opts[:sudo] = true if options[:privileged]
+                        do_command = command
+                    end
                     vm_exit_code = vm.communicate.execute(do_command, opts) do |type, data|
                         next if options[:quiet]
-                        data.rstrip!.chomp!
+                        data.rstrip!
+                        next if data.nil?
                         if type == :stderr
                             ui.error data
                         else
@@ -57,9 +71,9 @@ module Minicoin
                     end
                     unless options[:quiet]
                         if vm_exit_code == 0
-                            vm.ui.success "'#{command}' finished with #{exit_code}"
+                            vm.ui.success "'#{command}' finished with #{vm_exit_code}"
                         else
-                            vm.ui.error "'#{command}' finished with #{exit_code}"
+                            vm.ui.error "'#{command}' finished with #{vm_exit_code}"
                         end
                     end
                     exit_code += vm_exit_code
