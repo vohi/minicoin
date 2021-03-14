@@ -113,27 +113,35 @@ do {
         $taskargs += $jobargs
         $taskargs += @("> ${outpath} 2> ${errpath}")
 
-        Log-Verbose "Running 'cmd.exe $taskargs'"
-        $taskAction = New-ScheduledTaskAction -Execute $taskcommand -Argument [string]$taskargs -WorkingDirectory $ENV:USERPROFILE
-        $task = Register-ScheduledTask -TaskPath $taskpath -Action $taskAction -TaskName $jobid -RunLevel Highest
+        Log-Verbose "Creating task"
+        $taskRegister = @{
+            TaskPath = $taskpath
+            TaskName = $jobid
+            Description = [string]$taskargs
+            Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument [string]$taskargs -WorkingDirectory $ENV:USERPROFILE
+            User = "vagrant"
+            RunLevel = "Highest"
+            Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel
+        }
+        $task = Register-ScheduledTask @taskRegister -Force
 
         if (!$task) {
             Write-Error "Failed to register task, aborting"
             exit 1
         }
         Log-Verbose "Registered task ${task}"
-        Start-ScheduledTask -InputObject $task
+        Log-Verbose "Running 'cmd.exe $taskargs'"
+        $task | Start-ScheduledTask
         # from now on, interrupts stop the task
         Write-Host "minicoin.process.id="
 
-        Log-Verbose $((Get-ScheduledTaskInfo -TaskPath $taskpath -TaskName $jobid).LastTaskResult)
         Log-Verbose "Reading $outpath and $errpath"
         $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
         $stdout = New-Object System.IO.StreamReader($stdout_file)
         $stderr_file = [System.IO.File]::Open($errpath, 'Open', 'Read', 'ReadWrite')
         $stderr = New-Object System.IO.StreamReader($stderr_file)
 
-        $taskstate = 0
+        $taskstate = $task.State
         do {
             Repeat-Output $stdout $stderr
             Start-Sleep -Milliseconds 50
@@ -142,10 +150,10 @@ do {
         } while ($taskstate -eq 'Running')
         # task finished, let interrupts kill this process again
         Write-Host "minicoin.process.id=${PID}"
-        $taskinfo = Get-ScheduledTaskInfo -TaskPath $taskpath -TaskName $jobid
+        $taskinfo = ($task | Get-ScheduledTaskInfo)
         $exit_code = $taskinfo.LastTaskResult
 
-        Unregister-ScheduledTask -TaskPath $taskpath -TaskName $jobid -Confirm:$false
+        $task | Unregister-ScheduledTask -Confirm:$false
         Repeat-Output $stdout $stderr
 
         Log-Verbose "Cleaning up $outpath and $errpath"
