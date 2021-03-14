@@ -28,6 +28,8 @@ function Log-Verbose {
     param ([PSObject] $InputObject)
     if ($verbose) {
         Write-StdErr $InputObject.ToString()
+    } else {
+        Add-Content -Path $ENV:TEMP\${jobid}.log -Value $InputObject.ToString()
     }
 }
 
@@ -38,18 +40,23 @@ function Repeat-Output {
     )
     while (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
         $out_line = $stdout.ReadLine();
-        $err_line = $stderr.ReadLine();
         $havedata = $false
         if (![String]::IsNullOrEmpty($out_line)) {
             write-host $out_line
             $havedata = $true
         }
+        $err_line = $stderr.ReadLine();
         if (![String]::IsNullOrEmpty($err_line)) {
             Write-StdErr $err_line
             $havedata = $true
         }
         if (!$havedata) {
             Start-Sleep -Milliseconds 25
+        } else {
+            $ErrorActionPreference="SilentlyContinue"
+            Add-Content -Path $ENV:TEMP\${jobid}.log -Value $out_line
+            Add-Content -Path $ENV:TEMP\${jobid}.log -Value $err_line
+            $ErrorActionPreference="Continue"
         }
     }
 }
