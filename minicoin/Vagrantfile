@@ -237,29 +237,16 @@ Vagrant.configure("2") do |config|
       end
 
       # Definition of provisioning steps
-      roles = machine["roles"]
-      unless roles.nil?
-        roles.each do |role|
-          begin
-            add_role(box, role.dup, name, machine) unless role.nil?
-          rescue => e
-            puts "==> #{name}: Error when adding role #{role}:"
-            puts "             #{e}"
-          end
+      roles = machine["roles"] || []
+      # some default provisioning at the very end
+      roles << "windows-setup" if box.vm.guest = :windows
+      roles.each do |role|
+        begin
+          add_role(box, role.dup, name, machine) unless role.nil?
+        rescue => e
+          puts "==> #{name}: Error when adding role #{role}:"
+          puts "             #{e}"
         end
-      end
-
-      # make powershell the default ssh shell on Windows at the end, as some provisioners rely on cmd
-      if box.vm.guest == :windows
-        force_defaults = <<-POWERSHELL
-        New-ItemProperty -Path "HKLM:\\SOFTWARE\\OpenSSH" -Name DefaultShell -Value "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -PropertyType String -Force | Out-Null
-        New-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender" -Name DisableAntiSpyware -Value 1 -PropertyType DWORD -Force | Out-Null
-        Set-MpPreference -DisableIntrusionPreventionSystem $true -DisableIOAVProtection $true -DisableRemovableDriveScanning $true -DisableArchiveScanning $true -DisableRealtimeMonitoring $true -DisableScriptScanning $true -EnableControlledFolderAccess Disabled -EnableNetworkProtection AuditMode -Force -MAPSReporting Disabled -SubmitSamplesConsent NeverSend  | Out-Null
-        
-        POWERSHELL
-        box.vm.provision "powershell_default",
-          type: :shell,
-          inline: force_defaults
       end
     end
   end
