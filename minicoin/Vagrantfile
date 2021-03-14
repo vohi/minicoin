@@ -114,10 +114,12 @@ Vagrant.configure("2") do |config|
       box.vm.box = machine_box
       box.vm.box_version = machine["box_version"] unless machine["box_version"].nil?
 
+      hostname = name.gsub("_", "-")
       # Platform specific configurations
       if is_windows
         machine["os"] = "windows"
         box.vm.guest = :windows
+        hostname = hostname[0..14] # windows hostnames cannot be more than 15 characters long
         box.minicoin.guest_homes = "C:\\Users"
 
         # "Intel Pro/1000 MT Desktop" must be used on Windows
@@ -204,9 +206,7 @@ Vagrant.configure("2") do |config|
       end
 
       # private network setup
-      unless machine["no-hostname"] == true
-        box.vm.hostname = name[0..14].gsub("_", "-") # windows hostnames cannot be more than 15 characters long
-      end
+      box.vm.hostname = hostname unless machine["no-hostname"] == true
       private_net = machine["private_net"]
       if private_net.nil?
         box.vm.network "private_network", type: "dhcp"
