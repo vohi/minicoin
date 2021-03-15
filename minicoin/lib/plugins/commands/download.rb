@@ -1,3 +1,5 @@
+require 'net/scp'
+
 module Minicoin
     module Commands
         class Download < Vagrant.plugin("2", :command)
@@ -24,17 +26,36 @@ module Minicoin
                     guest_homes = Minicoin.get_config(vm).guest_homes
                     destination = $MINICOIN_PROJECT_DIR
                     download_source = Pathname.new(source).absolute? ? source : "#{guest_homes}/#{vm.ssh_info[:remote_user]}/#{source}"
-                    download_destination = File.join($MINICOIN_PROJECT_DIR, source)
+                    download_source.gsub!("\\", "/") # consistently platform independent slashes
+                    if vm.guest.name == :windows
+                        display_source = download_source.gsub("/", "\\")
+                        is_directory = vm.communicate.test("if (Test-Path -Path '#{download_source}' -PathType Container) { exit 0 } else { exit 1 }")
+                    else
+                        display_source = download_source
+                        is_directory = vm.communicate.test("[ -d '#{download_source}' ] && exit 0 || exit 1")
+                    end
+                    if is_directory
+                        # ssh communicator can't download directories, doesn't pass -r through to scp :(
+                        vm.ui.warn "The SSH communicator can't download directories, this will probably fail" if "#{vm.communicate.class}".include?("SSH")
+                        download_destination = $MINICOIN_PROJECT_DIR.dup
+                    else
+                        # file - download only the file
+                        download_destination = File.join($MINICOIN_PROJECT_DIR, File.basename(source))
+                    end
 
-                    @env.ui.info "Downloading #{download_source} to #{$MINICOIN_PROJECT_DIR}"
-                    vm.communicate.download(download_source, $MINICOIN_PROJECT_DIR)
+                    if Vagrant::Util::Platform.windows?
+                        download_destination.gsub!("/", "\\")
+                    else
+                        download_destination.gsub!("\\", "/")
+                    end
+
+                    @env.ui.info "Downloading #{is_directory ? 'directory' : 'file'} #{display_source} to #{download_destination}"
+                    vm.communicate.download(download_source, download_destination)
                     @env.ui.info "Download has completed successfully!"
-                    @env.ui.info "  Source: #{download_source}"
+                    @env.ui.info "  Source: #{display_source}"
                     @env.ui.info "  Destination: #{download_destination}"
                 rescue Net::SCP::Error => e
                     raise Minicoin::Errors::DownloadError.new("#{e}")
-                rescue => e
-                    raise Vagrant::Errors::VagrantError
                 end
             end
         end
