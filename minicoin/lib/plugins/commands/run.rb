@@ -680,14 +680,16 @@ module Minicoin
                             guest_dir[hostpath] = guestpath
                         end
                     end
-                    if guest_dir.nil? || guest_dir.empty?
-                        @vm.ui.warn "the host path '#{project_dir}' doesn't map to any location on the guest:"
+                    guest_dir ||= ""
+                    if guest_dir.empty?
+                        @vm.ui.warn "The host path '#{project_dir}' doesn't map to any location on the guest:"
                         minicoin.fs_mappings.each do |hostpath, guestpath|
+                            hostpath = $PWD if hostpath == "."
                             @vm.ui.warn "    #{hostpath} => #{guestpath}"
                         end
                         guest_dir = project_dir
                     end
-                    guest_dir.gsub!("/", "\\") if @vm.guest.name == :windows
+                    guest_dir = guest_dir.gsub("/", "\\") if @vm.guest.name == :windows
                     guest_dir
                 end
 
