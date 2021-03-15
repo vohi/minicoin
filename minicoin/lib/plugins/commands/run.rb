@@ -69,7 +69,7 @@ module Minicoin
             def initialize(argv, env)
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
                 # special case, since we have a main command argument that takes a value
-                ["--repeat", "--jobconfig"].each do |option|
+                ["--repeat", "--jobconfig", "--env"].each do |option|
                     if @argv[-1] == option
                         loop do
                             @argv << @job_name
@@ -101,7 +101,9 @@ module Minicoin
             end
 
             def execute
-                options = {}
+                options = {
+                    env: []
+                }
                 parser = OptionParser.new do |option|
                     option.banner = "Usage: minicoin run [options] <job> [name|id] [-- extra job args]"
                     option.separator ""
@@ -116,6 +118,9 @@ module Minicoin
                     option.separator ""
                     option.separator "For help on a job run `minicoin run <job> --help`"
                     option.separator ""
+                    option.on("--env ENV=VAL", "Specifies comma-separated list of environment variables") do |o|
+                        options[:env] += o.split(",")
+                    end
                     option.on("--verbose", "Enable verbose output") do |o|
                         options[:verbose] = o
                     end
@@ -458,6 +463,16 @@ module Minicoin
                             PGID=$(($(ps -o pgid= $PID)))
                             echo "minicoin.process.id=$PGID"
                         BASH
+                        @job.run_options[:env].each do |env|
+                            md = /([A-Za-z0-9]+[\+]?)=(.*)/.match(env)
+                            key = md[1]
+                            value = md[2]
+                            if key.end_with?('+')
+                                key = key[0..-2]
+                                value="#{value}:$#{key}"
+                            end
+                            envelope += "export #{key}=\"#{value}\"\n"
+                        end
                         if @job.run_options[:repeat] || @job.run_options[:fswait]
                             if fswait
                                 fswait = <<-BASH
@@ -499,6 +514,7 @@ module Minicoin
                         end
                     else
                         run_command += " -jobargs @('#{@job_args.join("', '")}')"
+                        run_command += " -envvars @('#{@job.run_options[:env].join("', '")}')" if @job.run_options[:env].count > 0
                     end
 
                     @vm.ui.info "Running '#{@job.name}' with arguments #{@job_args.join(" ")}"

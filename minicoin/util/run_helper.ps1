@@ -1,6 +1,7 @@
 param (
     [string]$jobid,
     [string]$script,
+    [string[]]$envvars,
     [string[]]$jobargs,
     [int]$repeat = 0,
     [switch]$verbose,
@@ -96,6 +97,24 @@ do {
     }
     # minicoin process protocol - interrupts kill this process
     Write-Host "minicoin.process.id=${PID}"
+
+    $envstring = ""
+    Log-Verbose "Adding to environment: $envvars"
+    foreach ($envvar in $envvars) {
+        $keyval = $envvar -Split("=")
+        $key = $keyval[0]
+        $value = $keyval[1]
+        if ($key -match "\+$") {
+            $key = $key -replace "\+$"
+            $oldvalue = (Get-ChildItem -Path Env:${key}).Value
+            $envstring += "set `"${key}=${value};%${key}%`" & "
+            $value = "${value};${oldvalue}"
+        } else {
+            $envstring += "set `"${key}=${value}`" & "
+        }
+        Set-Item -Path Env:${key} -Value ${value}
+    }
+
     if ($console) {
         Log-Verbose "Calling $script with Arguments: $jobargs"
         if ($script.ToLower().EndsWith("ps1")) {
@@ -113,6 +132,7 @@ do {
         $taskcommand = "cmd.exe"
 
         $taskargs = @("/C")
+        $taskargs += $envstring
         if ($script.ToLower().EndsWith("ps1")) {
             $taskargs += @("powershell.exe", "-ExecutionPolicy", "Bypass", "-File")
         }
@@ -125,7 +145,7 @@ do {
             TaskPath = $taskpath
             TaskName = $jobid
             Description = [string]$taskargs
-            Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument [string]$taskargs -WorkingDirectory $ENV:USERPROFILE
+            Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument "$taskargs" -WorkingDirectory $ENV:USERPROFILE
             User = "vagrant"
             RunLevel = "Highest"
             Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel
