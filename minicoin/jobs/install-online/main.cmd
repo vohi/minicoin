@@ -2,6 +2,13 @@
 SETLOCAL ENABLEDELAYEDEXPANSION
 call \minicoin\util\parse-opts.cmd %*
 
+where cmake > NUL 2> NUL
+if %errorlevel% NEQ 0 (
+    choco install --no-progress --no-progress --limitoutput -y cmake
+    set "PATH=%PATH%;c:\Program Files\CMake\bin"
+)
+
+for %%F in ("%0") do set "jobpath=%%~dpF"
 if exist "Documents\qtaccount.ini" (
     echo Installing qtaccount.ini file from "%cd%" into %USERPROFILE%
     if not exist "%USERPROFILE%\AppData\Roaming\Qt" mkdir -p "%USERPROFILE%\AppData\Roaming\Qt"
@@ -11,19 +18,17 @@ if exist "Documents\qtaccount.ini" (
     exit /b 3
 )
 
-where cmake > NUL 2> NUL
-if %errorlevel% NEQ 0 (
-    choco install --no-progress --no-progress --limitoutput -y cmake
-    set "PATH=%PATH%;c:\Program Files\CMake\bin"
-)
-
 set "INSTALL_ROOT=!PARAM_install_root!"
 if not defined INSTALL_ROOT set "INSTALL_ROOT=Qt"
 
-for %%F in ("%0") do set "jobname=%%~dpF"
-cmake -DINSTALL_ROOT=!PARAM_install_root! -DPACKAGE=!PARAM_package! -P "%jobname%\install-online.cmake"
+set "cmake_params=-DINSTALL_ROOT=!PARAM_install_root! -DPACKAGE=!PARAM_package!"
+if defined PARAM_search set "cmake_params=%cmake_params% -DSEARCH=!PARAM_search!"
 
-if %errorlevel% NEQ 0 (
+cmake %cmake_params% -P "%jobpath%\install-online.cmake"
+
+set result=%errorlevel%
+if defined PARAM_search exit /B %result%
+if %result% NEQ 0 (
     >&2 echo Installation failed, aborting
     exit /b 4
 )

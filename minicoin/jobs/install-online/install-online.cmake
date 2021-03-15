@@ -72,6 +72,17 @@ if(NOT EXISTS "${maintenance_tool_file}")
   message(FATAL_ERROR "Installation failed, ${maintenance_tool_file} not found")
 endif()
 
+if (SEARCH)
+  message(STATUS "Searching packages matching ${SEARCH}")
+  execute_process(
+    COMMAND
+      "${maintenance_tool_file}" search ${SEARCH}
+    RESULT_VARIABLE
+      exitcode
+  )
+  return()
+endif()
+
 set(exitcode 0)
 if(NOT PACKAGE)
   set(PACKAGE "qt.qt6.600")

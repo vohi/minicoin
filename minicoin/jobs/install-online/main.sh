@@ -42,8 +42,14 @@ fi
 
 INSTALL_ROOT=${PARAM_install_root:-"Qt"}
 
-cmake -DINSTALL_ROOT=${INSTALL_ROOT} -DPACKAGE=$PARAM_package -P $jobpath/install-online.cmake
-if [ $? -gt 0 ]
+cmake_params=("-DINSTALL_ROOT=${INSTALL_ROOT}" "-DPACKAGE=$PARAM_package")
+[ ! -z $PARAM_search ] && cmake_params+=("-DSEARCH=${PARAM_search} ${cmake_params}")
+
+cmake ${cmake_params[@]} -P $jobpath/install-online.cmake
+
+result=$?
+[ ! -z $PARAM_search ] && exit $result
+if [ $result -gt 0 ]
 then
     >&2 echo "Installation failed, aborting"
     exit 4
