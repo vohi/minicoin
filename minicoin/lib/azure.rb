@@ -18,12 +18,15 @@ end
 def azure_setup(box, machine)
     return unless Vagrant.has_plugin?('vagrant-azure')
     return if $AZURE_CLI_INSTALLED == false
+    # this has to happen on machine level, even though it's only needed for the
+    # provider, otherwise the plugin runs after machine-level provisioners, which
+    # is too late.
+    box.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
 
     box.vm.provider :azure do |azure, override|
         location = "northeurope"
         pwd = ENV['minicoin_key']
 
-        override.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
         override.vm.synced_folder ".", "/minicoin", disabled: true
         shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|

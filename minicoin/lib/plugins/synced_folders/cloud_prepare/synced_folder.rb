@@ -33,7 +33,8 @@ module Minicoin
                 elsif provider == :aws
                     error_message = "AWS not implemented"
                 else
-                    error_message = "Unknown cloud provider #{provider}"
+                    # assume it's not a cloud provider; enable will not do anything
+                    return true
                 end
 
                 return true if !error_message
