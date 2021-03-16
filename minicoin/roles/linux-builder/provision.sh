@@ -74,6 +74,46 @@ case $distro in
             "mesa-libwayland-egl*"
     )
   ;;
+
+  opensuse*)
+    zypper addrepo https://download.opensuse.org/repositories/devel:tools:compiler/openSUSE_Leap_15.2/devel:tools:compiler.repo
+    zypper refresh
+    command="zypper --quiet --non-interactive install -y"
+    packages=(
+      # build essentials
+      git-core
+      gcc10-c++ clang9
+      cmake make ninja
+      # webkit
+      flex bison gperf libicu-devel ruby
+      # xcb
+      xorg-x11-libxcb-devel
+      xcb-util-devel
+      xcb-util-image-devel
+      xcb-util-keysyms-devel
+      xcb-util-renderutil-devel
+      xcb-util-wm-devel
+      xorg-x11-devel
+      libxkbcommon-x11-devel
+      libxkbcommon-devel
+      libXi-devel
+      # webengine
+      alsa-devel
+      dbus-1-devel
+      libXcomposite-devel
+      libXcursor-devel
+      libXrandr-devel
+      libXtst-devel
+      mozilla-nspr-devel
+      mozilla-nss-devel
+      nodejs10
+      nodejs10-devel
+      # shader tools
+      spirv-tools
+      # qdoc
+      libclang9 libllvm9-devel libllvm
+    )
+  ;;
 esac
 
 for package in "${packages[@]}"

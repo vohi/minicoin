@@ -6,7 +6,7 @@ distro=${ID}${VERSION_ID}
 desktop=${PARAM_desktop:-$PARAM_linux_desktop}
 desktop=$(echo $desktop | awk '{print tolower($1)}')
 
-echo "Requested: '$desktop' on '$distro'"
+echo "Installing desktop. Requested: '${desktop:-"default"}' on '$distro'"
 
 setdefault="systemctl set-default graphical.target"
 startdesktop="systemctl isolate graphical.target"
@@ -31,23 +31,20 @@ case $distro in
       weston)
         packages=( "weston" )
         ;;
-      gnome)
-        packages=( "ubuntu-desktop" )
-        ;;
       *)
-        desktop="default"
+        desktop="ubuntu-desktop"
+        packages=( "ubuntu-desktop" )
         ;;
     esac
 
     export DEBIAN_FRONTEND=noninteractive
-    echo "Preparing installation of '$desktop' on '$distro'"
     sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
     echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
     apt-get -qq update > /dev/null
     ;;
 
   centos*)
-    command="dnf --enablerepo=epel,PowerTools group -y install"
+    command="dnf --enablerepo=epel group -y install"
 
     case $desktop in
       kde)
@@ -63,17 +60,29 @@ case $distro in
         command="yum install -y"
         packages=( "xorg-x11-server-Xorg" "fluxbox" "xinit" "xterm" )
         ;;
-      gnome)
-        packages=( "GNOME" )
-        ;;
       *)
-        desktop="default"
+        desktop="gnome"
+        packages=( "GNOME" )
         ;;
     esac
 
-    echo "Preparing installation of '$desktop' on '$distro'"
     yum update -y > /dev/null
     yum install -y epel-release > /dev/null
+    ;;
+
+  opensuse*)
+    command="zypper --quiet --non-interactive install -y --no-recommends "
+    case $desktop in
+      kde)
+        packages=( "-t pattern kde" sddm )
+        ;;
+      *)
+        desktop="kde-plasma"
+        packages=( "-t pattern kde_plasma" sddm )
+        ;;
+    esac
+
+    zypper refresh
     ;;
 esac
 
@@ -85,7 +94,7 @@ fi
 for package in "${packages[@]}"
 do
   echo "Installing '$package'..."
-  $command "$package" > /dev/null
+  $command $package > /dev/null
   error=$?
 
   if [[ $error -gt 0 ]]; then

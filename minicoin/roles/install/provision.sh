@@ -20,6 +20,10 @@ case $distro in
         command="yum install ${PARAM_options:-"-y -qq"}"
     ;;
 
+    opensuse*)
+        command="zypper --non-interactive --quiet install -y ${PARAM_options}"
+    ;;
+
     darwin*)
         su vagrant -c "brew update"
         command="brew install ${PARAM_options:-"-quiet"}"
