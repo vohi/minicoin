@@ -58,7 +58,7 @@ module Minicoin
                     machine.ui.detail "Uploading data"
                     machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\programdata\\ssh\\administrators_authorized_keys")
                     machine.communicate.upload("./lib/cloud_provision", "C:\\Windows\\Temp")
-                    machine.communicate.upload("./util", "c:\\minicoin\\util")
+                    machine.communicate.upload("./util", "c:\\minicoin")
                     admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
                     machine.ui.detail "Installing base software"
                     machine.communicate.sudo("powershell.exe -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\cloud_provision\\windows.ps1 '#{admin_password}'") do |type, data|
@@ -70,7 +70,7 @@ module Minicoin
                                               [ -d /minicoin ] || sudo mkdir /minicoin && sudo chown vagrant /minicoin") do |type, data|
                         echo(machine.ui, type, data)
                     end
-                    machine.communicate.upload("./util", "/minicoin/util")
+                    machine.communicate.upload("./util", "/minicoin")
                 end
             end
 
