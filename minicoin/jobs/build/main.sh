@@ -11,14 +11,28 @@ fi
 function search_highest
 {
   [ -z $1 ] && return
-  local search_version=8
-  local highest_found=
-  while [[ -f "${1}-${search_version}" ]]
+  local binary="$1"
+  local have_version=8
+  if which realpath &> /dev/null
+  then
+    [ -L $binary ] && binary="$(realpath $binary)"
+  else
+    [ -L $binary ] && binary="$(readlink $binary)"
+  fi
+  regexp='(.*)-([0-9]+$)'
+  [[ $binary =~ $regexp ]] && binary="${BASH_REMATCH[1]}"; have_version="${BASH_REMATCH[2]}"
+
+  local highest_found=$have_version
+  attempts=1
+  while true
   do
-    highest_found=$search_version
-    search_version=$(( $search_version + 1 ))
+    local search_version=$(( $have_version + $attempts ))
+    [[ -f "${binary}-${search_version}" ]] && highest_found=$(( $have_version + $attempts ))
+    search_version=$(( $have_version + $attempts ))
+    attempts=$(( $attempts + 1 ))
+    [[ $attempts -gt 10 ]] && break
   done
-  [ -z ${highest_found} ] && echo "$1" || echo "${1}-${highest_found}"
+  [ -z ${highest_found} ] && echo "$binary" || echo "${binary}-${highest_found}"
 }
 
 export CC=${PARAM_cc:-$(search_highest "$(which gcc || which clang)")}
