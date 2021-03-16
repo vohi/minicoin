@@ -7,6 +7,11 @@ cd %TEMP%
 vagrant --version 2> NUL > NUL
 if NOT %errorlevel% == 0 (
     echo vagrant not found, installing
+    choco --version 2> NUL > NUL
+    if NOT %errorlevel% == 0 (
+        echo Chocolatey not found, please install manually
+        exit /B 1
+    )
 
     VBoxManage --version 2> NUL > NUL
     if NOT %errorlevel% == 0 (
