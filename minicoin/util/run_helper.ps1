@@ -76,6 +76,10 @@ try {
     Log-Verbose "Active session found: $sessioninfo"
 } catch {
     Write-StdErr "User '$env:USERNAME' not logged in - running '$script' non-interactively"
+    if (! $script.ToLower().EndsWith("ps1")) {
+        # this way we get at least the output, even though not to stderr
+        $jobargs += @("2>&1")
+    }
     $console = $true
 }
 
