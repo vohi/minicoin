@@ -58,9 +58,11 @@ machines:
     roles:
       - windows-tools
       - msvc2019
+      - role: install
+        packages: vulkan-sdk
     gui: false
 
-### Mac - nothing provisioned yet
+### Mac - design to run host binaries
   - name: macos1014
     box: tqtc/$minicoin_key/macos1014
   - name: macos1015

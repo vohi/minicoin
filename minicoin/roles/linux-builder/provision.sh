@@ -37,6 +37,8 @@ case $distro in
             "pkg-config"
             "libwayland-.*"
             "libxcomposite-dev"
+            # shader tools
+            "spirv-tools"
             # print support
             "libcups2-dev"
             # virtual keyboard
