@@ -50,28 +50,40 @@ case $distro in
             "clang-10" "libclang-10-dev" "llvm-10"
     )
   ;;
+
   centos*)
-    yum update -y > /dev/null
     yum install -y epel-release > /dev/null
-    dnf -y install dnf-plugins-core > /dev/null
-    dnf config-manager --set-enabled PowerTools > /dev/null
-    yum group install -y 'Development Tools' > /dev/null
+    yum install -y dnf-plugins-core > /dev/null
+    yum config-manager --set-enabled powertools > /dev/null
+    yum update -y > /dev/null
     command="yum install -y"
 
+    yum group install -y 'Development Tools' > /dev/null
     packages=(
-            "perl-core"
-            "inotify-tools"
-            "zlib-devel"
-            "libxcb.* libxcb-devel"
-            "libX11.*"
-            "libX11-xcb.* libXrender.* libXrender-devel.* libXi.* libXi-devel.*"
-            "xcb-util-* mesa-libGL-devel"
-            "libxkbcommon-devel libxkbcommon-x11-devel.*"
-            "libssl.* openssl-devel"
-            "ninja-build"
-            "libwayland-*"
-            "libxcomposite-dev"
-            "mesa-libwayland-egl*"
+            clang
+            llvm-libs
+            perl-core
+            xdotool
+            inotify-tools
+            zlib-devel
+            libxcb.*
+            libxcb-devel
+            libX11.*
+            libX11-xcb.*
+            libXrender.*
+            libXrender-devel.*
+            libXi.*
+            libXi-devel.*
+            xcb-util-*
+            mesa-libGL-devel
+            libxkbcommon-devel
+            libxkbcommon-x11-devel.*
+            libssl.*
+            openssl-devel
+            ninja-build
+            libwayland-*
+            libXcomposite-devel
+            mesa-libwayland-egl*
     )
   ;;
 
