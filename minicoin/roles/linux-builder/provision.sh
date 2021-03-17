@@ -129,19 +129,31 @@ mkdir -p /tmp
 cd /tmp
 
 # install latest cmake
-cmake_version=3.19
+cmake_major=3
+cmake_minor=19
 cmake_build=4
-echo "Installing cmake $cmake_version.$cmake_build"
-if [[ -z $(cmake --version | grep "cmake version $cmake_version.$cmake_build") ]]
+install_cmake=1
+have_version=$(su -l vagrant -c "cmake --version | head -n1") # root might use different PATH, i.e. /bin on centos
+re='cmake version ([0-9]+)\.([0-9]+)\.([0-9]+)'
+[[ $have_version =~ $re ]]
+have_major=${BASH_REMATCH[1]}
+have_minor=${BASH_REMATCH[2]}
+have_build=${BASH_REMATCH[3]}
+[[ $have_major -ge $cmake_major ]] && [[ $have_minor -ge $cmake_minor ]] && [[ $have_build -ge $cmake_build ]] && install_cmake=0
+if [[ $install_cmake -gt 0 ]]
 then
-  $command cmake=$cmake_version
+  echo "Installing cmake ${cmake_major}.${cmake_minor}.${cmake_build}"
+  $command cmake=${cmake_major}.${cmake_minor}
   if [ $? -gt 0 ]
   then
       echo "... Downloading cmake $cmake_version"
-      wget -q https://cmake.org/files/v$cmake_version/cmake-${cmake_version}.${cmake_build}-Linux-x86_64.sh 2>&1 > /dev/null
+      wget -q https://cmake.org/files/v${cmake_major}.${cmake_minor}/cmake-${cmake_major}.${cmake_minor}.${cmake_build}-Linux-x86_64.sh 2>&1 > /dev/null
       echo "... Installing cmake"
-      /bin/sh ./cmake-${cmake_version}.${cmake_build}-Linux-x86_64.sh --skip-license --prefix=/usr/local
+      /bin/sh ./cmake-${cmake_major}.${cmake_minor}.${cmake_build}-Linux-x86_64.sh --skip-license --prefix=/usr/local
   fi
 fi
+echo "cmake version installed:"
+su -l vagrant -c "cmake --version"
+
 
 cd - > /dev/null
