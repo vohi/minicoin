@@ -27,14 +27,12 @@ machines:
     box: generic/ubuntu1804
     roles:
       - role: linux-desktop
-        desktop: lxde
       - role: linux-builder
 
   - name: ubuntu2004
     box: generic/ubuntu2004
     roles:
       - role: linux-desktop
-        desktop: lxde
       - role: linux-builder
 
   - name: centos8
@@ -43,6 +41,7 @@ machines:
       - role: script
         script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
       - role: linux-desktop
+      - role: linux-builder
 
   - name: opensuse15
     box: generic/opensuse15
