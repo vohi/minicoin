@@ -105,12 +105,28 @@ done
 
 echo "Installation of '$desktop' complete, enabling..."
 
-if [[ ! -z $setdefault ]]; then
-  $setdefault
+$setdefault
+
+echo "Enabling auto-login"
+if [ -f /etc/sysconfig/displaymanager ]
+then
+  echo "DISPLAYMANAGER=sddm" >> /etc/sysconfig/displaymanager
+  sed -i s/DISPLAYMANAGER_AUTOLOGIN=.*/DISPLAYMANAGER_AUTOLOGIN=\"vagrant\"/ /etc/sysconfig/displaymanager
+elif [ -d /etc/lightdm ]
+then
+  printf "[Seat:*]\nautologin-user=vagrant\nautologin-user-timeout=0\n" >> /etc/lightdm/lightdm.conf
+elif [ -d /etc/gdm ]
+then
+  printf "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=vagrant\n" >> /etc/gdm/custom.conf
+elif [ -d /etc/gdm3 ]
+then
+  printf "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=vagrant\n" >> /etc/gdm3/custom.conf
+elif [ -d /etc/sddm.conf.d ]
+then
+  printf "[Autologin]\nUser=vagrant\nSession=ubuntu\n" >> /etc/sddm.conf.d/autologin.conf
 fi
-if [[ ! -z $startdesktop ]]; then
-  $startdesktop
-fi
+
+$startdesktop
 
 echo "Setting up remote login with xdotool..."
 $command "xdotool" > /dev/null
