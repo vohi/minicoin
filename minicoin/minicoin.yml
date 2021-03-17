@@ -43,7 +43,11 @@ machines:
       - role: script
         script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
       - role: linux-desktop
-        desktop: gnome
+
+  - name: opensuse15
+    box: generic/opensuse15
+    roles:
+      - role: linux-desktop
       - role: linux-builder
 
 ### Simple Windows boxes - different versions, different compilers

@@ -76,14 +76,14 @@ case $distro in
   ;;
 
   opensuse*)
-    zypper addrepo https://download.opensuse.org/repositories/devel:tools:compiler/openSUSE_Leap_15.2/devel:tools:compiler.repo
     zypper refresh
     command="zypper --quiet --non-interactive install -y"
     packages=(
       # build essentials
       git-core
-      gcc10-c++ clang9
+      gcc-c++ gcc10-c++
       cmake make ninja
+      inotify-tools
       # webkit
       flex bison gperf libicu-devel ruby
       # xcb
