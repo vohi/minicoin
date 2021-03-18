@@ -4,6 +4,7 @@
 
 distro=${ID}${VERSION_ID}
 desktop=${PARAM_desktop:-$PARAM_linux_desktop}
+session=${PARAM_session}
 desktop=$(echo $desktop | awk '{print tolower($1)}')
 
 echo "Installing desktop. Requested: '${desktop:-"default"}' on '$distro'"
@@ -48,17 +49,7 @@ case $distro in
 
     case $desktop in
       kde)
-        packages=( "KDE Plasma Workspaces" )
-        ;;
-      lxde)
-        packages=( "lxde" )
-        ;;
-      xfce)
-        packages=( "xfce" )
-        ;;
-      minimal-x11)
-        command="yum install -y"
-        packages=( "xorg-x11-server-Xorg" "fluxbox" "xinit" "xterm" )
+        packages=( "KDE Plasma Workspaces" "base-x" )
         ;;
       *)
         desktop="gnome"
@@ -78,11 +69,12 @@ case $distro in
         ;;
       *)
         desktop="kde-plasma"
-        packages=( "-t pattern kde_plasma" sddm )
+        packages=( "-t pattern kde_plasma" sddm xrandr)
         ;;
     esac
 
     zypper refresh
+    zypper --non-interactive dup
     ;;
 esac
 
@@ -105,32 +97,66 @@ done
 
 echo "Installation of '$desktop' complete, enabling..."
 
-$setdefault
-
-echo "Enabling auto-login"
-if [ -f /etc/sysconfig/displaymanager ]
+if [ -z $session ]
 then
-  echo "DISPLAYMANAGER=sddm" >> /etc/sysconfig/displaymanager
-  sed -i s/DISPLAYMANAGER_AUTOLOGIN=.*/DISPLAYMANAGER_AUTOLOGIN=\"vagrant\"/ /etc/sysconfig/displaymanager
+  if [ -f /usr/share/xsessions/$ID.desktop ]
+  then
+    session=$ID
+  elif [ -f /usr/share/xsessions/default.desktop ]
+  then
+    session="default"
+  else
+    session=`ls /usr/share/xsessions/ | head -n1`
+    session=${session%%.desktop}
+  fi
 fi
+
+$setdefault &>1
+
+printf "Enabling auto-login "
+displaymanager=""
 if [ -d /etc/lightdm ]
 then
+  displaymanager=lightdm
   printf "[Seat:*]\nautologin-user=vagrant\nautologin-user-timeout=0\n" >> /etc/lightdm/lightdm.conf
-fi
-if [ -d /etc/gdm ]
+elif [ -d /etc/gdm ]
 then
+  displaymanager=gdm
   printf "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=vagrant\n" >> /etc/gdm/custom.conf
-fi
-if [ -d /etc/gdm3 ]
+elif [ -d /etc/gdm3 ]
 then
+  displaymanager=gdm3
   printf "[daemon]\nAutomaticLoginEnable=True\nAutomaticLogin=vagrant\n" >> /etc/gdm3/custom.conf
-fi
-if [ -d /etc/sddm.conf.d ]
+elif [ -d /etc/sddm.conf.d ]
 then
-  printf "[Autologin]\nUser=vagrant\nSession=ubuntu\n" >> /etc/sddm.conf.d/autologin.conf
+  printf "...to session '${session}' "
+  displaymanager=sddm
+  printf "[Autologin]\nUser=vagrant\nSession=${session}\n"  >> /etc/sddm.conf.d/autologin.conf
+fi
+if [ -f /etc/sysconfig/displaymanager ]
+then
+  echo "DISPLAYMANAGER=${displaymanager}" >> /etc/sysconfig/displaymanager
+  sed -i s/DISPLAYMANAGER_AUTOLOGIN=.*/DISPLAYMANAGER_AUTOLOGIN=\"vagrant\"/ /etc/sysconfig/displaymanager
+fi
+printf "...in ${displaymanager}\n"
+
+# turn off screen locker
+if which gsettings &> /dev/null
+then
+  echo "Turning off screen locker for Gnome"
+  su vagrant -c "gsettings set org.gnome.desktop.screensaver lock-enabled false"
+  su vagrant -c "gsettings set org.gnome.settings-daemon.plugins.power idle-dim false"
+  su vagrant -c "gsettings set org.gnome.desktop.session idle-delay 0"
+fi
+if which kwriteconfig5 &> /dev/null
+then
+  echo "Turning off screen locker for KDE"
+  su vagrant -c "kwriteconfig5 --file kscreensaverrc --group ScreenSaver --key Lock false"
+  su vagrant -c "kwriteconfig5 --file kscreenlockerrc --group Daemon --key Autolock false"
 fi
 
-$startdesktop
+echo "Launching desktop environment"
+$startdesktop &>1
 
 echo "Setting up remote login with xdotool..."
 $command "xdotool" > /dev/null
@@ -147,3 +173,12 @@ do
 done
 
 echo 'export DISPLAY=:0' >> /home/vagrant/.profile
+if which xrandr &> /dev/null
+then
+  echo "Setting X screen resolution"
+  su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
+fi
+
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target &> /dev/null
+
+exit 0
