@@ -134,7 +134,7 @@ do
     $command $package > /dev/null
 done
 
-echo "fs.inotify.max_user_watches=1048576" >> /etc/sysctl.conf
+sysctl -w fs.inotify.max_user_watches=1048576
 sysctl -p /etc/sysctl.conf
 
 mkdir -p /tmp
