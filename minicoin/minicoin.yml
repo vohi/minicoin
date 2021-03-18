@@ -41,6 +41,7 @@ machines:
       - role: script
         script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
       - role: linux-desktop
+        reboot: true
       - role: linux-builder
 
   - name: opensuse15

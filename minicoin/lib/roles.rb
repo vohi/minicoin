@@ -311,6 +311,7 @@ def add_role(box, role, name, machine)
             upload_path: upload_path,
             privileged: true
         }
+        attributes[:reboot] = !!role_params["reboot"]
         begin
             ex_attributes["shell"].each do |key, value|
                 key = key.to_sym
