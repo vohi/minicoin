@@ -1,5 +1,6 @@
 require "open3"
 require "vagrant/util/busy"
+require "io/console"
 
 module Minicoin
     module Commands
@@ -185,7 +186,7 @@ module Minicoin
             def initialize(options, argv, env)
                 super(argv, env)
                 @run_options = options
-                @tty_width = Minicoin.tty_size[:width]
+                @tty_width = IO.console.winsize[1]
                 log_verbose(@env.ui, "Terminal width is #{@tty_width}")
             end
             
@@ -315,6 +316,7 @@ module Minicoin
                     if thread.interrupted?
                         thread.kill_job()
                     end
+                    @tty_width = IO.console.winsize[1]
                     sleep 1
                 end
             end

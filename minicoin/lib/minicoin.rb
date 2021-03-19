@@ -116,17 +116,6 @@ module Minicoin
         false
     end
 
-    def self.tty_size
-        {}.tap do |size|
-            numbers = (Vagrant::Util::Platform.windows? \
-                    ? /Lines:\s+(\d+).*Columns:\s+(\d+)/m.match(`mode CON`) \
-                    : /(\d+)\s+(\d+)/.match(`stty size`))
-            size[:height], size[:width] = numbers[1..2].map { |number| Integer(number) }
-        end
-    rescue
-        {}
-    end
-
     Find.find(".") do |path|
         if path =~ /.*\/plugin.rb$/
             Vagrant.global_logger.debug "Loading plugin #{path}"
