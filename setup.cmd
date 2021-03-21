@@ -44,7 +44,7 @@ if NOT !errorlevel! == 0 (
     FOR /F "tokens=* USEBACKQ" %%F IN (`mutagen version`) DO echo Mutagen version %%F found
 )
 
-where minicoin 2> NUL > NUL
+where minicoin.cmd 2> NUL > NUL
 if NOT !errorlevel! == 0 (
     echo Adding %~dp0%minicoin to the PATH
     powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';%~dp0%minicoin', 'User')"
