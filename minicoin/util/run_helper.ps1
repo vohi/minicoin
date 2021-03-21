@@ -100,7 +100,8 @@ do {
         exit 130 # interrupt exit code
     }
     # minicoin process protocol - interrupts kill this process
-    Write-Host "minicoin.process.id=${PID}"
+    Write-StdErr "minicoin.process.id=${PID}"
+    Write-StdErr "minicoin.process.run"
 
     $envstring = ""
     Log-Verbose "Adding to environment: $envvars"
@@ -164,7 +165,7 @@ do {
         Log-Verbose "Running 'cmd.exe $taskargs'"
         $task | Start-ScheduledTask
         # from now on, interrupts stop the task
-        Write-Host "minicoin.process.id="
+        Write-StdErr "minicoin.process.id="
 
         Log-Verbose "Reading $outpath and $errpath"
         $stdout_file = [System.IO.File]::Open($outpath, 'Open', 'Read', 'ReadWrite')
@@ -180,7 +181,7 @@ do {
             $taskstate = $task.State
         } while ($taskstate -eq 'Running')
         # task finished, let interrupts kill this process again
-        Write-Host "minicoin.process.id=${PID}"
+        Write-StdErr "minicoin.process.id=${PID}"
         $taskinfo = ($task | Get-ScheduledTaskInfo)
         $exit_code = $taskinfo.LastTaskResult
 
@@ -231,14 +232,29 @@ do {
         break
     }
     if ($fswait) {
+        $ErrorActionPreference="SilentlyContinue"
         $watchpath = $fsw.Path
+        $wakepath = "${ENV:Userprofile}\Documents\.minicoin\jobs\${jobid}\wakeup"
         $time = Get-Date -Format "HH:mm:ss"
         Write-Host "(${time}) Waiting for file system changes in ${watchpath}"
-        $fsw.WaitForChanged(15) | Out-Null
+        Write-StdErr "minicoin.process.wait"
+        $wakecmd = $Null
+        do {
+            $waitResult = $fsw.WaitForChanged(15, 1000)
+            try {
+                $wakecmd = Get-Content $wakepath -Tail 1
+            } catch {
+            }
+        } while ($waitResult.Timedout -and !$wakecmd)
+        Remove-Item -Path $wakepath -Force
+        $ErrorActionPreference="Continue"
+        if ($wakecmd -eq "quit") {
+            break
+        }
     }
 } while ($true)
 
-if ($repeat -ne 1) {
+if ($repeat -gt 0) {
     if ($success_count -lt $repeat) {
         $printer="Write-StdErr"
     } else {

@@ -312,40 +312,73 @@ module Minicoin
             private
 
             def wait_for_thread(thread)
+                showing_dialog = false
                 while thread.alive?
                     if thread.interrupted?
                         thread.kill_job()
                     end
+                    if thread.job_status == :waiting && STDIN.tty? && !@run_options[:parallel]
+                        command = nil
+                        begin
+                            Timeout.timeout(1) do
+                                if !showing_dialog
+                                    @env.ui.detail "Type (q)uit or (w)ake-up and press Enter, or do nothing! ", {new_line: false}
+                                    showing_dialog = true
+                                end
+                                command = STDIN.gets.chomp
+                            end
+                        rescue Timeout::Error => e
+                        end
+                        if command
+                            case command.downcase
+                            when "q", "quit"
+                                thread.command!("quit")
+                            when "w", "wake", "wakeup", "wake-up"
+                                thread.command!("wakeup")
+                            end
+                        end
+                    else
+                        showing_dialog = false
+                        sleep 1
+                    end
                     @tty_width = IO.console.winsize[1]
-                    sleep 1
                 end
             end
 
             class JobThread < Thread
                 attr_accessor :vm
                 attr_accessor :exit_code
+                attr_accessor :pid
                 attr_accessor :job
                 attr_accessor :job_id
+                attr_accessor :job_status
     
                 def initialize(job, vm)
                     @job = job
+                    @target_path = nil
                     @vm = vm
                     @last_options = {}
                     @pid = nil
                     @interrupt = 0
                     @level = 0
+                    @kill_communicator = nil
                     @exit_code = nil
                     @job_id = nil
+                    @job_status = :ready
                     super
                 end
-    
-                def pid()
-                    @pid
-                end
-                def pid=(id)
-                    @pid = id
-                end
 
+                def command!(cmd)
+                    if @target_path && @kill_communicator
+                        @job.log_verbose(@vm.ui, "Waking up job #{@job_id} on #{@vm.name} by touching #{@target_path}/wakeup")
+                        begin
+                            @kill_communicator.execute("echo \"#{cmd}\" > #{@target_path}/wakeup")
+                        rescue => e
+                            @vm.ui.error "Error sending command '#{cmd}':"
+                            @vm.ui.error e
+                        end
+                    end
+                end
                 def kill_job()
                     if @interrupt > @level
                         @level = @interrupt
@@ -377,7 +410,7 @@ module Minicoin
                             begin
                                 @kill_communicator.wait_for_ready(5)
                                 if @job.run_options[:repeat]
-                                    @kill_communicator.sudo(@cleanup_command, { error_check: false})
+                                    @kill_communicator.sudo(@cleanup_command, { error_check: false })
                                     @job.log_verbose(vm.ui, "Removing job to prevent more runs: '#{@cleanup_command}")
                                 end
                                 @kill_communicator.sudo(@killcmd, { error_check: false})
@@ -425,20 +458,31 @@ module Minicoin
                         run_command += "-repeat #{@job.run_options[:repeat] || (@job.run_options[:fswait] ? 0 : 1)} "
                         run_command += "-console " if @job.run_options[:console]
                         run_command += "-fswait " if @job.run_options[:fswait]
-                        target_path = ".minicoin\\jobs\\#{@job_id}"
-                        run_command += "Documents\\#{target_path}\\#{@job.name}\\"
-                        @cleanup_command = "if ($(Test-Path #{target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{target_path} | Out-Null }"
+                        @target_path = ".minicoin\\jobs\\#{@job_id}"
+                        run_command += "Documents\\#{@target_path}\\#{@job.name}\\"
+                        @cleanup_command = "if ($(Test-Path #{@target_path}\\#{@job.name})) { Remove-Item -Force -Recurse #{@target_path} | Out-Null }"
                     else
                         options[:ext] = "sh"
-                        target_path = ".minicoin/jobs/#{@job_id}"
-                        run_command = "#{target_path}/#{@job.name}/"
-                        @cleanup_command = "rm -rf #{target_path}"
+                        @target_path = ".minicoin/jobs/#{@job_id}"
+                        run_command = "#{@target_path}/#{@job.name}/"
+                        @cleanup_command = "rm -rf #{@target_path}"
                         if @job.run_options[:fswait]
                             if @vm.guest.name == :darwin
-                                fswait = "fswatch -1 -r"
+                                fswait_cmd = "fswatch -1 -r"
                             else
-                                fswait = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
+                                fswait_cmd = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
                             end
+                            fswait = <<-BASH
+                                >&2 echo "minicoin.process.wait"
+                                echo "($(date '%{date_format}')) Waiting for file system changes in %{fswait_path}"
+                                #{fswait_cmd} #{@target_path} %{fswait_path}
+                                if [ -f "#{@target_path}/wakeup" ]
+                                then
+                                    cmd=`tail -n1 #{@target_path}/wakeup`
+                                    rm -f "#{@target_path}/wakeup"
+                                    [ "$cmd" == "quit" ] && break
+                                fi
+                                BASH
                         end
                     end
                     script_file = "main.#{options[:ext]}"
@@ -448,7 +492,7 @@ module Minicoin
                     end
 
                     @vm.ui.info "Uploading '#{@job.path}'"
-                    @vm.communicate.upload(@job.path, target_path)
+                    @vm.communicate.upload(@job.path, @target_path)
 
                     run_local("pre")
 
@@ -458,12 +502,13 @@ module Minicoin
 
                     if options[:ext] == "sh"
                         run_command += " #{@job_args.join(" ")}"
+                        fswait = fswait % { fswait_path: @job_args.first, date_format: "+%H:%M:%S" } if @job.run_options[:fswait]
 
                         envelope = <<-BASH
                             PID=$$
                             chmod -R +x .minicoin/jobs
                             PGID=$(($(ps -o pgid= $PID)))
-                            echo "minicoin.process.id=$PGID"
+                            >&2 echo "minicoin.process.id=$PGID"
                         BASH
                         @job.run_options[:env].each do |env|
                             md = /([A-Za-z0-9]+[\+]?)=(.*)/.match(env)
@@ -476,18 +521,13 @@ module Minicoin
                             envelope += "export #{key}=\"#{value}\"\n"
                         end
                         if @job.run_options[:repeat] || @job.run_options[:fswait]
-                            if fswait
-                                fswait = <<-BASH
-                                    echo "($(date '+%H:%M:%S')) Waiting for file system changes in #{@job_args.first}"
-                                    #{fswait} #{@job_args.first}
-                                BASH
-                            end
                             envelope += <<-BASH
                                 repeat=#{@job.run_options[:repeat] || "0"}
                                 success=0
                                 total=0
                                 while true
                                 do
+                                    >&2 echo "minicoin.process.run"
                                     #{run_command}
                                     exit_code=$?
                                     if [ $exit_code -eq 0 ]
@@ -499,10 +539,7 @@ module Minicoin
                                     fi
                                     total=$(( $total + 1 ))
                                     >&${out} echo "Run $total/$repeat: Exit code $exit_code"
-                                    if [[ $repeat -gt 0 && $total -lt $repeat ]]
-                                    then
-                                        break
-                                    fi
+                                    [[ $repeat -gt 0 && $total -lt $repeat ]] && break
                                     #{fswait}
                                 done
                                 [ $success -lt $total ] && out=2 || out=1
@@ -583,14 +620,25 @@ module Minicoin
                     data.rstrip!
                     return if data.nil?
                     data.chomp!
-                    if data.start_with?("minicoin.process.")
-                        @job.log_verbose(@vm.ui, "Received process info '#{data}'")
-                        @pid = data.delete_prefix("minicoin.process.id=") if data.start_with?("minicoin.process.id=")
-                        @pid = nil if @pid && @pid.empty?
-                        @job.log_verbose(@vm.ui, "Job has process ID #{@pid} on guest")
-                        return
-                    end
                     data.split("\n").each do |line|
+                        if type == :stderr && line.start_with?("minicoin.process.")
+                            md = /minicoin\.process\.(?<var>[a-z]+)=?(?<val>.*)?/.match(line)
+                            case md[:var]
+                            when "id"
+                                @pid = md[:val]
+                                @pid = nil if @pid && @pid.empty?
+                                @job.log_verbose(@vm.ui, "Job #{@job_id} has process ID #{@pid} on guest")
+                            when "wait"
+                                @job.log_verbose(@vm.ui, "Job #{@job_id} is about to wait")
+                                @job_status = :waiting
+                            when "run"
+                                @job.log_verbose(@vm.ui, "Job #{@job_id} is running")
+                                @job_status = :running
+                            else
+                                @job.log_verbose(@vm.ui, "Job #{@job_id} sent status info '#{data}'")
+                            end
+                            next
+                        end
                         options = {}
                         if type == :stdout
                             matchers.each do |matcher|
