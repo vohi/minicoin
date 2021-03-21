@@ -539,12 +539,12 @@ module Minicoin
                                     fi
                                     total=$(( $total + 1 ))
                                     >&${out} echo "Run $total/$repeat: Exit code $exit_code"
-                                    [[ $repeat -gt 0 && $total -lt $repeat ]] && break
+                                    [[ $repeat -gt 0 && $total -ge $repeat ]] && break
                                     #{fswait}
                                 done
                                 [ $success -lt $total ] && out=2 || out=1
                                 >&${out} echo "Success rate is ${success}/${total}"
-                                [ $repeat -gt 0 ] && exit_code=$(( $repeat - $success ))
+                                [ $total -gt 1 ] && exit_code=$(( $total - $success ))
                                 exit $exit_code
                             BASH
                             run_command = envelope

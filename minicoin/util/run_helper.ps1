@@ -254,14 +254,14 @@ do {
     }
 } while ($true)
 
-if ($repeat -gt 0) {
+if ($total -gt 1) {
     if ($success_count -lt $repeat) {
         $printer="Write-StdErr"
     } else {
         $printer="Write-Output"
     }
-    Invoke-Expression -Command "$printer 'Success rate is ${success_count}/${repeat}'"
-    exit $repeat - $success_count
+    Invoke-Expression -Command "$printer 'Success rate is ${success_count}/${total}'"
+    exit $total - $success_count
 } else {
     exit $exit_code
 }
