@@ -11,7 +11,7 @@ if %errorlevel% NEQ 0 (
 for %%F in ("%0") do set "jobpath=%%~dpF"
 if exist "Documents\qtaccount.ini" (
     echo Installing qtaccount.ini file from "%cd%" into %USERPROFILE%
-    if not exist "%USERPROFILE%\AppData\Roaming\Qt" mkdir -p "%USERPROFILE%\AppData\Roaming\Qt"
+    if not exist "%USERPROFILE%\AppData\Roaming\Qt" mkdir "%USERPROFILE%\AppData\Roaming\Qt"
     copy "Documents\qtaccount.ini" "%USERPROFILE%\AppData\Roaming\Qt\qtaccount.ini"
 ) else (
     echo qtaccount.ini file not found in "%cd%", aborting
