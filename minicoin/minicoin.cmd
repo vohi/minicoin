@@ -34,7 +34,8 @@ if "%1" == "" (
 if not "%minicoin_version%" == "" (
     echo Checking out version %minicoin_version%
     git stash > NUL
-    git checkout %minicoin_version% > NUL
+    git checkout %minicoin_version% 2> NUL > NUL
+    git checkout master -- ..\setup.cmd minicoin.cmd 2> NUL > NUL
 )
 goto :end
 

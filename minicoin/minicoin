@@ -33,8 +33,9 @@ function update_minicoin()
     output=`git checkout $minicoin_version 2>&1`
     error=$?
     if [ $error -gt 0 ]; then
-      >&2 echo "$error"
+      >&2 echo "$output"
     fi
+    git checkout master -- ../setup.sh minicoin
   fi
   return $?
 }
