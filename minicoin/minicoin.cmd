@@ -22,7 +22,8 @@ goto :end
 git fetch --all --tags 2> NUL > NUL
 if not !errorlevel! == 0 (
     >&2 echo Failed to fetch tags, can't update minicoin!
-    exit /B 2
+    error=!errorlevel!
+    goto :end
 )
 
 if "%1" == "" (
