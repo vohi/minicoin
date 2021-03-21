@@ -40,8 +40,8 @@ function Repeat-Output {
         [System.Object]$stderr
     )
     while (!($stdout.EndOfStream -and $stderr.EndOfStream)) {
-        $out_line = $stdout.ReadLine();
         $havedata = $false
+        $out_line = $stdout.ReadLine();
         if (![String]::IsNullOrEmpty($out_line)) {
             write-host $out_line
             $havedata = $true

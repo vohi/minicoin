@@ -41,19 +41,21 @@ echo "Hello runner!"
 echo "This is $(uname -a)"
 echo "Args received:"
 exitcode=0
+flood=0
 for arg in "${@}"; do
   echo \'$arg\'
-  if [[ "$arg" = "error" ]]; then
-     exitcode=42
-  fi
+  [[ "$arg" = "error" ]] && exitcode=42
+  [[ "$arg" = "flood" ]] && flood=1
 done
 
+repeats=3
+[[ $flood -gt 0 ]] && repeats=1000
 echo "Testing stdout and stderr"
-for i in {1..3}
+for i in $(seq 1 ${repeats})
 do
   echo "- stdout $i"
   >&2 echo "- stderr $i"
-  sleep 1
+  [[ $flood -gt 0 ]] || sleep 1
 done
 
 if [ "$exitcode" -gt 0 ]

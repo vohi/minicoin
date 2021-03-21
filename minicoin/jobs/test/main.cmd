@@ -36,18 +36,20 @@ echo Hello runner^^!
 systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
 echo Args received:
 set errorcode=0
+set flood=0
+set repeats=3
 for %%i in (%*) DO (
     ECHO '%%i'
-    if "%%i" == "error" (
-        set errorcode=42
-    )
+    if "%%i" == "error" set errorcode=42
+    if "%%i" == "flood" set flood=1
 )
 
+if %flood% == 1 set repeats=1000
 echo Testing stdout and stderr
-for %%I in (1,2,3) do (
-    echo - stdout %%I
-    >&2 echo - stderr %%I
-    waitfor something /T 1 2> NUL
+for /L %%F in (1, 1, %repeats%) do (
+    echo - stdout %%F
+    >&2 echo - stderr %%F
+    if %flood% == 0 waitfor something /T 1 2> NUL
 )
 
 if "!errorcode!" == "0" (
