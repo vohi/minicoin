@@ -106,24 +106,24 @@ then
     count=${#machines[@]}
     if [ $count -eq 0 ]; then
         echo "No machines running, bring up test machines for more tests"
+    else
+        echo "Running test on $count machines in sequence"
+        stdout=""
+        stderr=""
+        minicoin run --jobconfig 0 test ${machines[@]} -- error > .std.out 2> .std.err
+        return=$?
+
+        stdout=`grep "Hello" .std.out`
+        stderr=`grep "error code" .std.err`
+        rm .std.out
+        rm .std.err
+
+        assert $return $(( $count*42 ))
+        assert `echo "$stdout" | head -n 1` "Hello runner!"
+        assert `echo "$stderr" | head -n 1` "Exiting with error code 42"
+        assert `echo "$stdout" | wc -l | xargs` $count
+        assert `echo "$stderr" | wc -l | xargs` $count
     fi
-
-    echo "Running test on $count machines in sequence"
-    stdout=""
-    stderr=""
-    minicoin run --jobconfig 0 test ${machines[@]} -- error > .std.out 2> .std.err
-    return=$?
-
-    stdout=`grep "Hello" .std.out`
-    stderr=`grep "error code" .std.err`
-    rm .std.out
-    rm .std.err
-
-    assert $return $(( $count*42 ))
-    assert `echo "$stdout" | head -n 1` "Hello runner!"
-    assert `echo "$stderr" | head -n 1` "Exiting with error code 42"
-    assert `echo "$stdout" | wc -l | xargs` $count
-    assert `echo "$stderr" | wc -l | xargs` $count
 
     if [ $count -gt 1 ]
     then
