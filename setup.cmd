@@ -5,16 +5,16 @@ set "oldpwd=%cd%"
 cd %TEMP%
 
 vagrant --version 2> NUL > NUL
-if NOT %errorlevel% == 0 (
+if NOT !errorlevel! == 0 (
     echo vagrant not found, installing
     choco --version 2> NUL > NUL
-    if NOT %errorlevel% == 0 (
+    if NOT !errorlevel! == 0 (
         echo Chocolatey not found, please install manually
         exit /B 1
     )
 
     VBoxManage --version 2> NUL > NUL
-    if NOT %errorlevel% == 0 (
+    if NOT !errorlevel! == 0 (
         echo VirtualBox not found
         choco install --confirm virtualbox
         call refreshenv
@@ -32,7 +32,7 @@ if NOT %errorlevel% == 0 (
 )
 
 mutagen version 2> NUL > NUL
-if NOT %errorlevel% == 0 (
+if NOT !errorlevel! == 0 (
     echo Mutagen not found, installing
 
     powershell -Command "(new-object net.webclient).DownloadFile('https://github.com/mutagen-io/mutagen/releases/download/v0.11.8/mutagen_windows_amd64_v0.11.8.zip', 'mutagen_windows_amd64_v0.11.8.zip')"
@@ -45,7 +45,7 @@ if NOT %errorlevel% == 0 (
 )
 
 where minicoin 2> NUL > NUL
-if NOT %errorlevel% == 0 (
+if NOT !errorlevel! == 0 (
     echo Adding %~dp0%minicoin to the PATH
     powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';%~dp0%minicoin', 'User')"
     call refreshenv > NUL
