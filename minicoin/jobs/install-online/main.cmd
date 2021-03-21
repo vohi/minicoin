@@ -8,7 +8,7 @@ if %errorlevel% NEQ 0 (
     set "PATH=%PATH%;c:\Program Files\CMake\bin"
 )
 
-for %%F in ("%0") do set "jobpath=%%~dpF"
+set "jobpath=%~dp0"
 if exist "Documents\qtaccount.ini" (
     echo Installing qtaccount.ini file from "%cd%" into %USERPROFILE%
     if not exist "%USERPROFILE%\AppData\Roaming\Qt" mkdir "%USERPROFILE%\AppData\Roaming\Qt"
