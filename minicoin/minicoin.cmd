@@ -1,7 +1,7 @@
 @echo off
 set "MINICOIN_PROJECT_DIR=%cd%"
 
-setlocal
+setlocal enabledelayedexpansion
 set "minicoin_dir=%~dp0"
 set error=0
 cd "%minicoin_dir%"
@@ -20,14 +20,15 @@ goto :end
 
 :update
 git fetch --all --tags 2> NUL > NUL
-if %errorlevel% == 0 (
-    if "%1" == "" (
-        FOR /F "tokens=* USEBACKQ" %%F IN (`git describe --abbrev=0`) DO set "minicoin_version=%%F"
-    ) else (
-        set "minicoin_version=%1"
-    )
-) else (
+if not !errorlevel! == 0 (
     >&2 echo Failed to fetch tags, can't update minicoin!
+    exit /B 2
+)
+
+if "%1" == "" (
+    FOR /F "tokens=* USEBACKQ" %%F IN (`"git describe --abbrev=0"`) DO set "minicoin_version=%%F"
+) else (
+    set "minicoin_version=%1"
 )
 if not "%minicoin_version%" == "" (
     echo Checking out version %minicoin_version%
