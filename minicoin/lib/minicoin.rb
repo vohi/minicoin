@@ -36,6 +36,12 @@ module Minicoin
         class DownloadError < MinicoinError
             def error_message; "Could not download file: #{@detail}"; end
         end
+        class PreRunFail < MinicoinError
+            def error_message; "Pre-run script returned with error:\n#{@detail}"; end
+        end
+        class PostRunFail < MinicoinError
+            def error_message; "Post-run script returned with error:\n#{@detail}"; end
+        end
     end
 
     # startup argument parsing

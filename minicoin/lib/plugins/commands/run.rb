@@ -491,10 +491,15 @@ module Minicoin
                         raise Vagrant::Errors::VagrantError.new
                     end
 
+                    begin
+                        run_local("pre")
+                    rescue Minicoin::Errors::PreRunFail => e
+                        @vm.ui.error "#{e}"
+                        return false
+                    end
+
                     @vm.ui.info "Uploading '#{@job.path}'"
                     @vm.communicate.upload(@job.path, @target_path)
-
-                    run_local("pre")
 
                     run_command +=  "#{script_file}"
                     job_config = jobconfig(options)
@@ -612,7 +617,11 @@ module Minicoin
                         @job.log_verbose(vm.ui, "Error cleaning up: #{e}")
                     end
 
-                    run_local("post")
+                    begin
+                        run_local("post")
+                    rescue Minicoin::Errors::PostRunFail => e
+                        @vm.ui.error "#{e}"
+                    end
                     @exit_code
                 end
 
@@ -701,16 +710,19 @@ module Minicoin
                 end
 
                 def run_local(type)
-                    script = File.join(@job.path, "#{type}-run.sh")
+                    begin
+                        require "#{@job.path}/#{type}-run"
+                        @job.log_verbose(@vm.ui, "Running #{type}-run ruby script for #{@job.name}")
+                        eval("#{@job.name.gsub("-", "_").capitalize}::#{type}_run(@vm)")
+                    rescue LoadError => e
+                    end
+                    ext = Vagrant::Util::Platform.windows? ? "cmd" : "sh"
+                    script = File.join(@job.path, "#{type}-run.#{ext}")
                     if File.exist?(script)
                         @job.log_verbose(@vm.ui, "Running #{type}-run script for #{@job.name}")
                         stdout, stderr, status = Open3.capture3(script, @vm.name.to_s)
                         @vm.ui.detail stdout.chomp
-                        if status != 0
-                            raise StandardError.new "#{pre_script} returned with error code #{status}"
-                            @vm.ui.error stderr.chomp
-                            raise Vagrant::Errors::VagrantError.new
-                        end
+                        raise Minicoin::Errors::PreRunFail.new("#{pre_script} returned with error code #{status}:\n#{stderr}") if status != 0
                     end
                 end
 
