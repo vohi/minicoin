@@ -20,7 +20,7 @@ if NOT !errorlevel! == 0 (
         call refreshenv
 
         powershell -Command "(new-object net.webclient).DownloadFile('https://download.virtualbox.org/virtualbox/6.1.18/Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack', 'Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack')"
-        echo yes | C:\Program Files\Oracle\VirtualBox\VBoxManage.exe extpack install --accept-license=yes Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack
+        echo yes | VBoxManage.exe extpack install --accept-license=yes Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack
     ) else (
         FOR /F "tokens=* USEBACKQ" %%F IN (`VBoxManage --version`) DO echo VirtualBox version %%F found
     )
