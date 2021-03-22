@@ -45,7 +45,7 @@ function show_help()
   cat help.txt
 }
 
-if [ $1 == "update" ]; then
+if [ "$1" == "update" ]; then
   shift
   update_minicoin "$@"
   error=$?
