@@ -114,7 +114,7 @@ printf "\nMinicoin set up!\n"
 printf "%s: %s\n" "- vagrant version" "$vagrant_version"
 [[ "${vagrant_version}" < "${vagrant_version_good}" ]] && echo "   You might need to upgrade to version ${vagrant_version_good}!"
 printf "%s: %s\n" "- VirtualBox version" "$vbox_version"
-[[ "${vbox_version}" < "${vbox_version_good}" ]] && echo "   You might need to upgrade to version ${vagrant_version_good}!"
+[[ "${vbox_version}" < "${vbox_version_good}" ]] && echo "   You might need to upgrade to version ${vbox_version_good}!"
 printf "%s: %s\n" "- mutagen version" "$mutagen_version"
 [[ "${mutagen_version}" < "${mutagen_version_good}" ]] && echo "   You might need to upgrade to version ${mutagen_version_good}!"
 minicoin list
