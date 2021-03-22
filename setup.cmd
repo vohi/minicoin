@@ -5,19 +5,23 @@ set "oldpwd=%cd%"
 cd %TEMP%
 
 vagrant --version 2> NUL > NUL
-if NOT !errorlevel! == 0 (
+if !errorlevel! NEQ 0 (
     echo vagrant not found, installing
     choco --version 2> NUL > NUL
-    if NOT !errorlevel! == 0 (
+    if !errorlevel! NEQ 0 (
         echo Chocolatey not found, please install manually
         exit /B 1
     )
 
     VBoxManage --version 2> NUL > NUL
-    if NOT !errorlevel! == 0 (
+    if !errorlevel! NEQ 0 (
         echo VirtualBox not found
         choco install --confirm virtualbox
-        call refreshenv
+        if !errorlevel! NEQ 0 if !errorlevel! NEQ 1641 if !errorlevel! NEQ 3010 (
+            echo VirtualBox installation failed, aborting installation. Please retry.
+            exit /B 1
+        )
+        call refreshenv > NUL
 
         powershell -Command "(new-object net.webclient).DownloadFile('https://download.virtualbox.org/virtualbox/6.1.18/Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack', 'Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack')"
         echo yes | VBoxManage.exe extpack install --accept-license=yes Oracle_VM_VirtualBox_Extension_Pack-6.1.18.vbox-extpack
@@ -26,13 +30,17 @@ if NOT !errorlevel! == 0 (
     )
 
     choco install --confirm vagrant
+    if !errorlevel! NEQ 0 if !errorlevel! NEQ 1641 if !errorlevel! NEQ 3010 (
+        echo vagrant installation failed, aborting installation. Please retry.
+        exit /B 1
+    )
     call refreshenv > NUL
 ) else (
     FOR /F "tokens=* USEBACKQ" %%F IN (`vagrant --version`) DO echo Vagrant version %%F found
 )
 
 mutagen version 2> NUL > NUL
-if NOT !errorlevel! == 0 (
+if !errorlevel! NEQ 0 (
     echo Mutagen not found, installing
 
     powershell -Command "(new-object net.webclient).DownloadFile('https://github.com/mutagen-io/mutagen/releases/download/v0.11.8/mutagen_windows_amd64_v0.11.8.zip', 'mutagen_windows_amd64_v0.11.8.zip')"
@@ -45,7 +53,7 @@ if NOT !errorlevel! == 0 (
 )
 
 where minicoin.cmd 2> NUL > NUL
-if NOT !errorlevel! == 0 (
+if !errorlevel! NEQ 0 (
     echo Adding %~dp0%minicoin to the PATH
     powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';%~dp0%minicoin', 'User')"
     call refreshenv > NUL
