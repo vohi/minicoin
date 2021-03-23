@@ -511,6 +511,7 @@ module Minicoin
 
                         envelope = <<-BASH
                             PID=$$
+                            export DISPLAY=:0
                             chmod -R +x .minicoin/jobs
                             PGID=$(($(ps -o pgid= $PID)))
                             >&2 echo "minicoin.process.id=$PGID"
