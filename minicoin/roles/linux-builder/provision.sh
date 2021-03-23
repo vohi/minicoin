@@ -60,8 +60,8 @@ case $distro in
 
     yum group install -y 'Development Tools' > /dev/null
     packages=(
-            clang
-            llvm-libs
+            clang gcc-toolset-9-gcc-c++
+            ninja-build
             perl-core
             inotify-tools
             zlib-devel
@@ -81,9 +81,11 @@ case $distro in
             openssl-devel
             ninja-build
             libwayland-*
-            libXcomposite-devel
             mesa-libwayland-egl*
+            # qttools
+            llvm llvm-libs llvm-devel
     )
+    echo ". /opt/rh/gcc-toolset-9/enable" >> /home/vagrant/.bashrc
   ;;
 
   opensuse*)
