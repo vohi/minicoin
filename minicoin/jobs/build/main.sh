@@ -85,7 +85,7 @@ then
 elif [ -f $JOBDIR/configure ]
 then
   default_configure="-developer-build -confirm-license -opensource -nomake examples"
-  [[ $(which ccache) ]] && default_configure="$default_configure -ccache -no-pch"
+  [[ -x $(command -v ccache) ]] && default_configure="$default_configure -ccache -no-pch"
   configure=${PARAM_configure:-$default_configure}
   # not setting CMAKE_C(XX)_COMPILER, using CC and CXX environment instead
   [[ $configure == -D* ]] && configure="-- $configure"
