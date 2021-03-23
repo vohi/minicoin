@@ -59,6 +59,7 @@ case $distro in
 
     yum update -y > /dev/null
     yum install -y epel-release > /dev/null
+    yum install -y xdotool
     ;;
 
   opensuse*)
@@ -159,7 +160,10 @@ echo "Launching desktop environment"
 $startdesktop &>1
 
 echo "Setting up remote login with xdotool..."
-$command "xdotool" > /dev/null
+if ! which xdotool &> /dev/null
+then
+  $command "xdotool" > /dev/null
+fi
 xorg_cmd=$(ps a -C Xorg -o command)
 auth=0
 for cmd in $xorg_cmd

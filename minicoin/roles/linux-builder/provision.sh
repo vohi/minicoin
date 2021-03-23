@@ -63,7 +63,6 @@ case $distro in
             clang
             llvm-libs
             perl-core
-            xdotool
             inotify-tools
             zlib-devel
             libxcb.*
