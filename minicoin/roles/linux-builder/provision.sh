@@ -30,13 +30,15 @@ case $distro in
             "ninja-build"
             "^libxcb.*-dev libx11-xcb-dev libxrender-dev libxi-dev"
             "libxkbcommon-dev libxkbcommon-x11-dev"
-            "libglu1-mesa-dev freeglut3-dev mesa-common-dev"
+            "libglu1-mesa-dev freeglut3-dev mesa-common-dev libopengl-dev"
             "fontconfig libfontconfig-dev libfreetype6-dev"
             "libssl-dev"
             "libpcre2-dev"
             "pkg-config"
             "libwayland-.*"
             "libxcomposite-dev"
+            # vulkan
+            libvulkan1 mesa-vulkan-drivers vulkan-utils
             # shader tools
             "spirv-tools"
             # print support
@@ -65,6 +67,7 @@ case $distro in
             perl-core
             inotify-tools
             zlib-devel
+            # Xcb
             libxcb.*
             libxcb-devel
             libX11.*
@@ -74,14 +77,19 @@ case $distro in
             libXi.*
             libXi-devel.*
             xcb-util-*
-            mesa-libGL-devel
             libxkbcommon-devel
             libxkbcommon-x11-devel.*
+            libXcomposite-devel
+            # OpenGL
+            mesa-libGL-devel
+            # SSL
             libssl.*
             openssl-devel
-            ninja-build
+            # wayland
             libwayland-*
             mesa-libwayland-egl*
+            # vulkan
+            vulkan mesa-vulkan-drivers
             # qttools
             llvm llvm-libs llvm-devel
     )
@@ -121,6 +129,8 @@ case $distro in
       mozilla-nss-devel
       nodejs10
       nodejs10-devel
+      # vulkan
+      vulkan libvulkan1 vulkan-utils mesa-vulkan-drivers
       # shader tools
       spirv-tools
       # qdoc
