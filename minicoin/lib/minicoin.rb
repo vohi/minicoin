@@ -46,8 +46,9 @@ module Minicoin
 
     # startup argument parsing
     argv = ARGV.dup
+    mstart = ["run", "mutagen"].include?(argv[0]) ? 2 : 1 # skip subcommands
     @@requested_boxes = []
-    for a in 1 ... argv.length
+    for a in mstart ... argv.length
         arg = argv[a]
         next if arg.start_with?("-")
         @@requested_boxes << argv[a]

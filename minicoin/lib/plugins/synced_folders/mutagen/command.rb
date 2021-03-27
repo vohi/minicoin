@@ -88,7 +88,6 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
                 alpha = File.expand_path(argv.first)
                 beta = alpha.gsub(Dir.home, "")[1..-1]
                 argv = argv.drop(1)
@@ -141,7 +140,6 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
                 raise Minicoin::Errors::MissingArgument.new("Neither --alpha nor --all specified") if !options[:all] && !options[:alpha]
 
                 with_target_vms(argv) do |vm|
@@ -184,7 +182,6 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 with_target_vms(argv) do |vm|
                     stdout, stderr, status = SyncedFolderMutagen.call_mutagen("pause", vm.name)
@@ -206,7 +203,6 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 with_target_vms(argv) do |vm|
                     stdout, stderr, status = SyncedFolderMutagen.call_mutagen("resume", vm.name)
@@ -227,9 +223,8 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
-                with_target_vms(argv) do |vm|
 
+                with_target_vms(argv) do |vm|
                     SyncedFolderMutagen.parse_sessions(vm).each do |session|
                         def ui_opts(side)
                             {}.tap do |uiopts|
@@ -264,7 +259,6 @@ module Minicoin
 
                 argv = parse_options(parser)
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 with_target_vms(argv) do |vm|
                     waitcount = 0

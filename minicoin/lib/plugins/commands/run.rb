@@ -258,10 +258,7 @@ module Minicoin
                 end
 
                 argv = parse_options(parser)
-                # this is because our machine matching optimization misinterprets subcommands
-                # but running a job on all machines is a bad idea anyway
                 return if !argv
-                raise Vagrant::Errors::MultiVMTargetRequired if argv.empty?
 
                 @run_options[:machine_ui] = argv.count > 1 && @run_options[:parallel]
                 Thread.report_on_exception = true
