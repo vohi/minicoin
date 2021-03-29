@@ -123,9 +123,15 @@ do {
     if ($console) {
         Log-Verbose "Calling $script with Arguments: $jobargs"
         if ($script.ToLower().EndsWith("ps1")) {
-            $ErrorActionPreference="SilentlyContinue"
-            & $script $jobargs 2>&1
-            $ErrorActionPreference="Continue"
+            $psargs = @()
+            foreach ($job in $jobargs) {
+                if ($job.StartsWith("--")) {
+                    $psargs += $job.Substring($job.Length - 1)
+                } else {
+                    $psargs += $job
+                }
+            }
+            & powershell.exe -Command $script $psargs
         } else {
             & $script $jobargs
         }

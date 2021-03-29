@@ -1,3 +1,8 @@
+param (
+    [string]$jobdir,
+    [string]$hostdir,
+    [string[]]$array
+)
 $ExitCode = 0
 
 function Write-StdErr {
@@ -18,8 +23,11 @@ function Write-StdErr {
 # $ErrorActionPreference="SilentlyContinue"
 write-host "Hello runner!"
 write-host "Arguments received:"
+write-host "- $jobdir (jobdir)"
+write-host "- $hostdir (hostdir)"
+write-host "- $array (array $($array.Count))"
 foreach ($arg in $Args) {
-    write-host "-" $arg
+    write-host "- ${arg} $($arg.Count)"
     if ($arg -eq "error") {
         $ExitCode=42
     }
