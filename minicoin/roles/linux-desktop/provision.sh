@@ -112,7 +112,7 @@ then
   fi
 fi
 
-$setdefault &>1
+$setdefault 2>&1
 
 printf "Enabling auto-login "
 displaymanager=""
@@ -157,7 +157,7 @@ then
 fi
 
 echo "Launching desktop environment"
-$startdesktop &>1
+$startdesktop 2>&1
 
 echo "Setting up remote login with xdotool..."
 if ! which xdotool &> /dev/null
