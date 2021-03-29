@@ -1,0 +1,12 @@
+---
+summary: "Launch executable based on the job directory"
+options:
+  - name: bindir
+    type: string
+    description: The path in which to look for executables
+  - name: exe
+    type: string
+    description: The name of the executable
+  - name: args
+    type: string
+    description: Arguments to pass through to the executable
