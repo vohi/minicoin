@@ -187,6 +187,16 @@ module Minicoin
                 super(argv, env)
                 @run_options = options
                 @tty_width = IO.console.winsize[1]
+                begin
+                    # tty_winch will be "SYSTEM_DEFAULT" or the previous signal handler
+                    @tty_winch = Signal.trap("WINCH") do
+                        @tty_width = IO.console.winsize[1]
+                        @tty_winch.call if @tty_winch.is_a?(Proc)
+                    end
+                rescue ArgumentError => e
+                    # or nil if WINCH is not supported, in which case we poll in the wait loop
+                    @tty_winch = nil
+                end
                 log_verbose(@env.ui, "Terminal width is #{@tty_width}")
             end
             
@@ -338,7 +348,7 @@ module Minicoin
                         showing_dialog = false
                         sleep 1
                     end
-                    @tty_width = IO.console.winsize[1]
+                    @tty_width = IO.console.winsize[1] unless @tty_winch
                 end
             end
 
@@ -620,6 +630,7 @@ module Minicoin
                     rescue Minicoin::Errors::PostRunFail => e
                         @vm.ui.error "#{e}"
                     end
+                    @vm.ui.detail "" if @last_options[:new_line] # newline in case the last ouput came without
                     @exit_code
                 end
 
