@@ -93,10 +93,12 @@ def mutagen_provision(box, name, role_params, machine)
                 beta.gsub!("~", "#{box.minicoin.guest_homes}\\vagrant")
                 beta.gsub!($HOME, "#{box.minicoin.guest_homes}\\vagrant")
                 beta.gsub!("/", "\\")
+                beta.gsub!(/^\\$/, "C:\\")
             else
                 beta.gsub!("~", "#{box.minicoin.guest_homes}/vagrant")
                 beta.gsub!($HOME, "#{box.minicoin.guest_homes}/vagrant")
                 beta.gsub!("\\", "/")
+                beta.gsub!(/^\//, "C:/")
             end
         else
             beta.gsub!("~", "#{box.minicoin.guest_homes}/vagrant")

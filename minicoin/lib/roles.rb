@@ -143,7 +143,7 @@ def add_role(box, role, name, machine)
     role_params.each do |key, value|
         next if value.nil?
         if value.is_a?(String)
-            new_value = expand_env(value, box)
+            new_value = expand_env(value)
             if new_value.nil?
                 STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                 return
@@ -152,7 +152,7 @@ def add_role(box, role, name, machine)
         elsif value.is_a?(Array)
             array = []
             value.each do |entry|
-                new_entry = expand_env(entry, box)
+                new_entry = expand_env(entry)
                 if new_entry.nil?
                     STDERR.puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
                     return
@@ -163,9 +163,8 @@ def add_role(box, role, name, machine)
         elsif value.is_a?(Hash)
             new_hash = {}
             value.each do |k, v|
-                # left side of key/value pair refers to the host
-                new_key = expand_env(k, nil)
-                new_value = expand_env(v, box)
+                new_key = expand_env(k)
+                new_value = expand_env(v)
                 if new_key.nil? || new_value.nil?
                     STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                     return

@@ -36,13 +36,18 @@ def share_folders(box, machine, shares)
     shares.each do |share|
         next if share.nil?
         share.each do |host, guest|
-            host = expand_env(host, nil)
+            host = expand_env(host)
             host = "." if host == $PWD # this prevents duplicate PWD sharing from vagrant
-            guest = expand_env(guest, box)
+            guest = expand_env(guest)
             if guest.nil? || host.nil?
                 STDERR.puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
                 next
             end
+            if !box.nil? && box.vm.guest == :windows
+                guest = guest.gsub("/C:\\", "C:\\")
+                guest = guest.gsub("/", "\\\\")
+            end
+    
             exp_shares << { host => guest }
         end
     end

@@ -732,7 +732,7 @@ module Minicoin
                     # check whether we are in a subdirectory of a mapped path, and use the best match
                     minicoin.fs_mappings.each do |hostpath, guestpath|
                         hostpath = hostpath.gsub("~", "$HOME")
-                        hostpath = expand_env(hostpath, nil)
+                        hostpath = expand_env(hostpath)
                         match_length = -1
                         if project_dir.start_with?(hostpath) && hostpath.length > match_length
                             match_length = hostpath.count('/') unless hostpath == ENV["HOME_SHARE"]

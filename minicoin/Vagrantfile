@@ -68,7 +68,7 @@ Vagrant.configure("2") do |config|
         machine_url = machine_box.gsub("$minicoin_key", minicoin_key)
         machine_box.gsub!("$minicoin_key/", "")
       end
-      machine_box = expand_env(machine_box, nil)
+      machine_box = expand_env(machine_box)
     end
     if machine_box.nil?
       ui.warn "Machine has no box set"

@@ -1,6 +1,6 @@
 # expand environment variables in parameters
 # and adjust any occurence of $HOME to the home on the guest
-def expand_env(value, box)
+def expand_env(value)
     guest_sub_indices = []
     return value unless value.is_a?(String)
 
@@ -19,10 +19,6 @@ def expand_env(value, box)
         return nil if env_val.nil?
         
         value = value.sub("$#{env_name}", env_val)
-        if !box.nil? && box.vm.guest == :windows
-            value = value.gsub("/C:\\", "C:\\")
-            value = value.gsub("/", "\\\\")
-        end
     end
     guest_sub_indices.each do |i|
         value[i] = '$'

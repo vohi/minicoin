@@ -63,7 +63,7 @@ def merge_settings(yaml, user_yaml)
 
     home_share = $settings["home_share"] || $HOME
     home_share = home_share.gsub("~", "$HOME")
-    home_share = expand_env(home_share, nil)
+    home_share = expand_env(home_share)
     ENV["HOME_SHARE"] = home_share
     $settings["defaults"] = {} if $settings["defaults"].nil?
     yaml["settings"] = $settings

@@ -218,7 +218,7 @@ class Tester
     user = ENV["USER"]
     test_data = {
       "plain" => [:windows, "foo", "foo"],
-      "$home_win" => [:windows, "$HOME", ENV["HOME"].gsub("/", "\\")],
+      "$home_win" => [:windows, "$HOME", ENV["HOME"]],
       "$home_nix" => [:linux, "$HOME", ENV["HOME"]],
       "$home_mac" => [:darwin, "$HOME", ENV["HOME"]],
       "$user" => [nil, "$USER", user],
@@ -234,10 +234,9 @@ class Tester
       input = data[1]
       output = data[2]
 
-      box = MockVm.new(guest)
       old_env = ENV["GUEST_HOMES"]
       ENV["GUEST_HOMES"] = "#{guest}"
-      result = expand_env(input, box)
+      result = expand_env(input)
       if result != output
         STDERR.puts "Fail! for '#{name}'!"
         STDERR.puts "=> produced: '#{result}'"
