@@ -56,6 +56,7 @@ def azure_setup(box, machine)
         next if $AZURE_CREDENTIALS.nil?
 
         override.ssh.private_key_path = "~/.ssh/id_rsa"
+        override.ssh.keep_alive = true
 
         if machine["os"] == "windows"
             # open up for ssh, winrm, and rdp
@@ -64,6 +65,7 @@ def azure_setup(box, machine)
             override.winrm.basic_auth_only = false
             override.winrm.timeout = 3600
             override.winssh.private_key_path = "~/.ssh/id_rsa"
+            override.winssh.keep_alive = true
             begin # windows hostnames can't be more than 15 character long
                 vm_name = ""
                 loop do
