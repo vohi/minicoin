@@ -1,13 +1,11 @@
+$ErrorActionPreference = "SilentlyContinue"
 net stop wuauserv
 
-$tempfolders = @( "C:\Windows\Temp\*",
-                  "C:\Windows\Prefetch\*",
+$tempfolders = @( "C:\Windows\Prefetch\*",
                   "C:\Users\*\Appdata\Local\Temp\*",
-                  "C:\Windows\SoftwareDistribution\Downloads\*" )
-
-Remove-Item $tempfolders -force -recurse
-
-Optimize-Volume -DriveLetter C -Defrag
+                  "C:\Windows\SoftwareDistribution\Downloads\*",
+                  "C:\Windows\Temp\*"
+                )
 
 function Set-RegistryKey
 {
@@ -21,7 +19,8 @@ function Set-RegistryKey
     }
     New-ItemProperty -Path $Path -Name $Key -Value $Value -Type DWORD -Force | Out-Null
 }
-New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force | Out-Null
+
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell
 
 Set-RegistryKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Key "DisableAntiSpyware" -Value 1
 Set-RegistryKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender Security Center\Notifications" -Key "DisableEnhancedNotifications" -Value 1
@@ -31,3 +30,8 @@ Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfi
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "ToastEnabled" -Value 0
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotification" -Value 1
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotificationOnLockScreen" -Value 1
+
+Remove-Item $tempfolders -force -recurse
+Optimize-Volume -DriveLetter C -Defrag
+
+exit 0

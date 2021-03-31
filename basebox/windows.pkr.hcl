@@ -23,6 +23,7 @@ source "null" "testing" {
     ssh_password        = "vagrant"
 }
 
+# run this with "packer build --only manual.windows10-virtualbox windows.pkr.hcl"
 build {
     name = "manual"
 
@@ -30,6 +31,12 @@ build {
         "vagrant.windows10-virtualbox", 
         "vagrant.windows10-vmware"
     ]
+
+    provisioner "powershell" {
+        scripts = [
+            "windows/cleanup.ps1"
+        ]
+    }
 
     provisioner "breakpoint" {
         disable = false
