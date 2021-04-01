@@ -10,4 +10,4 @@ write-host $role $name $user $package $version
 
 cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 
-.\choco install --no-progress -y $package -version $version
+.\choco install --no-progress -y $package --version $version
