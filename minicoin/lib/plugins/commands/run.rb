@@ -475,14 +475,36 @@ module Minicoin
                         @cleanup_command = "rm -rf #{@target_path}"
                         if @job.run_options[:fswait]
                             if @vm.guest.name == :darwin
-                                fswait_cmd = "fswatch -1 -r"
+                                fswait_cmd = <<-BASH
+                                    changed=$(fswatch -1 -r %{target_path} %{fswait_path})
+                                    if [ "$changed" != "$PWD/%{target_path}/wakeup" ]
+                                    then
+                                        printf "\n($(date '%{date_format}')) Waiting for file system changes in %{fswait_path} to complete\n"
+                                        while IFS= read -t 3 -d '' -r file -s
+                                        do
+                                            true
+                                        done < <(fswatch -r -0 %{fswait_path})
+                                        # timed out
+                                    fi
+                                BASH
                             else
-                                fswait_cmd = "inotifywait -qq -r --event modify,attrib,close_write,move,create,delete"
+                                fswait_cmd = <<-BASH
+                                    changed=$(inotifywait -q --format %%w%%f -r --event modify,attrib,close_write,move,create,delete %{target_path} %{fswait_path})
+                                    if [ "$changed" != "%{target_path}/wakeup" ]
+                                    then
+                                        printf "\n($(date '%{date_format}')) Waiting for file system changes in %{fswait_path} to complete\n"
+                                        while true # wait until no more events occur
+                                        do
+                                            inotifywait -qq -r --event modify,attrib,close_write,move,create,delete --timeout 3 %{fswait_path}
+                                            [ $? == 2 ] && break # timeout
+                                        done
+                                    fi
+                                BASH
                             end
                             fswait = <<-BASH
                                 >&2 echo "minicoin.process.wait"
-                                echo "($(date '%{date_format}')) Waiting for file system changes in %{fswait_path}"
-                                #{fswait_cmd} #{@target_path} %{fswait_path}
+                                printf "($(date '%{date_format}')) Waiting for file system changes in %{fswait_path}\n"
+                                #{fswait_cmd}
                                 if [ -f "#{@target_path}/wakeup" ]
                                 then
                                     cmd=`tail -n1 #{@target_path}/wakeup`
@@ -514,7 +536,7 @@ module Minicoin
 
                     if options[:ext] == "sh"
                         run_command += " #{@job_args.join(" ")}"
-                        fswait = fswait % { fswait_path: @job_args.first, date_format: "+%H:%M:%S" } if @job.run_options[:fswait]
+                        fswait = fswait % { target_path: @target_path, fswait_path: @job_args.first, date_format: "+%H:%M:%S" } if @job.run_options[:fswait]
 
                         envelope = <<-BASH
                             PID=$$

@@ -246,12 +246,20 @@ do {
         Write-StdErr "minicoin.process.wait"
         $wakecmd = $Null
         do {
+            # 15 == All (The creation, deletion, change, or renaming of a file or folder.)
             $waitResult = $fsw.WaitForChanged(15, 1000)
             try {
                 $wakecmd = Get-Content $wakepath -Tail 1
             } catch {
             }
         } while ($waitResult.Timedout -and !$wakecmd)
+        if (!$wakecmd) {
+            # wait for the dust to settle
+            Write-Host "`n(${time}) Waiting for file system changes in ${watchpath} to complete"
+            do {
+                $waitResult = $fsw.WaitForChanged(15, 3000)
+            } while (!$waitResult.TimedOut)
+        }
         Remove-Item -Path $wakepath -Force
         $ErrorActionPreference="Continue"
         if ($wakecmd -eq "quit") {
