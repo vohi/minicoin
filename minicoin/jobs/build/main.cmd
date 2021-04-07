@@ -72,7 +72,6 @@ if EXIST build.ninja (
     ) else (
       if EXIST !JOBDIR!\CMakeLists.txt (
         if "!PARAM_configure!" == "" SET "PARAM_configure=-GNinja"
-        if "!PARAM_configure:~0,2!" == "-D" SET "PARAM_configure=-- !PARAM_configure!"
         echo "Configuring '!JOBDIR!' with 'qt-cmake !PARAM_configure!'"
         if NOT EXIST %USERPROFILE%\bin\qt-cmake.bat (
           >&2 echo qt-cmake wrapper not found in '%USERPROFILE%\bin', build qtbase first!

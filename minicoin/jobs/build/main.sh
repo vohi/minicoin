@@ -96,22 +96,22 @@ elif [ -f $JOBDIR/CMakeLists.txt ]
 then
   [ $(command -v ninja) ] && generator="-GNinja"
   configure=${PARAM_configure:-$generator}
-  [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'qt-cmake ${configure}'"
   if [ ! -f ~/qt-cmake ]
   then
-    >&2 echo "qt-cmake wrapper not found in '$HOME', build qtbase first!"
+    >&2 echo "qt-cmake wrapper not found in '$HOME', using plain cmake!"
+    cmake "${configure}" $JOBDIR
   else
     ~/qt-cmake "${configure}" $JOBDIR
   fi
 elif [ -f $JOBDIR/$projectname.pro ]
 then
-  echo "Configuring '$JOBDIR' with 'qmake ${configure}'"
+  echo "Configuring '$JOBDIR' with 'qmake ${PARAM_configure}'"
   if [ ! -f ~/qmake ]
   then
     >&2 echo "qmake wrapper not found in '$HOME', build qtbase first!"
   else
-    ~/qmake "${configure}" $JOBDIR
+    ~/qmake "${PARAM_configure}" $JOBDIR
   fi
 else
   >&2 echo "No CMake or qmake build system found"
