@@ -26,7 +26,7 @@ case $distro in
 
     darwin*)
         su vagrant -c "brew update"
-        command="brew install ${PARAM_options:-"-quiet"}"
+        command="brew install ${PARAM_options:-"--quiet"}"
     ;;
 esac
 
