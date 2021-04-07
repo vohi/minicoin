@@ -94,7 +94,8 @@ then
   $JOBDIR/configure $configure
 elif [ -f $JOBDIR/CMakeLists.txt ]
 then
-  configure=${PARAM_configure:-"-GNinja"}
+  [ $(command -v ninja) ] && generator="-GNinja"
+  configure=${PARAM_configure:-$generator}
   [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'qt-cmake ${configure}'"
   if [ ! -f ~/qt-cmake ]
