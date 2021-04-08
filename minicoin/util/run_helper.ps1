@@ -91,6 +91,15 @@ if ($fswait) {
     $fsw.IncludeSubdirectories = $true
 }
 
+$escaped_args = @()
+foreach ($jobarg in $jobargs) {
+    if ($jobarg.Contains('=')) {
+        $jobarg = "`"$jobarg`""
+    }
+    $escaped_args += @($jobarg)
+}
+$jobargs = $escaped_args
+
 $success_count = 0
 $exit_code = 0
 $total = 0
