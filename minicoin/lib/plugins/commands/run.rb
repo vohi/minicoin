@@ -186,11 +186,11 @@ module Minicoin
             def initialize(options, argv, env)
                 super(argv, env)
                 @run_options = options
-                @tty_width = IO.console.winsize[1]
+                @tty_width = IO.console.winsize[1] if IO.console
                 begin
                     # tty_winch will be "SYSTEM_DEFAULT" or the previous signal handler
                     @tty_winch = Signal.trap("WINCH") do
-                        @tty_width = IO.console.winsize[1]
+                        @tty_width = IO.console.winsize[1] if IO.console
                         @tty_winch.call if @tty_winch.is_a?(Proc)
                     end
                 rescue ArgumentError => e
@@ -348,7 +348,7 @@ module Minicoin
                         showing_dialog = false
                         sleep 1
                     end
-                    @tty_width = IO.console.winsize[1] unless @tty_winch
+                    @tty_width = IO.console.winsize[1] unless @tty_winch || !IO.console
                 end
             end
 
