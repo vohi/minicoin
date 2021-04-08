@@ -93,7 +93,7 @@ if ($fswait) {
 
 $escaped_args = @()
 foreach ($jobarg in $jobargs) {
-    if ($jobarg.Contains('=')) {
+    if ($jobarg.Contains('=') -and !$jobarg.StartsWith('"')) {
         $jobarg = "`"$jobarg`""
     }
     $escaped_args += @($jobarg)
