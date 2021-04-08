@@ -652,7 +652,7 @@ module Minicoin
                     rescue Minicoin::Errors::PostRunFail => e
                         @vm.ui.error "#{e}"
                     end
-                    @vm.ui.detail "" if @last_options[:new_line] # newline in case the last ouput came without
+                    print "\n" if @last_options[:new_line] == false # newline in case the last ouput came without
                     @exit_code
                 end
 
