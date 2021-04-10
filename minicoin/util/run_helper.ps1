@@ -168,7 +168,7 @@ do {
             Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument "$taskargs" -WorkingDirectory $ENV:USERPROFILE
             User = "vagrant"
             RunLevel = "Highest"
-            Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel
+            Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel -DontStopIfGoingOnBatteries
         }
         $task = Register-ScheduledTask @taskRegister -Force
 
@@ -197,6 +197,9 @@ do {
         } while ($taskstate -eq 'Running')
         # task finished, let interrupts kill this process again
         Write-StdErr "minicoin.process.id=${PID}"
+        if ($taskstate -ne 'Ready') {
+            Write-StdErr "Failed to run task to completion: $taskstate"
+        }
         $taskinfo = ($task | Get-ScheduledTaskInfo)
         $exit_code = $taskinfo.LastTaskResult
 
