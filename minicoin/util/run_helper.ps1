@@ -191,7 +191,7 @@ do {
         $taskstate = $task.State
         do {
             Repeat-Output $stdout $stderr
-            Start-Sleep -Milliseconds 50
+            Start-Sleep -Seconds 1
             $task = Get-ScheduledTask -TaskPath $taskpath -TaskName $jobid
             $taskstate = $task.State
         } while ($taskstate -eq 'Running')
