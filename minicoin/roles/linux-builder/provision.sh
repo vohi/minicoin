@@ -50,6 +50,9 @@ case $distro in
             "docker docker-compose"
             # qdoc
             "clang-10" "libclang-10-dev" "llvm-10"
+            # gstreamer
+            "libgstreamer1.0-dev" "libgstreamer-plugins-base1.0-dev"
+            "libgstreamer-plugins-good1.0-dev" "linux-libc-dev"
     )
   ;;
 
