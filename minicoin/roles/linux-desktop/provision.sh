@@ -65,12 +65,9 @@ case $distro in
   opensuse*)
     command="zypper --quiet --non-interactive install -y --no-recommends "
     case $desktop in
-      kde)
-        packages=( "-t pattern kde" sddm )
-        ;;
       *)
-        desktop="kde-plasma"
-        packages=( "-t pattern kde_plasma" sddm xrandr)
+        desktop="kde"
+        packages=( "-t pattern kde" sddm)
         ;;
     esac
 
