@@ -29,8 +29,8 @@ case $distro in
 esac
 
 # recommended versions
-vbox_version_good=6.1.16
-vagrant_version_good=2.2.14
+vbox_version_good=6.1.26
+vagrant_version_good=2.2.18
 mutagen_version_good=0.11.8
 
 cd /tmp
