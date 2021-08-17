@@ -16,5 +16,9 @@ echo "Running autoremove"
 /usr/local/bin/brew autoremove
 echo "Running upgrade"
 /usr/local/bin/brew upgrade
+echo "Running cleanup"
+/usr/local/bin/brew cleanup --prune=all
+echo "Running autoremove"
+/usr/local/bin/brew autoremove
 
 exit 0
