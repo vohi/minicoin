@@ -51,12 +51,6 @@ machines:
       - role: linux-builder
 
 ### Simple Windows boxes - different versions, different compilers
-  - name: windows7
-    box: tqtc/$minicoin_key/windows7
-    roles:
-      - windows-tools
-      - mingw
-    gui: false
   - name: windows10
     box: tqtc/$minicoin_key/windows10
     roles:
@@ -65,6 +59,11 @@ machines:
       - role: install
         packages: vulkan-sdk
     gui: false
+  - name: windows11
+    box: tqtc/$minicoin_key/windows11
+    roles:
+      - windows-tools
+      - msvc2019
 
 ### Mac - design to run host binaries
   - name: macos1014
