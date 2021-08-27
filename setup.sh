@@ -15,7 +15,7 @@ then
 fi
 
 case $distro in
-    ubuntu*|neon*)
+    ubuntu*|neon*|debian*)
         sudo apt-get update > /dev/null
         install_command="sudo apt-get -qq -y install"
         ;;
