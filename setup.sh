@@ -15,7 +15,7 @@ then
 fi
 
 case $distro in
-    ubuntu*|neon*)
+    ubuntu*|neon*|debian*)
         sudo apt-get update > /dev/null
         install_command="sudo apt-get -qq -y install"
         ;;
@@ -23,7 +23,7 @@ case $distro in
         install_command="brew install"
         ;;
     *)
-        echo "Don't know how to install packages on $distro.\n"
+        echo -e "Don't know how to install packages on $distro.\n"
         exit 1
         ;;
 esac
