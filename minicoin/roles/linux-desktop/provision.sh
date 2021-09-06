@@ -67,12 +67,11 @@ case $distro in
     case $desktop in
       *)
         desktop="kde"
-        packages=( "-t pattern kde" sddm)
+        packages=( "-t pattern kde" sddm konsole)
         ;;
     esac
 
     zypper refresh
-    zypper --non-interactive dup
     ;;
 esac
 
