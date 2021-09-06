@@ -44,7 +44,7 @@ if (!(Test-Path $ChocoInstallPath)) {
 } else {
     write-host "Upgrade Chocolatey . . . "
     cd $ChocoInstallPath
-    .\choco upgrade chocolatey
+    .\choco upgrade --confirm chocolatey
     write-host "END Upgrade Chocolatey!"
 }
 
