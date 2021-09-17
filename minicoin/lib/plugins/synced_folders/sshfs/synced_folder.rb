@@ -8,7 +8,7 @@ module Minicoin
 
             def initialize()
                 @hostname = Socket.gethostname
-                @logger = Log4r::Logger.new("minicoin::sshfs")
+                @logger = Log4r::Logger.new("vagrant::minicoin::sshfs")
                 @authorized_keys = File.expand_path("~/.ssh/authorized_keys")
                 super
             end
@@ -38,6 +38,7 @@ module Minicoin
                     return false
                 end
                 begin
+                    @logger.debug "SSHFS: Attempting to detect local SSH server"
                     Timeout::timeout(1) do
                     begin
                         s = TCPSocket.new("127.0.0.1", 22)
@@ -54,6 +55,7 @@ module Minicoin
                     return false
                 end
 
+                @logger.debug "SSHFS mounting available"
                 return true
             end
 
