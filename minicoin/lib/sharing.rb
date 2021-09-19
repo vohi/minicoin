@@ -67,7 +67,9 @@ def share_folders(box, machine, shares)
             end
             box.minicoin.actual_shared_folders[host] = guest
             box.minicoin.fs_mappings[host] = win_links[guest[1..-1]] || guest
-            box.vm.synced_folder host, guest
+            options = {}
+            options[:type] = machine["shared_folder_type"] if machine["shared_folder_type"]
+            box.vm.synced_folder host, guest, options
         end
     end
     win_link_folders(box, win_links) if box.vm.guest == :windows
