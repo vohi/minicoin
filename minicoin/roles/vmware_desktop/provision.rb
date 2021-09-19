@@ -1,9 +1,10 @@
-def vmware_fusion_provision(box, name, args, machine)
+def vmware_desktop_provision(box, name, args, machine)
     if !args.is_a?(Hash)
-        raise "Argument error: expecting args to be a hash"
+        raise "Argument error in vmware_desktop role: expecting args to be a hash"
     end
     box.vm.provider :vmware_desktop do |vmware|
         args.each do |key, value|
+            next if key == "role" || key == "role_path"
             vmware.vmx[key] = value
         end
     end
