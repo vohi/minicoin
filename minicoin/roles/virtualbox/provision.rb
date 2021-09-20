@@ -12,7 +12,7 @@ def virtualbox_provision(box, name, args, machine)
                 params.each do |key, value|
                     vb.customize [
                         command, :id,
-                        key, value
+                        key, *value
                     ]
                 end
             end
