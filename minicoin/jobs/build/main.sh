@@ -153,5 +153,9 @@ then
   link_tool qmake
   link_tool qt-cmake
 fi
+if [[ "$target" == "qmake" ]]
+then
+  link_tool qmake
+fi
 
 exit $error
