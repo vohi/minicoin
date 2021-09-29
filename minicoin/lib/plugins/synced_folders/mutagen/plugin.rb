@@ -4,7 +4,7 @@ module Minicoin
     module SyncedFolderMutagen
         include Vagrant::Util
 
-        @@mutagen_path = "\"#{Platform.unix_windows_path(Which.which("mutagen"))}\""
+        @@mutagen_path = "#{Platform.unix_windows_path(Which.which("mutagen"))}"
         def self.mutagen_path
             @@mutagen_path
         end
