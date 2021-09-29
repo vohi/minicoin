@@ -42,11 +42,12 @@ def azure_setup(box, machine)
                 next
             end
             $AZURE_PROFILE = JSON.parse(stdout)
-            stdout, stderr, status = Open3.capture3('az ad sp show --id "http://minicoin"')
+            azure_clientname = "http://minicoin-azure"
+            stdout, stderr, status = Open3.capture3("az ad sp show --id \"#{azure_clientname}\"")
             if status != 0
                 unless stderr.start_with?("Please ensure you have network connection")
-                    stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name 'http://minicoin'")
-                    stdout, stderr, status = Open3.capture3("az ad sp credential reset --name 'http://minicoin' --password #{pwd}")
+                    stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name '#{azure_clientname}'")
+                    stdout, stderr, status = Open3.capture3("az ad sp credential reset --name '#{azure_clientname}' --password #{pwd}")
                     STDERR.puts "Failed to generate azure account credentials" if status != 0
                 end
             end
