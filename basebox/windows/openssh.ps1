@@ -11,3 +11,6 @@ Set-Service sshd -StartupType Automatic
 Set-Service ssh-agent -StartupType Automatic
 Start-Service sshd
 Start-Service ssh-agent
+
+# put the public insecure vagrant key into C:\ProgramData\ssh\administrators_authorized_keys
+icacls.exe "C:\ProgramData\ssh\administrators_authorized_keys" /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"

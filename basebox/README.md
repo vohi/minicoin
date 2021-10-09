@@ -33,6 +33,7 @@ detailed requirements. In general
 * add the user to the sudoer group using `visudo`
 * on all platforms, install OpenSSH and add the insecure vagrant key to the
   .authorized_keys file of the vagrant user
+  (on windows: into c:\programdata\ssh\administrators_authorized_keys)
 * check the windows and mac subfolders for additional scripts to configure
   platform specific services, such as WinRM
 * turn off any automatic update services
