@@ -1,0 +1,16 @@
+{
+    "name": "tqtc/macos12",
+    "description": "macOS 12 Monterey",
+    "versions": [
+        {
+            "version": "0.0.1",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "vmware_desktop",
+                    "url": "file:///tmp/vmware_desktop/macos12-vmware-0.0.1.box"
+                }
+            ]
+        }
+    ]
+}
