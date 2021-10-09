@@ -7,5 +7,5 @@ then
 fi
 
 # allow software from anyone
-sudo spctl --master-disable
+sudo spctl --global-disable
 spctl developer-mode enable-terminal
