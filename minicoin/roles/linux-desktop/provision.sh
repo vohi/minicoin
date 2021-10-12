@@ -18,7 +18,7 @@ case $distro in
 
     case $desktop in
       kde)
-        packages=( "kubuntu-desktop" )
+        packages=( "kubuntu-desktop" "sddm" "konsole" )
         ;;
       lxde)
         packages=( "lubuntu-desktop" )
