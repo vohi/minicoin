@@ -20,7 +20,7 @@ function update_minicoin()
   git fetch --all --tags 2> /dev/null > /dev/null
   if [ $? == 0 ]; then
     if [ "$1" == "" ]; then
-      minicoin_version=`git describe --abbrev=0`
+      minicoin_version=`git tag --list --sort=-taggerdate | head -n1`
     else
       minicoin_version=$1
     fi
