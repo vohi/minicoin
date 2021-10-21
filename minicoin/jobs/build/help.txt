@@ -25,14 +25,14 @@ The job then builds the default target.
 
   Builds a different target than the default
 
-  $ minicoin run windows10 build -- --target tst_qobject_check
-  $ minicoin run doc-server build -- --target html_docs
+  $ minicoin run build --target tst_qobject_check windows10
+  $ minicoin run build --target html_docs doc-server
 
 --build NAME
 
   Overrides the default build tree
 
-  $ minicoin run ubuntu1804 build-qt -- --build qt-build-5.15
+  $ minicoin run build --build qt-build-5.15 ubuntu1804
 
 --clean
 
@@ -46,8 +46,8 @@ The job then builds the default target.
 
   Use the C++ compiler at the specified path
 
-  $ minicoin run ubuntu1804 build -- -cc /usr/bin/clang-10 --cxx /usr/bin/clang++10
-  $ minicoin run windows10 build -- -cc cl --cxx cl
+  $ minicoin run build --cc /usr/bin/clang-10 --cxx /usr/bin/clang++10 ubuntu1804
+  $ minicoin run build --cc cl --cxx cl  windows10
 
 --testargs ARGS
 
