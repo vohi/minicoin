@@ -43,10 +43,16 @@ module Minicoin
                         end
 
                         # ignore empty lines
-                        next if line.strip.empty?
+                        line.strip!
+                        next if line.empty?
                         # next line after -- is the description
 
-                        current["description"] = line if current && current["description"].nil?
+                        next unless current
+                        if current["description"].nil?
+                            current["description"] = line
+                        else
+                            current["description"] += "\n\t\t\t\t     #{line}"
+                        end
                     end
                     help["options"] = options
                 end
@@ -236,7 +242,7 @@ module Minicoin
                 job_options[:job_args] = []
 
                 parser = OptionParser.new do |option|
-                    option.banner = "Usage: minicoin run #{name()} [options] [name|id] [-- extra job args]"
+                    option.banner = "Usage: minicoin run #{name()} [options] [name|id]"
                     option.separator ""
                     help = Run.read_help(path())
                     if help
@@ -262,6 +268,7 @@ module Minicoin
                         end
                         option.separator ""
                     end
+                    option.banner += " [-- extra job args]" if job_options[:job_args_passthrough]
                     option.separator "Standard options:"
                     option.separator ""
                 end
