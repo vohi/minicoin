@@ -1,0 +1,29 @@
+---
+matchers:
+# QtTestLib
+  - pattern: ^.*PASS\s+:.*
+    color: green
+    bold: true
+  - pattern: ^.*BPASS\s+:.*
+    color: green
+  - pattern: ^.*SKIP\s+:.*$
+    color: yellow
+  - pattern: ^.*BFAIL\s+:.*$
+    color: yellow
+    bold: true
+  - pattern: ^.*FAIL!\s+:.*$
+    color: red
+    bold: true
+  - pattern: ^100% tests passed.*
+    color: green
+  - pattern: ^\d+% tests passed.*
+    color: yellow
+  - pattern: ".* : failure location"
+    replace: true
+# ctest
+  - pattern: ^\s*\d+\/\d+.+Test\s+#\d+:.*Passed.*$
+    color: green
+    bold: true
+  - pattern: ^\s*\d+\/\d+.+Test\s+#\d+:.*Failed.*$
+    color: red
+    bold: true

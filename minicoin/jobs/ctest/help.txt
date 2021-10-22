@@ -1,0 +1,23 @@
+Runs ctest in the build path matching the current host directory
+
+The highest-level build tree that matches the current working
+directory of the host will be used as the working directory on the
+guest, defaulting to any directory for which a -build path exists.
+E.g. for a host path ~/qt/dev/qtbase/tests, a the guest paths
+~/qt-build/dev/qtbase/tests, ~/qt/dev-build/qtbase/tests,
+~/qt/dev/qtbase-build/tests and so forth will be tried, and the
+first existing path will be used to navigate further down into the
+matching sub directory.
+
+--build NAME
+
+  Overrides the default build tree
+
+--testargs ARGS
+
+  Sets the TESTARGS environment variable before calling ctest
+
+-- CTESTARGS
+
+  Arguments following a -- after the machine(s) name will be passed
+  through to ctest.
