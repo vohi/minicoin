@@ -309,6 +309,20 @@ def load_minicoin()
     extend_machines(machines)
     # role merging once each box is fully defined
     combine_roles(machines)
+    # attributes from the environment override everything else
+    if ENV["MINICOIN"]
+        environment_yaml = ENV["MINICOIN"]
+        begin
+            envyaml = YAML.load(environment_yaml)
+            machines.each do |machine|
+                envyaml.each do |env_key, env_value|
+                    machine[env_key] = env_value
+                end
+            end
+        rescue
+            STDERR.puts "Settings from MINICOIN environment are not valid yaml"
+        end
+    end
 
     context = Minicoin::Context.new
     context.machines = machines
