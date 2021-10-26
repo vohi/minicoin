@@ -85,7 +85,7 @@ endif()
 
 set(exitcode 0)
 if(NOT PACKAGE)
-  set(PACKAGE "qt.qt6.600")
+  set(PACKAGE "qt.qt6.620")
 endif()
 
 message(STATUS "Updating tools in ${maintenance_tool_file}")

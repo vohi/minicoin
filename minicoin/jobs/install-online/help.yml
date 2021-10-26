@@ -6,7 +6,7 @@ options:
     description: Sets the root directory for the installation
   - name: package
     type: string
-    description: Specifies the package that should be installed
+    description: Specifies the package that should be installed, e.g. qt.qt6.620
   - name: search
     type: string
     description: Searches for packages matching the regexp
