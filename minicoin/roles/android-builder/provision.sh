@@ -11,10 +11,10 @@ apt-get -q install -y default-jre openjdk-8-jdk-headless
 apt-get -q install -y libc6-i386 libpulse-dev
 
 # the rest of the provisioning is executed as user vagrant
-ndkVersion="${PARAM_ndkVersion:-r21d}"
+ndkVersion="${PARAM_ndkVersion:-r22b}"
 ndkHost="linux-x86_64"
-sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-29.0.3}"
-sdkApiLevel="${PARAM_sdkApiLevel:-android-29}"
+sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-30.0.3}"
+sdkApiLevel="${PARAM_sdkApiLevel:-android-30}"
 
 repository="https://dl.google.com/android/repository"
 toolsFile="commandlinetools-linux-6609375_latest.zip"
