@@ -60,7 +60,7 @@ if(NOT EXISTS "${maintenance_tool_file}") # maintenance tool not present, instal
   message(STATUS "Running ${installer_file}")
   execute_process(
     COMMAND
-      ${installer_file} install "qt.tools.conan" --root "${INSTALL_ROOT}" ${INSTALL_ARGS}
+      ${installer_file} install --root "${INSTALL_ROOT}" ${INSTALL_ARGS}
   )
 
   if(APPLE)
