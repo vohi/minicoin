@@ -47,6 +47,7 @@ module Minicoin
             end
 
             def enable(machine, folders, opts)
+                return if machine.nil?
                 folder = folders[machine.box.provider]
                 return if folder.nil?
                 if skip_prepare(machine)
