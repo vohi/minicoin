@@ -26,25 +26,36 @@ androidRoot=/opt/android
 [[ -d "$androidRoot" ]] && rm -rf $androidRoot
 mkdir -p $androidRoot
 
-echo "Downloading SDK tools from '$repository/$toolsFile'"
-wget -q $repository/$toolsFile
-error=$?
-if [[ ! $error -eq 0 ]]; then
+if [ ! -f $toolsFile ]
+then
+  echo "Downloading SDK tools from '$repository/$toolsFile'"
+  wget -q $repository/$toolsFile
+  error=$?
+  if [[ ! $error -eq 0 ]]; then
     >&2 echo "Error downloading SDK tools!"
     exit $error
+  fi
 fi
 
-echo "Downloading NDK from '$repository/$ndkFile'"
-wget -q $repository/$ndkFile
-error=$?
-if [[ ! $error -eq 0 ]]; then
->&2 echo "Error downloading NDK!"
-exit $error
+if [ ! -f $ndkFile ]
+then
+  echo "Downloading NDK from '$repository/$ndkFile'"
+  wget -q $repository/$ndkFile
+  error=$?
+  if [[ ! $error -eq 0 ]]; then
+    >&2 echo "Error downloading NDK!"
+    exit $error
+  fi
 fi
 
 echo "Unpacking SDK and NDK into '$androidRoot'"
-unzip -qq $toolsFile -d $androidRoot/$toolsFolder
-unzip -qq $ndkFile -d $androidRoot
+unzip -qq $toolsFile -d $androidRoot/$toolsFolder && unzip -qq $ndkFile -d $androidRoot
+error=$?
+
+if [[ ! $error -eq 0 ]]; then
+  >&2 echo "Error unpacking!"
+  exit 1
+fi
 
 rm $toolsFile
 rm $ndkFile
