@@ -90,14 +90,14 @@ machines:
         description: builds and installs host-side tools for Qt
         job: build
         options:
-          configure: -release -prefix ~/android-host
-          target: "host_tools"
-          build: android-host-build
+          configure: -release -developer-build -nomake tests -nomake examples -no-warnings-are-errors
+          target: host_tools
+          build: qt-host-tools
       - name: android
         description: cross-platform build of Qt for Android
         job: build
         options:
-          configure: "-qt-host-path ~/android-host -xplatform android-clang -android-ndk $ANDROID_NDK_HOME -android-sdk $ANDROID_SDK_ROOT -nomake tests -nomake examples -no-warnings-are-errors"
+          configure: "-qt-host-path ~/qt-host-tools/qtbase -xplatform android-clang -android-ndk $ANDROID_NDK_HOME -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
           build: android
 
   - name: android-tester
