@@ -56,12 +56,6 @@ module Minicoin
                     Vagrant.global_logger.debug("Creating sync session with command '#{command}'")
                     stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
                     if status != 0
-                        machine.ui.warn("Attempting workaround to set up mutagen sync to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}: #{stderr}")
-                        upload_mutagen_agent(machine)
-                        stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
-                    end
-
-                    if status != 0
                         machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}: #{stderr}")
                         raise Minicoin::Errors::MutagenSyncFail
                     end
@@ -89,41 +83,6 @@ module Minicoin
                         if !SyncedFolderMutagen.remove_known_host(ssh_info)
                             machine.ui.error("Failed to remove SSH key for #{SyncedFolderMutagen.ssh_hostname(ssh_info)}")
                         end
-                    end
-                end
-            end
-
-            private
-
-            # work around mutagen bug with Windows 20H2's OpenSSH server
-            def upload_mutagen_agent(machine)
-                if machine.config.vm.guest != :windows
-                    machine.ui.error("Workaround not implemented for #{machine.config.vm.guest}")
-                    return
-                end
-                agent_binary = "windows_amd64"
-
-                mutagen_exe = SyncedFolderMutagen.mutagen_path()
-                if File.symlink?(mutagen_exe)
-                    mutagen_link = mutagen_exe
-                    mutagen_exe = File.readlink(mutagen_exe)
-                    unless mutagen_exe.start_with?("/") # relative path, resolve
-                        mutagen_exe = File.realpath("#{File.dirname(mutagen_link)}/#{mutagen_exe}")
-                    end
-                end
-                stdout, stderr, status = Open3.capture3("#{mutagen_exe} version")
-                mutagen_version = stdout.strip
-                mutagen_bin = File.dirname(mutagen_exe)
-                machine.ui.info("mutagen at #{mutagen_bin} is version #{mutagen_version}")
-                mutagen_agents = File.join(File.dirname(mutagen_bin), "libexec", "mutagen-agents.tar.gz")
-                if File.exist?(mutagen_agents)
-                    machine.ui.info("Extracting #{agent_binary} from #{mutagen_agents}")
-                    `cd /tmp; tar -zxvf #{mutagen_agents} #{agent_binary}`
-                    if File.exist?("/tmp/#{agent_binary}")
-                        machine.ui.info("Uploading #{agent_binary} to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
-                        machine.communicate.upload("/tmp/#{agent_binary}", "../.mutagen/agents/#{mutagen_version}/mutagen-agent.exe")
-                    else
-                        machine.ui.error("#{agent_binary} not present")
                     end
                 end
             end
