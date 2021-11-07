@@ -43,9 +43,11 @@ if !errorlevel! NEQ 0 (
 mutagen version 2> NUL > NUL
 if !errorlevel! NEQ 0 (
     echo Mutagen not found, installing
+    set "mutagen_version_good=0.12.0"
+    set "mutagen_filename=mutagen_windows_amd64_v!mutagen_version_good!.zip"
 
-    powershell -Command "(new-object net.webclient).DownloadFile('https://github.com/mutagen-io/mutagen/releases/download/v0.11.8/mutagen_windows_amd64_v0.11.8.zip', 'mutagen_windows_amd64_v0.11.8.zip')"
-    powershell -Command "Expand-Archive -Force mutagen_windows_amd64_v0.11.8.zip c:\programdata\mutagen"
+    powershell -Command "(new-object net.webclient).DownloadFile('https://github.com/mutagen-io/mutagen/releases/download/v!mutagen_version_good!/!mutagen_filename!', '!mutagen_filename!')"
+    powershell -Command "Expand-Archive -Force !mutagen_filename! c:\programdata\mutagen"
     powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('PATH', 'User') + ';C:\programdata\mutagen', 'User')"
 
     call refreshenv > NUL
