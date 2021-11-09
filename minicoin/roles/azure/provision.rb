@@ -5,7 +5,11 @@ def azure_provision(box, name, args, machine)
     box.vm.provider :azure do |azure, override|
         args.each do |key, value|
             next if key == "role" or key == "role_path"
-            eval("azure.#{key} = \"#{value}\"")
+            if value.is_a?(Array) || value.is_a?(Hash)
+                eval("azure.#{key} = #{value}")
+            else
+                eval("azure.#{key} = \"#{value}\"")
+            end
         end
     end
 end
