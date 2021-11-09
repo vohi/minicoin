@@ -129,7 +129,14 @@ do {
         Set-Item -Path Env:${key} -Value ${value}
     }
 
+    $workingdirectory = $ENV:USERPROFILE
+    if (Test-Path "D:") {
+        $workingdirectory = "D:"
+    }
+
     if ($console) {
+        Write-Output "Changing into $workingdirectory"
+        Set-Location $workingdirectory
         Log-Verbose "Calling $script with Arguments: $jobargs"
         if ($script.ToLower().EndsWith("ps1")) {
             $psargs = @()
@@ -165,7 +172,7 @@ do {
             TaskPath = $taskpath
             TaskName = $jobid
             Description = [string]$taskargs
-            Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument "$taskargs" -WorkingDirectory $ENV:USERPROFILE
+            Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument "$taskargs" -WorkingDirectory $workingdirectory
             User = "vagrant"
             RunLevel = "Highest"
             Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel -DontStopIfGoingOnBatteries
