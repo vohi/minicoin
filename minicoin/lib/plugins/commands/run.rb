@@ -419,10 +419,13 @@ module Minicoin
                         else
                             signal = @level == 1 ? "SIGTERM" : "SIGKILL"
                             if @pid
-                                @killcmd = "setsid kill -#{signal} -- -#{@pid}"
+                                @killcmd = "kill -#{signal} -- -#{@pid}"
                             else
                                 vm.ui.warn "No PID received, killing all bash processes"
-                                @killcmd = "setsid killall -#{signal} bash"
+                                @killcmd = "killall -#{signal} bash"
+                            end
+                            if @vm.guest.name != :darwin
+                                @killcmd = "setsid #{killcmd}"
                             end
                         end
                         begin
