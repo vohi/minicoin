@@ -1,6 +1,6 @@
 @echo off
 SETLOCAL ENABLEDELAYEDEXPANSION
-call \minicoin\util\parse-opts.cmd %*
+call C:\minicoin\util\parse-opts.cmd %*
 
 cd %USERPROFILE%
 

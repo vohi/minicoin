@@ -1,8 +1,8 @@
 @echo off
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-call \minicoin\util\parse-opts.cmd %*
-call \minicoin\util\discover-make.cmd
+call C:\minicoin\util\parse-opts.cmd %*
+call C:\minicoin\util\discover-make.cmd
 
 if NOT DEFINED JOBDIR (
   >&2 echo Error: path to host clone of Qt is required!
@@ -45,7 +45,7 @@ if DEFINED FLAG_clean (
 
 if NOT EXIST !build_dir! mkdir !build_dir!
 cd !build_dir!
-echo Building '!projectname!' from '!JOBDIR!' into '!build_dir!'
+echo Building '!projectname!' from '!JOBDIR!' into '%cd%\!build_dir!'
 
 if DEFINED FLAG_reconfigure (
   if EXIST build.ninja del build.ninja
