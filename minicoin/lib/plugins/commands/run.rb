@@ -564,7 +564,7 @@ module Minicoin
                             >&2 echo "minicoin.process.id=$PGID"
                         BASH
                         @job.run_options[:env].each do |env|
-                            md = /([A-Za-z0-9]+[\+]?)=(.*)/.match(env)
+                            md = /([A-Za-z0-9_]+[\+]?)=(.*)/.match(env)
                             key = md[1]
                             value = md[2]
                             if key.end_with?('+')
