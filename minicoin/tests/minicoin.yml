@@ -58,3 +58,12 @@ machines:
         paths: ~
   - name: notthere
     if: "false"
+  - name: nojob
+    jobconfigs:
+        - name: jobA
+          if: 1 + 2 == 5
+  - name: nojob_either
+    if: 3 + 3 == 6
+    extends: nojob
+    jobconfigs:
+        - name: jobB

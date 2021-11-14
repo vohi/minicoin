@@ -228,14 +228,17 @@ module Minicoin
             return true unless data.is_a?(Hash)
             data.each do |key, value|
                 if key == "if"
-                    begin
-                        exp = eval(value)
-                        data.delete(key) if exp
-                        return [exp, "#{value} => #{exp ? exp : false}"]
-                    rescue => error
-                        STDERR.puts "Error in expression #{value}:"
-                        STDERR.puts "\t#{error}"
-                        return false
+                    Dir.chdir($MINICOIN_PROJECT_DIR) do
+                        begin
+                            exp = eval(value)
+                            return [exp, "#{value} => #{exp}"] if !exp
+                            # if-conditions that evaluate to true can be removed
+                            data.delete(key)
+                        rescue => error
+                            reason = "Error in expression #{value}:\n\t#{error}"
+                            STDERR.puts reason
+                            return [false, reason]
+                        end
                     end
                 elsif value.is_a?(Hash)
                     exp, reason = preprocess(value, path + "#{key}/")
@@ -246,9 +249,11 @@ module Minicoin
                     pre.each_with_index do |entry, index|
                         exp, reason = preprocess(entry, path + "#{key}/#{index}/")
                         if !exp
+                            # we don't want to remove machines that don't meet all requirements
+                            # so that they are listed with the failing condition
                             if "#{path}#{key}" == "/machines" && entry.is_a?(Hash)
+                                entry[:disabled] = reason
                                 value << entry
-                                value.last[:disabled] = reason
                             end
                         else
                             value << entry

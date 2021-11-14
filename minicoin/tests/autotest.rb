@@ -153,6 +153,8 @@ class Tester
         "os"=>"linux"
       },
       {"name" => "notthere", "if" => "false", "shared_folders"=>[{"Host"=>"Guest"}], :disabled => "false => false"},
+      {"name" => "nojob", "jobconfigs" => [], "shared_folders"=>[{"Host"=>"Guest"}]},
+      {"name" => "nojob_either", "jobconfigs" => [{"name" => "jobB"}], "shared_folders"=>[{"Host"=>"Guest"}]},
       {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>[{"Host"=>"Guest"}], "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
     }
