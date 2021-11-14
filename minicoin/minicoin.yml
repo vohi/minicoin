@@ -86,16 +86,18 @@ machines:
       - role: linux-builder
       - role: android-builder
     jobconfigs:
-      - name: host
+      - name: host-tools
         description: builds and installs host-side tools for Qt
         job: build
+        if: File.exist?("configure")
         options:
           configure: -release -developer-build -nomake tests -nomake examples -no-warnings-are-errors
           target: host_tools
           build: qt-host-tools
-      - name: android
+      - name: qt-for-android
         description: cross-platform build of Qt for Android
         job: build
+        if: File.exist?("configure")
         options:
           configure: "-qt-host-path ~/qt-host-tools/qtbase -xplatform android-clang -android-ndk $ANDROID_NDK_HOME -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
           build: android
