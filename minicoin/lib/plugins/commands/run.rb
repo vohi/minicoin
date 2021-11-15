@@ -425,7 +425,7 @@ module Minicoin
                                 @killcmd = "killall -#{signal} bash"
                             end
                             if @vm.guest.name != :darwin
-                                @killcmd = "setsid #{killcmd}"
+                                @killcmd = "setsid #{@killcmd}"
                             end
                         end
                         begin
