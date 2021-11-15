@@ -1,4 +1,6 @@
 apt-get -q install -y qemu-kvm libvirt-clients libvirt-daemon-system bridge-utils virt-manager
+apt-get -q install -y libstdc++6 libncurses5 # for adb/gdb
+apt-get -q install -y libsdl1.2debian # for the emulator
 
 usermod -a -G libvirt vagrant
 usermod -a -G kvm vagrant
@@ -11,14 +13,20 @@ then
     exit 1
 fi
 
-androidArch="${PARAM_androidArch:-x86}"
-androidImage="${PARAM_androidImage:-android-23}"
+androidArch="${PARAM_androidArch:-armeabi-v7a}"
+androidImage="${PARAM_androidImage:-android-25}"
 
 echo "Installing emulator"
-echo "y" | sdkmanager --install "emulator" >> sdkmanager.log
+echo "y" | sdkmanager --install "emulator" "patcher;v4" >> sdkmanager.log
+
+if (! grep "ANDROID_EMULATOR_HOME" /home/vagrant/.profile)
+then
+    echo "export ANDROID_EMULATOR_HOME=~/.android" >> /home/vagrant/.profile
+    echo "export ANDROID_EMULATOR_IMAGE=${androidImage}-${androidArch}" >> /home/vagrant/.profile
+fi
 
 echo "Verifying emulator:"
-$ANDROID_SDK_ROOT/emulator/emulator-check accel
+$ANDROID_SDK_ROOT/emulator/emulator-check accel desktop-env window-mgr
 error=$?
 
 if [ $error -gt 0 ]
@@ -31,12 +39,15 @@ echo "Installing system image '$androidImage' for '$androidArch'"
 echo "y" | sdkmanager --install "system-images;$androidImage;google_apis;$androidArch" >> sdkmanager.log
 
 echo "Creating AVD based on '$androidImage' for '$androidArch'"
-echo "no" | avdmanager create avd -n $androidArch"emulator" -k "system-images;$androidImage;google_apis;$androidArch" -c 2048M -f >> sdkmanager.log
+echo "no" | su -l vagrant -c "avdmanager create avd -n \"${androidImage}-${androidArch}\" -k \"system-images;$androidImage;google_apis;$androidArch\" -c 2048M -f"
 
 echo "Installation of emulator complete, here's a list of Android Virtual Devices:"
-avdmanager list avd
+su -l vagrant -c "avdmanager list avd"
 
 echo "Starting adb"
-$ANDROID_SDK_ROOT/platform-tools/adb start-server
-echo "Starting windowless emulator"
-$ANDROID_SDK_ROOT/emulator/emulator -avd $androidArch"emulator" -no-window &
+su -l vagrant -c "$ANDROID_SDK_ROOT/platform-tools/adb start-server"
+echo "Starting emulator"
+su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window >&2 /dev/null &"
+while ! pgrep -f "qemu" > /dev/null; do
+    sleep 1
+done
