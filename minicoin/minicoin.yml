@@ -99,7 +99,7 @@ machines:
         job: build
         if: File.exist?("configure")
         options:
-          configure: "-qt-host-path ~/qt-host-tools/qtbase -xplatform android-clang -android-ndk $ANDROID_NDK_HOME -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
+          configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
           build: android
 
   - name: android-tester
