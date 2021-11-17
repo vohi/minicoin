@@ -160,23 +160,27 @@ if ! which xdotool &> /dev/null
 then
   $command "xdotool" > /dev/null
 fi
-xorg_cmd=$(ps a -C Xorg -o command)
-auth=0
-for cmd in $xorg_cmd
-do
-  if [ $auth == 1 ]
-  then
-    echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
-    break
-  fi
-  [ $cmd == "-auth" ] && auth=1
-done
 
-echo 'export DISPLAY=:0' >> /home/vagrant/.profile
-if which xrandr &> /dev/null
+if ! grep "XAUTH_FILE" /home/vagrant/.profile
 then
-  echo "Setting X screen resolution"
-  su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
+  xorg_cmd=$(ps a -C Xorg -o command)
+  auth=0
+  for cmd in $xorg_cmd
+  do
+    if [ $auth == 1 ]
+    then
+      echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
+      break
+    fi
+    [ $cmd == "-auth" ] && auth=1
+  done
+
+  echo 'export DISPLAY=:0' >> /home/vagrant/.profile
+  if which xrandr &> /dev/null
+  then
+    echo "Setting X screen resolution"
+    su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
+  fi
 fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target &> /dev/null
