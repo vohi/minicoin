@@ -123,12 +123,7 @@ if NOT "!PARAM_configure!" == "" (
   )
 )
 
-if /I "!PARAM_configure!"=="!PARAM_configure:xplatform=!" (
-  call :link_tool qmake.exe
-  call :link_tool qt-cmake.bat
-)
-if /I "!target!" == "qmake" (
-  call :link_tool qmake.exe
-)
+call :link_tool qmake.exe
+call :link_tool qt-cmake.bat
 
 exit /B %error%

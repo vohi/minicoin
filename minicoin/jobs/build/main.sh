@@ -148,14 +148,7 @@ then
   fi
 fi
 
-if [[ ! "$PARAM_configure" == *"xplatform"* ]]
-then
-  link_tool qmake
-  link_tool qt-cmake
-fi
-if [[ "$target" == "qmake" ]]
-then
-  link_tool qmake
-fi
+link_tool qmake
+link_tool qt-cmake
 
 exit $error
