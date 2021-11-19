@@ -101,6 +101,11 @@ machines:
         options:
           configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
           build: android
+      - name: standalone
+        description: cross-compile the current project for Android
+        job: build
+        options:
+          configure: "-DQT_HOST_PATH:PATH=~/qt-host-tools/qtbase"
 
   - name: android-tester
     extends: android-builder
