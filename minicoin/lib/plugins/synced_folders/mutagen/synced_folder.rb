@@ -18,7 +18,13 @@ module Minicoin
             def enable(machine, folders, opts)
                 machine.ui.info "Setting up mutagen sync sessions..."
                 stdout, stderr, status = SyncedFolderMutagen.call_mutagen(:list, machine.name)
-                status = -1 if status == 0 && stdout.include?("No sessions found")
+                status = -1 if status == 0 && !stdout.include?("minicoin: #{machine.name}")
+                # if the ssh info of the machine has changed, then we need to terminate and recreate
+                if status == 0 && !stdout.include?("URL: #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
+                    machine.ui.detail "SSH connection has changed, terminating old sync session..."
+                    SyncedFolderMutagen.call_mutagen("terminate", machine.name)
+                    status = -1
+                end
                 if status == 0
                     # we have a running session, check if it includes all our alphas
                     folders.each do |id, folder_opts|
