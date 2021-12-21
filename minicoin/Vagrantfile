@@ -3,6 +3,17 @@
 
 Vagrant.require_version ">= 2.2.4"
 
+class Hash
+  def slice(*keep_keys)
+    h = {}
+    keep_keys.each { |key| h[key] = fetch(key) if has_key?(key) }
+    h
+  end unless Hash.method_defined?(:slice)
+  def except(*less_keys)
+    slice(*keys - less_keys)
+  end unless Hash.method_defined?(:except)
+end
+
 require 'yaml'
 require 'json'
 require 'net/http'
@@ -15,6 +26,7 @@ require_relative "lib/sharing.rb"
 require_relative "lib/virtualbox.rb"
 require_relative "lib/vmware_desktop.rb"
 require_relative "lib/azure.rb"
+require_relative "lib/aws.rb"
 # minicoin command extensions
 require_relative "lib/minicoin.rb"
 
@@ -221,6 +233,7 @@ Vagrant.configure("2") do |config|
         virtualbox_setup(box, machine)
         vmware_setup(box, machine)
         azure_setup(box, machine)
+        aws_setup(box, machine)
       rescue => e
         puts "==> #{name}: Error initializing provider specific settings:"
         puts "             #{e}"
