@@ -4,7 +4,10 @@ chmod 0700 ~/.ssh
 chmod 0644 ~/.ssh/authorized_keys
 
 # turn keyboard navigation to all controls on
-defaults write "Apple Global Domain" AppleKeyboardUIMode 2
+defaults write "Apple Global Domain" AppleKeyboardUIMode -Int 2
+
+# forces security question for automation
+osascript -l JavaScript -e "Application('System Events').appearancePreferences.darkMode = true"
 
 echo "If this asks for a password, add the following via visudo"
 echo "vagrant ALL=(ALL) NOPASSWD: ALL
