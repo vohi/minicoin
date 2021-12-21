@@ -91,7 +91,7 @@ then
   [[ $configure == -D* ]] && configure="-- $configure"
   echo "Configuring '$JOBDIR' with 'configure $configure'"
   echo "Pass --configure \"configure options\" to override"
-  $JOBDIR/configure $configure
+  /bin/sh $JOBDIR/configure $configure
 elif [ -f $JOBDIR/CMakeLists.txt ]
 then
   [ $(command -v ninja) ] && generator="-GNinja"
