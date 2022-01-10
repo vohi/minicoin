@@ -37,7 +37,7 @@ cd /tmp
 
 vagrant_version=`vagrant --version 2> /dev/null`
 vbox_version=`VBoxManage --version 2> /dev/null`
-if [ -z $vagrant_version ]
+if [ -z "$vagrant_version" ]
 then
     echo "vagrant not found, installing..."
 
