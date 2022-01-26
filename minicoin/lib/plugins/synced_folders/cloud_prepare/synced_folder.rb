@@ -3,8 +3,12 @@ module Minicoin
         class SyncedFolder < Vagrant.plugin("2", :synced_folder)
             include Vagrant::Util
             @@azure_cli = Which.which("az")
+            @@aws_cli = Which.which("aws")
             def self.azure_cli()
                 @@azure_cli
+            end
+            def self.aws_cli()
+                @@aws_cli
             end
 
             def initialize()
@@ -31,7 +35,9 @@ module Minicoin
                         error_message = "Failed to read Azure credentials"
                     end
                 elsif provider == :aws
-                    error_message = "AWS not implemented"
+                    if !SyncedFolder.aws_cli()
+                        error_message = "The AWS CLI is not installed"
+                    end
                 else
                     # assume it's not a cloud provider; enable will not do anything
                     return true
