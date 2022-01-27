@@ -20,20 +20,26 @@ module Minicoin
 
             def prepare_aws_account(machine)
                 return nil unless @@aws_account.nil?
-                return if ['status', 'ssh', 'destroy', 'halt'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
+                return unless ['up', 'validate'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
                 begin
+                    @@aws_account = "" # don't try again
+                    # check that there are credentials
                     stdout, stderr, status = Open3.capture3('aws sts get-caller-identity')
-                    raise "Failed to read account information" if status != 0
+                    raise "Failed to read AWS account information" if status != 0
                     aws_profile = JSON.parse(stdout)
                     @@aws_account = aws_profile['Account']
                     machine.ui.info "Verifying AWs account #{@@aws_account}"
+
+                    # verify that there is a default VPC
                     stdout, stderr, status = Open3.capture3("aws ec2 describe-vpcs --filters Name=is-default,Values=true;Name=state,Values=available")
                     raise "Failed to read VPC information: #{stderr}" if status != 0
                     default_vpc = JSON.parse(stdout)['Vpcs'][0]
                     raise "No available default VPC found" if default_vpc.nil?
                     machine.ui.detail "Using Virtual private cloud #{default_vpc['VpcId']}"
+
+                    # check if there's a minicoin security group, and create it if not
                     stdout, stderr, status = Open3.capture3("aws ec2 describe-security-groups --filters Name=group-name,Values=minicoin;Name=vpc-id,Values=#{default_vpc['VpcId']}")
-                    raise "Failed to read security group information" if status != 0
+                    raise "Failed to read security group information: #{stderr}" if status != 0
                     minicoin_group = JSON.parse(stdout)['SecurityGroups'][0]
                     if minicoin_group.nil?
                         machine.ui.detail "minicoin security group not found, creating..."
@@ -56,7 +62,7 @@ module Minicoin
                     end
                 rescue => e
                     machine.ui.error e
-                    return e
+                    return "The AWS account does not meet the minicoin requirements"
                 end
                 nil
             end
