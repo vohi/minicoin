@@ -20,9 +20,8 @@ def aws_setup(box, machine)
     box.vm.synced_folder "", "/aws", type: :cloud_prepare, id: :aws
 
     box.vm.provider :aws do |aws, override|
-        aws.security_groups = [
-            "default"
-        ]
+         # this group is created by minicoin with permissions for SSH, RDP, and WinRM
+        aws.security_groups = [ "minicoin" ]
 
         # hello Ireland
         aws.region = "eu-west-1"

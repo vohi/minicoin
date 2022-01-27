@@ -1,9 +1,12 @@
+require 'json'
+
 module Minicoin
     module CloudPrepare
         class SyncedFolder < Vagrant.plugin("2", :synced_folder)
             include Vagrant::Util
             @@azure_cli = Which.which("az")
             @@aws_cli = Which.which("aws")
+            @@aws_account = nil
             def self.azure_cli()
                 @@azure_cli
             end
@@ -13,6 +16,49 @@ module Minicoin
 
             def initialize()
                 super
+            end
+
+            def prepare_aws_account(machine)
+                return nil unless @@aws_account.nil?
+                return if ['status', 'ssh', 'destroy', 'halt'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
+                begin
+                    stdout, stderr, status = Open3.capture3('aws sts get-caller-identity')
+                    raise "Failed to read account information" if status != 0
+                    aws_profile = JSON.parse(stdout)
+                    @@aws_account = aws_profile['Account']
+                    machine.ui.info "Verifying AWs account #{@@aws_account}"
+                    stdout, stderr, status = Open3.capture3("aws ec2 describe-vpcs --filters Name=is-default,Values=true;Name=state,Values=available")
+                    raise "Failed to read VPC information: #{stderr}" if status != 0
+                    default_vpc = JSON.parse(stdout)['Vpcs'][0]
+                    raise "No available default VPC found" if default_vpc.nil?
+                    machine.ui.detail "Using Virtual private cloud #{default_vpc['VpcId']}"
+                    stdout, stderr, status = Open3.capture3("aws ec2 describe-security-groups --filters Name=group-name,Values=minicoin;Name=vpc-id,Values=#{default_vpc['VpcId']}")
+                    raise "Failed to read security group information" if status != 0
+                    minicoin_group = JSON.parse(stdout)['SecurityGroups'][0]
+                    if minicoin_group.nil?
+                        machine.ui.detail "minicoin security group not found, creating..."
+                        create_string = "--group-name 'minicoin' --description 'Default group for minicoin machines' --vpc-id '#{default_vpc['VpcId']}'"
+                        stdout, stderr, status = Open3.capture3("aws ec2 create-security-group #{create_string}")
+                        raise "Failed to create minicoin security group: #{stderr}" if status != 0
+                        minicoin_group = JSON.parse(stdout)
+                    end
+                    machine.ui.detail "Machines will be created in security group #{minicoin_group['GroupId']}"
+                    if minicoin_group['IpPermissions'].nil?
+                        ports = [22, 3389, 5985, 5986] # Open up for SSH, RDP, and WinRM
+                        machine.ui.detail "Security group has no ingress permissions, adding rules for ports"
+                        ports.each do |port|
+                            machine.ui.detail "... #{port}"
+                            rule_string = "--ip-permissions \"FromPort=#{port},ToPort=#{port},IpProtocol=tcp,IpRanges=[{CidrIp='0.0.0.0/0',Description='Allow port #{port}'}]\""
+                            stdout, stderr, status = Open3.capture3("aws ec2 authorize-security-group-ingress --group-id #{minicoin_group['GroupId']} #{rule_string}")
+                            # don't throw, just warn and 
+                            machine.ui.warn "Failed to add ingress rule for port #{port}: #{stderr}" if status != 0
+                        end
+                    end
+                rescue => e
+                    machine.ui.error e
+                    return e
+                end
+                nil
             end
 
             def usable?(machine, raise_error=false)
@@ -37,6 +83,8 @@ module Minicoin
                 elsif provider == :aws
                     if !SyncedFolder.aws_cli()
                         error_message = "The AWS CLI is not installed"
+                    else
+                        error_message = prepare_aws_account(machine)
                     end
                 else
                     # assume it's not a cloud provider; enable will not do anything
