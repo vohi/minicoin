@@ -26,7 +26,7 @@ def aws_setup(box, machine)
         # hello Ireland
         aws.region = "eu-west-1"
         # 8 vCPU, 32 GB RAM
-        aws.instance_type = "t2.2xlarge"
+        aws.instance_type = "t2.2xlarge" unless box.vm.guest == :darwin
 
         # destroying an instance is broken in the vagrant plugin, so we
         # always terminate when the instance is shut down via `vagrant halt`
