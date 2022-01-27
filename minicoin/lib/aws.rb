@@ -43,5 +43,13 @@ def aws_setup(box, machine)
         # very much not a good idea, but vagrant fails to reconnect with the new key
         override.ssh.insert_key = false
         override.ssh.keep_alive = true
+        override.winssh.insert_key = false
+
+        override.winrm.transport = :negotiate
+        override.winrm.basic_auth_only = false
+        override.winrm.timeout = 3600
+        override.winrm.ssl_peer_verification = false
+
+        override.vagrant.sensitive = [ ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})" ]
     end
 end

@@ -38,6 +38,10 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Wi
 
 # fix file permissions for administrators_authorized_keys
 $file = "$Env:programdata\ssh\administrators_authorized_keys"
+$public_key = "$Env:systemroot\temp\id_rsa.pub"
+if (Test-Path $public_key) {
+    Get-Content -Path $public_key | Add-Content -Path $file
+}
 $acl = Get-Acl $file
 $acl.SetAccessRuleProtection($true,$false)
 $userid = New-Object System.Security.Principal.Ntaccount("NT AUTHORITY\Authenticated Users")

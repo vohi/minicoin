@@ -87,6 +87,8 @@ def azure_setup(box, machine)
         azure.location = location
         azure.instance_ready_timeout = 3600
 
-        override.vagrant.sensitive = [ ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)", pwd ]
+        ENV['CLOUD_VM_ADMIN_PASSWORD'] = "$Vagrant(0)"
+
+        override.vagrant.sensitive = [ ENV['AZURE_VM_ADMIN_PASSWORD'] || ENV['CLOUD_VM_ADMIN_PASSWORD'], pwd ]
     end
 end

@@ -63,10 +63,10 @@ module Minicoin
                 machine.ui.output "Preparing #{machine.box.provider} machine #{machine.name} with minicoin requirements for #{machine.config.vm.guest}"
                 if machine.config.vm.guest == :windows
                     machine.ui.detail "Uploading data"
-                    machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\programdata\\ssh\\administrators_authorized_keys")
+                    machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\Windows\\Temp\\id_rsa.pub")
                     machine.communicate.upload("./lib/cloud_provision", "C:\\Windows\\Temp")
                     machine.communicate.upload("./util", "c:\\minicoin")
-                    admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+                    admin_password = ENV['CLOUD_VM_ADMIN_PASSWORD'] || "vagrant"
                     machine.ui.detail "Installing base software"
                     machine.communicate.sudo("powershell.exe -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\cloud_provision\\windows.ps1 '#{admin_password}'") do |type, data|
                         echo(machine.ui, type, data)

@@ -1,0 +1,70 @@
+Vagrant.configure('2') do |config|
+    config.vm.guest = :windows
+    config.vm.provider :aws
+    config.vm.provider :aws do |aws, override|
+        pwd = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})"
+        ENV['CLOUD_VM_ADMIN_PASSWORD'] = pwd
+        aws.ami = "ami-00a452e228b12f42b" # Microsoft Windows Server 2019 Base
+        
+        # we need more disk space
+        aws.block_device_mapping = [{
+            "DeviceName" => "/dev/sda1",
+            "Ebs.VolumeSize" => 50
+        }]
+
+        # Use userdata to bootstrap the machine with the vagrant user and the insecure
+        # ssh key. Could inject the user's public key here, but keeping it simple for now.
+        aws.user_data = <<-BASH.lstrip
+            <script>
+            winrm quickconfig -q
+            winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2147483647"}
+            winrm set winrm/config @{MaxTimeoutms="1800000"}
+            winrm set winrm/config/client/auth @{Basic="true"}
+            winrm set winrm/config/service/auth @{Basic="true"}
+            winrm set winrm/config/service @{AllowUnencrypted="true"}
+            sc config WinRM start=auto
+            </script>
+            <powershell>
+            # bootstrap the vagrant user in the admin group
+            $Password = ConvertTo-SecureString -String "#{pwd}" -AsPlainText -Force
+            New-LocalUser "vagrant" -Password $Password -FullName "vagrant" -Description "Default vagrant user"
+            Add-LocalGroupMember -Group "Administrators" -Member "vagrant"
+
+            # Install the OpenSSH services
+            Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+            Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+
+            # Allow incoming connections to the SSH server
+            New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+            # Start sshd and ssh-agent automatically on startup
+            Set-Service sshd -StartupType Automatic
+            Set-Service ssh-agent -StartupType Automatic
+            Start-Service sshd
+            Start-Service ssh-agent
+
+            # download and secure the ssh keys
+            curl -o ${env:ProgramData}\\ssh\\administrators_authorized_keys https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant.pub
+            icacls.exe ${env:ProgramData}\\ssh\\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+
+            # configure WinRM
+            Enable-PSRemoting -Force
+            Set-Service winrm -StartupType Automatic
+
+            # Allow incoming connections to WinRM server
+            New-NetFirewallRule -Name winrm-http -DisplayName 'WinRM-HTTP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985
+            New-NetFirewallRule -Name winrm-https -DisplayName 'WinRM-HTTPS' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5986
+
+            </powershell>
+        BASH
+
+        # the default user in the VM is not vagrant, so we have to set that explicitly
+        override.ssh.username = "vagrant"
+        override.winrm.username = "vagrant"
+        override.winrm.password = pwd
+
+        # As long as we bootstrap with the default insecure key we need to use it to authenticate.
+        override.ssh.private_key_path = "~/.vagrant.d/insecure_private_key"
+        override.winssh.private_key_path = "~/.vagrant.d/insecure_private_key"
+    end
+end
