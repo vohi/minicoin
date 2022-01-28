@@ -21,7 +21,8 @@ def azure_setup(box, machine)
     # this has to happen on machine level, even though it's only needed for the
     # provider, otherwise the plugin runs after machine-level provisioners, which
     # is too late.
-    box.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure
+    admin_password = ENV['AZURE_VM_ADMIN_PASSWORD'] || "$Vagrant(0)"
+    box.vm.synced_folder "", "/azure", type: :cloud_prepare, id: :azure, admin_password: admin_password
 
     box.vm.provider :azure do |azure, override|
         location = "northeurope"
@@ -87,8 +88,6 @@ def azure_setup(box, machine)
         azure.location = location
         azure.instance_ready_timeout = 3600
 
-        ENV['CLOUD_VM_ADMIN_PASSWORD'] = "$Vagrant(0)"
-
-        override.vagrant.sensitive = [ ENV['AZURE_VM_ADMIN_PASSWORD'] || ENV['CLOUD_VM_ADMIN_PASSWORD'], pwd ]
+        override.vagrant.sensitive = [ pwd ]
     end
 end

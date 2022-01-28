@@ -2,19 +2,16 @@ Vagrant.configure('2') do |config|
     config.vm.guest = :windows
     config.vm.provider :aws
     config.vm.provider :aws do |aws, override|
-        pwd = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})"
-        ENV['CLOUD_VM_ADMIN_PASSWORD'] = pwd
-        aws.ami = "ami-00a452e228b12f42b" # Microsoft Windows Server 2019 Base
-        
-        # we need more disk space
-        aws.block_device_mapping = [{
-            "DeviceName" => "/dev/sda1",
-            "Ebs.VolumeSize" => 50
-        }]
+        # Microsoft Windows Server 2019 Base
+        aws.ami = "ami-00a452e228b12f42b"
 
+        # We expect that the user has a key pair in ~/.ssh
         public_key = File.read("#{$HOME}/.ssh/id_rsa.pub").strip
-        # Use userdata to bootstrap the machine with the vagrant user and the insecure
-        # ssh key. Could inject the user's public key here, but keeping it simple for now.
+        override.ssh.private_key_path = "~/.ssh/id_rsa"
+        override.winssh.private_key_path = "~/.ssh/id_rsa"
+
+        # Use userdata to bootstrap the machine with the vagrant user and the key pair.
+        # The lstrip is needed for the shebang to work.
         aws.user_data = <<-BASH.lstrip
             <script>
             winrm quickconfig -q
@@ -27,7 +24,7 @@ Vagrant.configure('2') do |config|
             </script>
             <powershell>
             # bootstrap the vagrant user in the admin group
-            $Password = ConvertTo-SecureString -String "#{pwd}" -AsPlainText -Force
+            $Password = ConvertTo-SecureString -String "#{ENV['AWS_VM_ADMIN_PASSWORD']}" -AsPlainText -Force
             New-LocalUser "vagrant" -Password $Password -FullName "vagrant" -Description "Default vagrant user"
             Add-LocalGroupMember -Group "Administrators" -Member "vagrant"
 
@@ -44,7 +41,7 @@ Vagrant.configure('2') do |config|
             Start-Service sshd
             Start-Service ssh-agent
 
-            # download and secure the ssh keys
+            # write and secure the ssh keys
             $public_key = "#{public_key}"
             Set-Content -Path ${env:ProgramData}\\ssh\\administrators_authorized_keys -Value $public_key
             icacls.exe ${env:ProgramData}\\ssh\\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
@@ -59,14 +56,5 @@ Vagrant.configure('2') do |config|
 
             </powershell>
         BASH
-
-        # the default user in the VM is not vagrant, so we have to set that explicitly
-        override.ssh.username = "vagrant"
-        override.winrm.username = "vagrant"
-        override.winrm.password = pwd
-
-        # As long as we bootstrap with the default insecure key we need to use it to authenticate.
-        override.ssh.private_key_path = "~/.ssh/id_rsa"
-        override.winssh.private_key_path = "~/.ssh/id_rsa"
     end
 end

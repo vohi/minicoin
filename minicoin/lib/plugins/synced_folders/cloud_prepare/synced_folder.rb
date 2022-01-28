@@ -107,6 +107,13 @@ module Minicoin
             end
 
             def enable(machine, folders, opts)
+
+                admin_password = ""
+                folders.each do |id, folder_opts|
+                    next if folder_opts[:type] != :cloud_prepare
+                    admin_password = folder_opts[:admin_password]
+                end
+
                 return if machine.nil?
                 folder = folders[machine.box.provider]
                 return if folder.nil?
@@ -120,7 +127,6 @@ module Minicoin
                     machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\Windows\\Temp\\id_rsa.pub")
                     machine.communicate.upload("./lib/cloud_provision", "C:\\Windows\\Temp")
                     machine.communicate.upload("./util", "c:\\minicoin")
-                    admin_password = ENV['CLOUD_VM_ADMIN_PASSWORD'] || "vagrant"
                     machine.ui.detail "Installing base software"
                     machine.communicate.sudo("powershell.exe -ExecutionPolicy Bypass -File C:\\Windows\\Temp\\cloud_provision\\windows.ps1 '#{admin_password}'") do |type, data|
                         echo(machine.ui, type, data)
