@@ -12,6 +12,7 @@ end
 
 # Azure specific settings
 def aws_setup(box, machine)
+    $settings[:aws] ||= {}
     return unless Vagrant.has_plugin?('vagrant-aws')
     return if $AWS_CLI_INSTALLED == false
     # this has to happen on machine level, even though it's only needed for the
@@ -25,6 +26,20 @@ def aws_setup(box, machine)
     box.vm.provider :aws do |aws, override|
          # this group is created by minicoin with permissions for SSH, RDP, and WinRM
         aws.security_groups = [ "minicoin" ]
+
+        # if the box is not installed or doesn't specify an AMI, then the minicoin.yaml file
+        # has to specify it. And we can't override what is set here in the box's Vagrantfile,
+        # so we are stuck. https://github.com/mitchellh/vagrant-aws/issues/538
+        aws.ami = box.minicoin.machine['ami'] unless box.minicoin.machine['ami'].nil?
+
+        # We expect that the user has a key pair in ~/.ssh
+        begin
+            $settings[:aws][:public_key] = File.read("#{$HOME}/.ssh/id_rsa.pub").strip
+            override.ssh.private_key_path = "~/.ssh/id_rsa"
+            override.winssh.private_key_path = "~/.ssh/id_rsa"
+        rescue => e
+            STDERR.puts "Failed to read the public key: #{e}"
+        end
 
         # hello Ireland
         aws.region = "eu-west-1"
@@ -63,6 +78,6 @@ def aws_setup(box, machine)
         override.winrm.timeout = 3600
         override.winrm.ssl_peer_verification = false
 
-        override.vagrant.sensitive = [ ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})" ]
+        override.vagrant.sensitive = [ ENV['AWS_VM_ADMIN_PASSWORD'] ]
     end
 end
