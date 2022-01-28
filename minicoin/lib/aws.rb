@@ -31,6 +31,9 @@ def aws_setup(box, machine)
         # has to specify it. And we can't override what is set here in the box's Vagrantfile,
         # so we are stuck. https://github.com/mitchellh/vagrant-aws/issues/538
         aws.ami = box.minicoin.machine['ami'] unless box.minicoin.machine['ami'].nil?
+        aws.tags = {
+            "minicoin" => box.minicoin.machine['name']
+        }
 
         # We expect that the user has a key pair in ~/.ssh
         begin
