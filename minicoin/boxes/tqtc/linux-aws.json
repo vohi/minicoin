@@ -1,0 +1,16 @@
+{
+    "name": "tqtc/linux-aws",
+    "description": "AWS linux box provisioned for use with minicoin",
+    "versions": [
+        {
+            "version": "0.0.1",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "aws",
+                    "url": "file:///tmp/aws/linux-aws-0.0.1.box"
+                }
+            ]
+        }
+    ]
+}
