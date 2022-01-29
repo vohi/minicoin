@@ -10,7 +10,7 @@ if $AWS_CLI_INSTALLED.nil?
 end
 
 
-# Azure specific settings
+# AWS specific settings
 def aws_setup(box, machine)
     $settings[:aws] ||= {}
     return unless Vagrant.has_plugin?('vagrant-aws')
