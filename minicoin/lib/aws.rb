@@ -13,6 +13,8 @@ end
 # AWS specific settings
 def aws_setup(box, machine)
     $settings[:aws] ||= {}
+    $settings[:aws_boxes] ||= []
+
     return unless Vagrant.has_plugin?('vagrant-aws')
     return if $AWS_CLI_INSTALLED == false
     # this has to happen on machine level, even though it's only needed for the
@@ -27,10 +29,15 @@ def aws_setup(box, machine)
          # this group is created by minicoin with permissions for SSH, RDP, and WinRM
         aws.security_groups = [ "minicoin" ]
 
-        # if the box is not installed or doesn't specify an AMI, then the minicoin.yaml file
-        # has to specify it. And we can't override what is set here in the box's Vagrantfile,
-        # so we are stuck. https://github.com/mitchellh/vagrant-aws/issues/538
-        aws.ami = box.minicoin.machine['ami'] unless box.minicoin.machine['ami'].nil?
+        # Workaround for https://github.com/mitchellh/vagrant-aws/issues/538: if the box we
+        # want is not installed yet, then the AWS plugin fails the validation before the box
+        # gets downloaded and installed. To check whether the box is installed, we use an entry
+        # in our global settings hash that boxes add themselves to via their Vagrantfile.
+        # If the box is not loaded yet, then setting the ami to a dummy value satisfies the
+        # plugin without overwriting the box file or the AWS-specific provisioning declared
+        # in the minicoin machine configuration.
+        aws.ami = "dummy" unless $settings[:aws_boxes].include?(box.minicoin.machine['box'])
+
         aws.tags = {
             "minicoin" => box.minicoin.machine['name']
         }

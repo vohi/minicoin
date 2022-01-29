@@ -1,3 +1,6 @@
+$settings[:aws_boxes] ||= []
+$settings[:aws_boxes] << "tqtc/windows-aws"
+
 Vagrant.configure('2') do |config|
     config.vm.guest = :windows
     config.vm.provider :aws
