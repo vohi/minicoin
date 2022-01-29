@@ -12,8 +12,8 @@ Vagrant.configure('2') do |config|
         # The lstrip is needed for the shebang to work.
         aws.user_data = <<-BASH.lstrip
             #!/bin/bash
-            echo 'bootstrapping vagrant user' > /tmp/user_data.log
-            useradd -m vagrant -s /bin/bash
+            groupadd vagrant
+            useradd -m vagrant -s /bin/bash -G vagrant
             echo "#{ENV['AWS_VM_ADMIN_PASSWORD']}" | passwd --stdin vagrant
             touch /etc/sudoers.d/vagrant
             echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant
@@ -21,8 +21,6 @@ Vagrant.configure('2') do |config|
             mkdir -p /home/vagrant/.ssh
             echo "#{$settings[:aws][:public_key]}" > /home/vagrant/.ssh/authorized_keys
             chown -R vagrant:vagrant /home/vagrant/.ssh
-
-            echo 'user vagrant created' >> /tmp/user_data.log
         BASH
     end
 end
