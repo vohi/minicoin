@@ -69,6 +69,16 @@
                     "url": "file:///tmp/vmware_desktop/macos11-vmware-0.0.6.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.7",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "vmware_desktop",
+                    "url": "file:///tmp/vmware_desktop/macos11-vmware-0.0.7.box"
+                }
+            ]
         }
     ]
 }

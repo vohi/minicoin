@@ -101,6 +101,20 @@
                     "url": "file:///tmp/azure/windows10-azure-0.0.8.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.9",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "virtualbox",
+                    "url": "file:///tmp/virtualbox/windows10-virtualbox-0.0.9.box"
+                },
+                {
+                    "name": "vmware_desktop",
+                    "url": "file:///tmp/vmware_desktop/windows10-vmware-0.0.9.box"
+                }
+            ]
         }
     ]
 }
