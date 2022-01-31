@@ -1,4 +1,6 @@
 require 'json'
+require 'net/http'
+require 'ipaddr'
 
 module Minicoin
     module CloudPrepare
@@ -48,15 +50,47 @@ module Minicoin
                         raise "Failed to create minicoin security group: #{stderr}" if status != 0
                         minicoin_group = JSON.parse(stdout)
                     end
-                    machine.ui.detail "Machines will be created in security group #{minicoin_group['GroupId']}"
-                    if minicoin_group['IpPermissions'].nil?
-                        ports = [22, 3389, 5985, 5986] # Open up for SSH, RDP, and WinRM
-                        machine.ui.detail "Security group has no ingress permissions, adding rules for ports"
-                        ports.each do |port|
-                            machine.ui.detail "... #{port}"
-                            rule_string = "--ip-permissions \"FromPort=#{port},ToPort=#{port},IpProtocol=tcp,IpRanges=[{CidrIp='0.0.0.0/0',Description='Allow port #{port}'}]\""
-                            stdout, stderr, status = Open3.capture3("aws ec2 authorize-security-group-ingress --group-id #{minicoin_group['GroupId']} #{rule_string}")
-                            # don't throw, just warn and 
+                    minicoin_group_id = minicoin_group['GroupId']
+                    # get the public IP address of this network (NOT just this host) as seen by AWS,
+                    # and make sure that the minicoin security group lets us in. This means that we
+                    # can connect to any instance on AWS from any public IP address from which an instance
+                    # has been created.
+                    public_ip = Net::HTTP.get(URI("https://api.ipify.org"))
+                    hostname = Socket.gethostname
+                    machine.ui.detail "Machines will be created with security group #{minicoin_group_id}, updating ingress rules for #{public_ip}"
+                    ingress_rules = [ # Open up for
+                        { :port => 22, :protocol => :tcp, :description => "SSH" },
+                        { :port => 3389, :protocol => :tcp, :description => "RDP" },
+                        { :port => 5985, :protocol => :tcp, :description => "WinRM-HTTP" },
+                        { :port => 5986, :protocol => :tcp, :description => "WinRM-HTTPS" },
+                        #  (https://support.apple.com/en-gb/guide/remote-desktop/apd0c903fec/mac)
+                        { :port => 5900, :protocol => :tcp, :description => "VNC - Control and observe"},
+                        { :port => 5900, :protocol => :udp, :description => "VNC - Send/share screen"},
+                        { :port => 3283, :protocol => :tcp, :description => "VNC - Reporting"},
+                        { :port => 3283, :protocol => :udp, :description => "VNC - Additional data"}
+                    ]
+                    ingress_permissions = minicoin_group['IpPermissions'] || []
+                    ingress_rules.each do |rule|
+                        # for every rule we want that doesn't have a matching entry in the existing permission, add
+                        port = rule[:port]
+                        protocol = rule[:protocol]
+                        description = rule[:description]
+                        ingress_permission = ingress_permissions.select do |permission|
+                            next unless permission["FromPort"].to_i == port
+                            next unless permission["IpProtocol"] == protocol.to_s
+                            in_network = false
+                            permission["IpRanges"].each do |iprange|
+                                net = IPAddr.new(iprange["CidrIp"])
+                                in_network |= net.include?(public_ip)
+                            end
+                            in_network
+                        end
+                        # if no matching rule is found, fix it
+                        if ingress_permission.empty?
+                            machine.ui.detail "... #{rule[:description]} (#{rule[:port]} over #{rule[:protocol].to_s})"
+                            rule_string = "--ip-permissions \"FromPort=#{port},ToPort=#{port},IpProtocol=#{protocol},IpRanges=[{CidrIp='#{public_ip}/32',Description='#{description} (#{hostname})'}]\""
+                            stdout, stderr, status = Open3.capture3("aws ec2 authorize-security-group-ingress --group-id #{minicoin_group_id} #{rule_string}")
+                            # don't throw, just warn and continue
                             machine.ui.warn "Failed to add ingress rule for port #{port}: #{stderr}" if status != 0
                         end
                     end
