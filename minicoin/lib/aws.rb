@@ -24,7 +24,6 @@ end
 
 # AWS specific settings
 def aws_setup(box, machine)
-    $settings[:aws] ||= {}
     $settings[:aws_boxes] ||= []
 
     return unless Vagrant.has_plugin?('vagrant-aws')
@@ -32,12 +31,12 @@ def aws_setup(box, machine)
     # We need to somehow communicate the admin password to the machine's vagrant file,
     # and using an environment variable (or alternatively $settings) seems to be the only way,
     # and we want users to set the admin password for the machines anyway.
-    ENV['AWS_VM_ADMIN_PASSWORD'] = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})"
+    aws_password = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})"
 
     # this has to happen on machine level, even though it's only needed for the
     # provider, otherwise the plugin runs after machine-level provisioners, which
     # is too late.
-    box.vm.synced_folder "", "/aws", type: :cloud_prepare, id: :aws, admin_password: ENV['AWS_VM_ADMIN_PASSWORD']
+    box.vm.synced_folder "", "/aws", type: :cloud_prepare, id: :aws, admin_password: aws_password
 
     box.vm.provider :aws do |aws, override|
          # this group is created by minicoin with permissions for SSH, RDP, and WinRM
@@ -58,7 +57,7 @@ def aws_setup(box, machine)
 
         # We expect that the user has a key pair in ~/.ssh
         begin
-            $settings[:aws][:public_key] = File.read("#{$HOME}/.ssh/id_rsa.pub").strip
+            public_key = File.read("#{$HOME}/.ssh/id_rsa.pub").strip
             override.ssh.private_key_path = "~/.ssh/id_rsa"
             override.winssh.private_key_path = "~/.ssh/id_rsa"
         rescue => e
@@ -68,15 +67,15 @@ def aws_setup(box, machine)
         # hello Ireland
         aws.region = "eu-west-1"
 
-        # macOS machines run on dedicated hosts
-        unless box.vm.guest == :darwin
-            # 8 vCPU, 32 GB RAM
-            aws.instance_type = "t2.2xlarge"
-            # we need more disk space
-            aws.block_device_mapping = [{
-                "DeviceName" => "/dev/sda1",
-                "Ebs.VolumeSize" => 50
-            }]
+        user_data_file = "linux"
+        user_data_file = box.vm.guest.to_s if box.vm.guest.is_a?(Symbol)
+        begin
+            user_data = File.read("./lib/cloud_provision/aws/#{user_data_file}.user_data").strip
+            user_data.sub!('#{public_key}', public_key)
+            user_data.sub!('#{aws_password}', aws_password)
+            aws.user_data = user_data
+        rescue => e
+            STDERR.puts "Failed to read user data for AWS platform #{user_data_file}"
         end
 
         # destroying an instance is broken in the vagrant plugin, so we
@@ -93,7 +92,7 @@ def aws_setup(box, machine)
         # the default user in the VM is not vagrant, so we have to set that explicitly
         override.ssh.username = "vagrant"
         override.winrm.username = "vagrant"
-        override.winrm.password = ENV['AWS_VM_ADMIN_PASSWORD']
+        override.winrm.password = aws_password
 
         # prevent session timeouts
         override.ssh.keep_alive = true
@@ -105,6 +104,6 @@ def aws_setup(box, machine)
         override.winrm.timeout = 3600
         override.winrm.ssl_peer_verification = false
 
-        override.vagrant.sensitive = [ ENV['AWS_VM_ADMIN_PASSWORD'] ]
+        override.vagrant.sensitive = [ aws_password ]
     end
 end

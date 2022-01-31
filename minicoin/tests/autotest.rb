@@ -172,7 +172,7 @@ class Tester
       elsif result.is_a?(Hash)
         result.each do |result_key, result_value|
           # skip internal stuff
-          next if [:aws, :aws_boxes].include?(result_key)
+          next if result_key == :aws_boxes
           if data[result_key].nil?
             STDERR.puts "#{result_key} not expected: #{data}"
             @error_count += 1

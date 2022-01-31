@@ -1,0 +1,42 @@
+<script>
+winrm quickconfig -q
+winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2147483647"}
+winrm set winrm/config @{MaxTimeoutms="1800000"}
+winrm set winrm/config/client/auth @{Basic="true"}
+winrm set winrm/config/service/auth @{Basic="true"}
+winrm set winrm/config/service @{AllowUnencrypted="true"}
+sc config WinRM start=auto
+</script>
+<powershell>
+# bootstrap the vagrant user in the admin group
+$Password = ConvertTo-SecureString -String "#{aws_password}" -AsPlainText -Force
+New-LocalUser "vagrant" -Password $Password -FullName "vagrant" -Description "Default vagrant user"
+Add-LocalGroupMember -Group "Administrators" -Member "vagrant"
+
+# Install the OpenSSH services
+Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+
+# Allow incoming connections to the SSH server
+New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+# Start sshd and ssh-agent automatically on startup
+Set-Service sshd -StartupType Automatic
+Set-Service ssh-agent -StartupType Automatic
+Start-Service sshd
+Start-Service ssh-agent
+
+# write and secure the ssh keys
+$public_key = "#{public_key}"
+Set-Content -Path ${env:ProgramData}\\ssh\\administrators_authorized_keys -Value $public_key
+icacls.exe ${env:ProgramData}\\ssh\\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+
+# configure WinRM
+Enable-PSRemoting -Force
+Set-Service winrm -StartupType Automatic
+
+# Allow incoming connections to WinRM server
+New-NetFirewallRule -Name winrm-http -DisplayName 'WinRM-HTTP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985
+New-NetFirewallRule -Name winrm-https -DisplayName 'WinRM-HTTPS' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5986
+
+</powershell>

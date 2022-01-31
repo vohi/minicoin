@@ -1,0 +1,30 @@
+#!/bin/bash
+# output from this script will be in /var/log/amazon/ec2/ec2-macos-init.log
+echo "Provisioning user vagrant with passwordless sudo"
+sysadminctl -addUser vagrant -password "#{aws_password}" -admin -home /Users/vagrant
+createhomedir -c -u vagrant
+touch /etc/sudoers.d/vagrant
+echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant
+chown -R vagrant /Users/vagrant
+
+echo "Starting and configuring SSH"
+# make sure the SSH server is running
+systemsetup -f -setremotelogin on
+
+mkdir -p /Users/vagrant/.ssh
+echo "#{public_key}" > /Users/vagrant/.ssh/authorized_keys
+chown -R vagrant /Users/vagrant/.ssh
+
+echo "Enabling screen sharing"
+# try to enable screen sharing (experimental)
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+    -activate -configure -access -off -restart -agent -privs -all -allowAccessFor -allUsers
+
+# make vagrant owner of /usr/local so that brew doesn't complain
+echo "Fixing homebrew permissions"
+sudo chown -R vagrant /usr/local
+
+echo "Finished startup provisioning"
+
+# at the very end, delete the default user
+sysadminctl -deleteUser ec2-User
