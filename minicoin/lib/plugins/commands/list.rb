@@ -33,7 +33,7 @@ module Minicoin
                     active_entry = active_entry.first
                     indicator = nil
                     provider = nil
-                    output_options = { :target => self.class }
+                    output_options = { :target => name }
                     if machine[:disabled]
                         output_options[:color] = :yellow
                         indicator = "X"
@@ -43,8 +43,14 @@ module Minicoin
                         indicator = "*"
                         provider = active_entry[1].to_s
                     end
-                    provider = " (#{provider})" if provider
-                    @env.ui.output "#{indicator || " "} #{(name).ljust(25)} #{(machine_box + provider.to_s).ljust(25)}", **output_options
+                    if @env.ui.is_a?(Vagrant::UI::MachineReadable)
+                        @env.ui.machine("box-name", machine_box, **output_options)
+                        @env.ui.machine("provider-name", provider.to_s, **output_options) if active_entry
+                        @env.ui.machine("state", indicator, **output_options)
+                    else
+                        provider = " (#{provider})" if provider
+                        @env.ui.output "#{indicator || " "} #{(name).ljust(25)} #{(machine_box + provider.to_s).ljust(25)}", **output_options
+                    end
                 end
             end
         end

@@ -82,7 +82,7 @@ then
     echo "=== Testing in global environment"
     cd ..
 
-    minicoin list --machine-readable | cut -d ',' -f 6 | (
+    minicoin list --machine-readable | grep "state" | cut -d ',' -f 2 | (
         while read machine
         do
             echo "    $machine"
