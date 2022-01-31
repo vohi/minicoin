@@ -1,5 +1,5 @@
 $settings[:aws_boxes] ||= []
-$settings[:aws_boxes] << "tqtc/windows-aws"
+$settings[:aws_boxes] << "minicoin/windows-cloud"
 
 Vagrant.configure('2') do |config|
     config.vm.guest = :windows
