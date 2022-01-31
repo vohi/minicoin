@@ -1,4 +1,4 @@
-. /minicoin/util/parse-opts.sh "$@"
+. /opt/minicoin/util/parse-opts.sh "$@"
 
 echo "Job works on '$JOBDIR'"
 
@@ -32,7 +32,7 @@ fi
 
 if [ ! -z "$FLAG_debug" ]; then
     echo "Running parse-opts-test"
-    cd /minicoin/tests
+    cd /opt/minicoin/tests
     . parse-opts-test.sh
     exit $?
 fi

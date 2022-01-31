@@ -1,7 +1,7 @@
 @echo off
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-call c:\minicoin\util\parse-opts.cmd %*
+call c:\opt\minicoin\util\parse-opts.cmd %*
 
 echo Job works on '%JOBDIR%'
 
@@ -27,7 +27,7 @@ if defined FLAG_echo (
 
 if defined FLAG_debug (
     echo Running parse-opts-test
-    cd c:\minicoin\tests
+    cd c:\opt\minicoin\tests
     call parse-opts-test.cmd
     exit /B %errorcode%
 )

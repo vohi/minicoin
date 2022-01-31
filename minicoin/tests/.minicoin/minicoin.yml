@@ -4,7 +4,7 @@ settings:
 
   /test.*/:
     shared_folders:
-      - $PWD: /minicoin
+      - $PWD: /opt/minicoin
       - $HOME_SHARE: $GUEST_HOMES/tester
     no-hostname: true
 

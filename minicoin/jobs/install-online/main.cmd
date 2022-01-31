@@ -1,6 +1,6 @@
 @echo off
 SETLOCAL ENABLEDELAYEDEXPANSION
-call C:\minicoin\util\parse-opts.cmd %*
+call C:\opt\minicoin\util\parse-opts.cmd %*
 
 where cmake > NUL 2> NUL
 if %errorlevel% NEQ 0 (

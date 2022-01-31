@@ -1,5 +1,5 @@
 #!/bin/bash
-. /minicoin/util/parse-opts.sh "$@"
+. /opt/minicoin/util/parse-opts.sh "$@"
 
 cd $HOME
 

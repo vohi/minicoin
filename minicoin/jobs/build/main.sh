@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. /minicoin/util/parse-opts.sh "$@"
+. /opt/minicoin/util/parse-opts.sh "$@"
 
 if [ -z $JOBDIR ]
 then

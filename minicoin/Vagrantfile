@@ -243,7 +243,7 @@ Vagrant.configure("2") do |config|
       shares = machine["shared_folders"]
       unless shares.nil?
         if shares.include?("disabled")
-          box.vm.synced_folder ".", "/minicoin", disabled: true
+          box.vm.synced_folder ".", "/opt/minicoin", disabled: true
         else
           share_folders(box, machine, shares)
         end

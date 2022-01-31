@@ -1,4 +1,4 @@
-. /minicoin/util/parse-opts.sh $HOME "$@"
+. /opt/minicoin/util/parse-opts.sh $HOME "$@"
 
 sudo apt-get install -y ccache
 

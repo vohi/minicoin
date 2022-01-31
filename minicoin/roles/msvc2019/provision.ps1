@@ -1,4 +1,4 @@
-. "c:\minicoin\util\install_helper.ps1"
+. "c:\opt\minicoin\util\install_helper.ps1"
 
 $packages = ( 
                 "visualstudio2019-workload-vctools"

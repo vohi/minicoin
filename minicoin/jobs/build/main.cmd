@@ -1,8 +1,8 @@
 @echo off
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-call C:\minicoin\util\parse-opts.cmd %*
-call C:\minicoin\util\discover-make.cmd
+call C:\opt\minicoin\util\parse-opts.cmd %*
+call C:\opt\minicoin\util\discover-make.cmd
 
 if NOT DEFINED JOBDIR (
   >&2 echo Error: path to host clone of Qt is required!

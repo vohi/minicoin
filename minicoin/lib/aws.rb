@@ -72,7 +72,7 @@ def aws_setup(box, machine)
         aws.terminate_on_shutdown = true
 
         # disable all folder sharing, it makes no sense for a machine in the cloud
-        override.vm.synced_folder ".", "/minicoin", disabled: true
+        override.vm.synced_folder ".", "/opt/minicoin", disabled: true
         shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|
             override.vm.synced_folder host, guest, disabled: true

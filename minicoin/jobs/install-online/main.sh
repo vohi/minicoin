@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. /minicoin/util/parse-opts.sh "$@"
+. /opt/minicoin/util/parse-opts.sh "$@"
 
 command -v cmake &> /dev/null && install_cmake=0 || install_cmake=1
 

@@ -28,7 +28,7 @@ def azure_setup(box, machine)
         location = "northeurope"
         pwd = ENV['minicoin_key']
 
-        override.vm.synced_folder ".", "/minicoin", disabled: true
+        override.vm.synced_folder ".", "/opt/minicoin", disabled: true
         shared_folder = box.minicoin.actual_shared_folders
         shared_folder.each do |host, guest|
             override.vm.synced_folder host, guest, disabled: true

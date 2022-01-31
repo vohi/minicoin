@@ -1,4 +1,4 @@
-. /minicoin/util/parse-opts.sh $HOME "$@"
+. /opt/minicoin/util/parse-opts.sh $HOME "$@"
 
 if [ "$PARAM_reverse" == "true" ]
 then

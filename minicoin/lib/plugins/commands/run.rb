@@ -476,7 +476,7 @@ module Minicoin
                         @guest_os = :windows
                         options[:ext] = "ps1"
                         options[:ext] = "cmd" if File.exist?(File.join(@job.path, "main.cmd")) && !@job.run_options[:powershell]
-                        run_command = "C:\\minicoin\\util\\run_helper.ps1 "
+                        run_command = "C:\\opt\\minicoin\\util\\run_helper.ps1 "
                         run_command += "-jobid #{@job_id} "
                         # enable execution modes through run_helper
                         run_command += "-verbose " if @job.run_options[:verbose]

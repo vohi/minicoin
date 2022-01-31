@@ -1,7 +1,7 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
-call C:\minicoin\util\parse-opts.cmd %*
+call C:\opt\minicoin\util\parse-opts.cmd %*
 
 set "welcome=Hello world,"
 if DEFINED PARAM_welcome set welcome=%PARAM_welcome%

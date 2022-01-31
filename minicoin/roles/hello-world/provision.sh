@@ -1,4 +1,4 @@
-. /minicoin/util/parse-opts.sh $HOME "$@"
+. /opt/minicoin/util/parse-opts.sh $HOME "$@"
 
 [[ ! -z $PARAM_welcome ]] && welcome=$PARAM_welcome || welcome="Hello world,"
 echo "$welcome $3"
