@@ -27,7 +27,9 @@ if not !errorlevel! == 0 (
 )
 
 if "%1" == "" (
-    FOR /F "tokens=* USEBACKQ" %%F IN (`"git describe --abbrev=0"`) DO set "minicoin_version=%%F"
+    FOR /F "tokens=* USEBACKQ" %%F IN (`"git tag --list --sort=-taggerdate"`) DO (
+        if not defined minicoin_version set "minicoin_version=%%F"
+    )
 ) else (
     set "minicoin_version=%1"
 )
