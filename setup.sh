@@ -35,13 +35,14 @@ mutagen_version_good=0.12.0
 
 cd /tmp
 
+vmware_version=`vmrun --version  2> /dev/null | grep "vmrun version"`
 vagrant_version=`vagrant --version 2> /dev/null`
 vbox_version=`VBoxManage --version 2> /dev/null`
 if [ -z "$vagrant_version" ]
 then
     echo "vagrant not found, installing..."
 
-    if [ -z $vbox_version ]
+    if [[ -z "$vbox_version" && -z "$vmware_version" ]]
     then
         echo "VirtualBox not found, installing first..."
         $install_command virtualbox
@@ -56,10 +57,13 @@ then
     then
         vbox_version=${BASH_REMATCH[1]}
     fi
-    echo "Installing VirtualBox extension pack. This requires sudo, your password may be required"
-    filename="Oracle_VM_VirtualBox_Extension_Pack-${vbox_version}.vbox-extpack"
-    curl -L -O "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}"
-    sudo VBoxManage extpack install "${filename}"
+    if [[ ! -z $vbox_version ]]
+    then
+        echo "Installing VirtualBox extension pack. This requires sudo, your password may be required"
+        filename="Oracle_VM_VirtualBox_Extension_Pack-${vbox_version}.vbox-extpack"
+        curl -L -O "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}"
+        sudo VBoxManage extpack install "${filename}"
+    fi
 
     case $distro in
         ubuntu*|neon*)
@@ -80,6 +84,18 @@ then
     vagrant_version=`vagrant --version | awk '{print $2}'`
 else
     echo "vagrant version ${vagrant_version} found!"
+fi
+
+if [[ ! -z "$vmware_version" ]]
+then
+    echo "VWmare found, checking vagrant plugin..."
+    vagrant_vmware=`vagrant plugin list | grep vmware`
+    if [ -z "$vagrant_vmware" ]
+    then
+        echo "... installing"
+        vagrant plugin install vagrant-vmware-desktop
+        echo "You might still need to install the VMware vagrant utility"
+    fi
 fi
 
 mutagen_version=`mutagen version 2> /dev/null`
