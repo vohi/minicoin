@@ -35,3 +35,5 @@ machines:
           source2: target2
       - role: hello-world
         if: "false"
+      - role: install
+        packages: package_b

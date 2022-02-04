@@ -46,6 +46,8 @@ machines:
       - role: mutagen
         paths:
           - path2
+      - role: install
+        packages: package_a
   - name: uses
     extends: merged_role
     roles:

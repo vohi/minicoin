@@ -127,6 +127,10 @@ class Tester
                                     {
                                       "role" => "mutagen",
                                       "paths" => ["path2", "path1"]
+                                    },
+                                    {
+                                      "role" => "install",
+                                      "packages" => [ "package_a", "package_b" ]
                                     }
                                   ],
                                    "shared_folders"=>[{"Host"=>"Guest"}],
@@ -146,6 +150,10 @@ class Tester
           },
           {
             "role" => "mutagen"
+          },
+          {
+            "role" => "install",
+            "packages" => [ "package_a", "package_b" ]
           }
         ],
         "shared_folders"=>[{"Host"=>"Guest"}],

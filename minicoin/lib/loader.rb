@@ -155,11 +155,18 @@ def combine_roles(machines)
                 else
                     rolename = role
                 end
-                if rolename == "script" || rolename == "install"
+                if rolename == "script"
                     role_set << role
                     index += 1
                 elsif role_indices.has_key?(rolename)
                     oldindex = role_indices[rolename]
+                    # special case: merge all install roles; for that to work, one of the packages
+                    # values must be an array, otherwise we end up with multiple script provisioners
+                    # called "install" and vagrant will only run one of them
+                    if rolename == "install"
+                        old_packages = role_set[oldindex]["packages"]
+                        role_set[oldindex]["packages"] = [ old_packages ] unless old_packages.is_a?(Array)
+                    end
                     role_set[oldindex] = merge_yaml(role_set[oldindex], role)
                 else
                     role_indices[rolename] = index
