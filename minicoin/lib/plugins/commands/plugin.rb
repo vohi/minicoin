@@ -42,6 +42,11 @@ module Minicoin
                 require_relative "gui.rb"
                 GUI
             end
+
+            command(:aws) do
+                require_relative "aws.rb"
+                AWS
+            end
         end
     end
 end
