@@ -14,10 +14,27 @@ if $AZURE_CLI_INSTALLED.nil?
     end
 end
 
+module VagrantPlugins
+    module Azure
+        class Provider < Vagrant.plugin("2", :provider)
+            @@azure_cli = Which.which("az")
+            def self.check_cli()
+                @@azure_cli
+            end
+
+            def prepare_account(machine)
+            end
+
+            def auto_shutdown(machine)
+            end
+        end
+    end
+end
+
 # Azure specific settings
 def azure_setup(box, machine)
     return unless Vagrant.has_plugin?('vagrant-azure')
-    return if $AZURE_CLI_INSTALLED == false
+    return unless VagrantPlugins::Azure::Provider::check_cli()
     # this has to happen on machine level, even though it's only needed for the
     # provider, otherwise the plugin runs after machine-level provisioners, which
     # is too late.

@@ -1,3 +1,7 @@
+require 'json'
+require 'net/http'
+require 'ipaddr'
+require 'open3'
 
 class Hash
     def slice(*keep_keys)
@@ -10,24 +14,145 @@ class Hash
     end unless Hash.method_defined?(:except)
 end
 
-$AWS_CLI_INSTALLED = nil
+module VagrantPlugins
+    module AWS
+        class Provider < Vagrant.plugin("2", :provider)
+            @@aws_cli = Which.which("aws")
+            @@aws_account = nil
+            @@default_region = nil
 
-if $AWS_CLI_INSTALLED.nil?
-    begin
-        `aws --version`
-        $AWS_CLI_INSTALLED = true
-    rescue
-        $AWS_CLI_INSTALLED = false
+            def call(service, method, json={})
+                params = ""
+                json.each do |option, value|
+                    params += " --#{option} "
+                    if value.is_a?(Hash)
+                        first = true
+                        value.each do |name, values|
+                            params += ";" unless first
+                            params += "Name=#{name},Values=#{values}"
+                            first = false
+                        end
+                    elsif value.is_a?(String) && value.include?(" ") && !value.start_with?("\"")
+                        params += " \"#{value}\""
+                    else
+                        params += " #{value}"
+                    end
+                end
+                Open3.capture3("#{@@aws_cli} #{service} #{method} #{params}")
+            end
+
+            def self.check_cli()
+                @@aws_cli
+            end
+
+            def prepare_account(machine)
+                return nil unless @@aws_account.nil?
+                @@default_region = `#{@@aws_cli} configure get region`
+                return unless ['up', 'validate'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
+                begin
+                    @@aws_account = "" # don't try again
+                    # check that there are credentials
+                    stdout, stderr, status = call(:sts, "get-caller-identity")
+                    raise "Failed to read AWS account information" if status != 0
+                    aws_profile = JSON.parse(stdout)
+                    @@aws_account = aws_profile['Account']
+                    machine.ui.info "Verifying AWs account #{@@aws_account}"
+
+                    # verify that there is a default VPC
+                    stdout, stderr, status = call(:ec2, "describe-vpcs", {
+                        :filter => { "is-default" => true, "state" => "available"}
+                    })
+                    raise "Failed to read VPC information: #{stderr}" if status != 0
+                    default_vpc = JSON.parse(stdout)['Vpcs'][0]
+                    raise "No available default VPC found" if default_vpc.nil?
+                    machine.ui.detail "Using Virtual private cloud #{default_vpc['VpcId']}"
+
+                    # check if there's a minicoin security group, and create it if not
+                    stdout, stderr, status = call(:ec2, "describe-security-groups", {
+                        :filters => {
+                            "group-name" => "minicoin",
+                            "vpc-id" => default_vpc['VpcId']
+                        }
+                    })
+                    raise "Failed to read security group information: #{stderr}" if status != 0
+                    minicoin_group = JSON.parse(stdout)['SecurityGroups'][0]
+                    if minicoin_group.nil?
+                        machine.ui.detail "minicoin security group not found, creating..."
+                        stdout, stderr, status = call(:ec2, "create-security-group", {
+                            "group-name" => "minicoin",
+                            "description" => "Default group for minicoin machines",
+                            "vpc-id" => default_vpc['VpcId']
+                        })
+                        raise "Failed to create minicoin security group: #{stderr}" if status != 0
+                        minicoin_group = JSON.parse(stdout)
+                    end
+                    minicoin_group_id = minicoin_group['GroupId']
+                    # get the public IP address of this network (NOT just this host) as seen by AWS,
+                    # and make sure that the minicoin security group lets us in. This means that we
+                    # can connect to any instance on AWS from any public IP address from which an instance
+                    # has been created.
+                    public_ip = Net::HTTP.get(URI("https://api.ipify.org"))
+                    hostname = Socket.gethostname
+                    machine.ui.detail "Machines will be created with security group #{minicoin_group_id}, updating ingress rules for #{public_ip}"
+                    ingress_rules = [ # Open up for
+                        { :port => 22, :protocol => :tcp, :description => "SSH" },
+                        { :port => 3389, :protocol => :tcp, :description => "RDP" },
+                        { :port => 5985, :protocol => :tcp, :description => "WinRM-HTTP" },
+                        { :port => 5986, :protocol => :tcp, :description => "WinRM-HTTPS" },
+                        #  (https://support.apple.com/en-gb/guide/remote-desktop/apd0c903fec/mac)
+                        { :port => 5900, :protocol => :tcp, :description => "VNC - Control and observe"},
+                        { :port => 5900, :protocol => :udp, :description => "VNC - Send/share screen"},
+                        { :port => 3283, :protocol => :tcp, :description => "VNC - Reporting"},
+                        { :port => 3283, :protocol => :udp, :description => "VNC - Additional data"}
+                    ]
+                    ingress_permissions = minicoin_group['IpPermissions'] || []
+                    ingress_rules.each do |rule|
+                        # for every rule we want that doesn't have a matching entry in the existing permission, add
+                        port = rule[:port]
+                        protocol = rule[:protocol]
+                        description = rule[:description]
+                        ingress_permission = ingress_permissions.select do |permission|
+                            next unless permission["FromPort"].to_i == port
+                            next unless permission["IpProtocol"] == protocol.to_s
+                            in_network = false
+                            permission["IpRanges"].each do |iprange|
+                                net = IPAddr.new(iprange["CidrIp"])
+                                in_network |= net.include?(public_ip)
+                            end
+                            in_network
+                        end
+                        # if no matching rule is found, fix it
+                        if ingress_permission.empty?
+                            machine.ui.detail "... #{rule[:description]} (#{rule[:port]} over #{rule[:protocol].to_s})"
+                            rule_string = "FromPort=#{port},ToPort=#{port},IpProtocol=#{protocol},IpRanges=[{CidrIp='#{public_ip}/32',Description='#{description} (#{hostname})'}]"
+                            stdout, stderr, status = call(:ec2, "authorize-security-group-ingress", {
+                                "group-id" => minicoin_group_id,
+                                "ip-permissions" => "\"#{rule_string}\""
+                            })
+                            # don't throw, just warn and continue
+                            machine.ui.warn "Failed to add ingress rule for port #{port}: #{stderr}" if status != 0
+                        end
+                    end
+                rescue => e
+                    machine.ui.error e
+                    raise "The AWS account does not meet the minicoin requirements"
+                end
+                nil
+            end
+
+            def auto_shutdown(machine)
+
+            end
+        end
     end
 end
-
 
 # AWS specific settings
 def aws_setup(box, machine)
     $settings[:aws_boxes] ||= []
 
     return unless Vagrant.has_plugin?('vagrant-aws')
-    return if $AWS_CLI_INSTALLED == false
+    return unless VagrantPlugins::AWS::Provider::check_cli()
     # We need to somehow communicate the admin password to the machine's vagrant file,
     # and using an environment variable (or alternatively $settings) seems to be the only way,
     # and we want users to set the admin password for the machines anyway.
