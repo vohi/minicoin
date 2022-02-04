@@ -45,6 +45,10 @@ module Minicoin
                     return
                 end
                 machine.ui.output "Preparing #{machine.box.provider} machine #{machine.name} with minicoin requirements for #{machine.config.vm.guest}"
+
+                # enable auto-shutdown, if implemented in our provider subclass
+                machine.provider.auto_shutdown(machine)
+
                 if machine.config.vm.guest == :windows
                     machine.ui.detail "Uploading data"
                     machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\Windows\\Temp\\id_rsa.pub")

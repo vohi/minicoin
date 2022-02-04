@@ -141,7 +141,26 @@ module VagrantPlugins
             end
 
             def auto_shutdown(machine)
-
+                stdout, stderr, status = call(:cloudwatch, "put-metric-alarm", {
+                    "alarm-name" => "#{machine.name}-auto-shutdown",
+                    "alarm-description" => "Shut down when CPU is idle for >= 60 minutes",
+                    "metric-name" => :CPUUtilization,
+                    :namespace => "AWS/EC2",
+                    :period => 60,                                  # sample every minute
+                    "evaluation-periods" => 60,                     # if of the 60 last checks
+                    "datapoints-to-alar" => 60,                     # for all 60
+                    :statistic => :Maximum,                         # the max CPU usage
+                    "comparison-operator" => :LessThanThreshold,    # was never above
+                    :threshold => 20,                               # 20%
+                    :unit => :Percent,
+                    "alarm-action" => "arn:aws:swf:#{@@default_region}:#{@@aws_account}:action/actions/AWS_EC2.InstanceId.Stop/1.0",
+                    "dimensions" => "Name=InstanceId,Value=#{machine.id}"
+                })
+                if status != 0
+                    machine.ui.warn "Failed to set up auto-shutdown alarm in cloudwatch: #{stderr}"
+                else
+                    machine.ui.detail "Auto-shutdown enabled"
+                end
             end
         end
     end
