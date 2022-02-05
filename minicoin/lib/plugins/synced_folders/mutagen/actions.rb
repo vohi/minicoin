@@ -9,6 +9,23 @@ module Minicoin
                 @callbacks = callbacks
             end
         end
+        class MutagenDestroy < MutagenAction
+            @@terminated = {} # we get called multiple times, only terminate once
+
+            def call(env)
+                machine = env[:machine]
+                return if machine.state.id == :not_created
+                unless @@terminated[machine.id]
+                    @@terminated[machine.id] = true
+                    ssh_info = machine.ssh_info || {}
+                    # machine.ui.warn "Terminating mutagen sessions for #{machine.name} #{machine.state.id}"
+                    SyncedFolderMutagen.call_mutagen("terminate", machine.name)
+                    SyncedFolderMutagen.remove_known_host(ssh_info) unless ssh_info[:host].nil?
+                end
+                @app.call(env)
+            end
+        end
+
         class MutagenSuspend < MutagenAction
             def call(env)
                 machine = env[:machine]

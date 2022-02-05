@@ -122,6 +122,10 @@ module Minicoin
                 SyncedFolder
             end
 
+            action_hook("mutagen_destroy", :machine_action_destroy) do |hook|
+                require_relative "actions.rb"
+                hook.prepend(MutagenDestroy)
+            end
             action_hook("mutagen_suspend", :machine_action_suspend) do |hook|
                 require_relative "actions.rb"
                 hook.prepend(MutagenSuspend)
