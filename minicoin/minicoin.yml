@@ -46,14 +46,10 @@ machines:
 
   - name: opensuse15
     box: generic/opensuse15
+    box_versin: ">= 3.6.8"
     roles:
       - role: linux-builder
       - role: linux-desktop
-      - role: script
-        script: | # work around bug in the vbox driver
-          zypper rm -y virtualbox-guest-x11
-          shutdown -r now
-        reboot: true
 
 ### Simple Windows boxes - different versions, different compilers
   - name: windows10
