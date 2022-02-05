@@ -44,10 +44,13 @@ module VagrantPlugins
             def self.check_cli()
                 @@aws_cli
             end
+            def self.default_region()
+                @@default_region
+            end
 
             def prepare_account(machine)
                 return nil unless @@aws_account.nil?
-                @@default_region = `#{@@aws_cli} configure get region`
+                @@default_region = `#{@@aws_cli} configure get region`.strip
                 return unless ['up', 'validate'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
                 begin
                     @@aws_account = "" # don't try again
@@ -208,8 +211,8 @@ def aws_setup(box, machine)
             STDERR.puts "Failed to read the public key: #{e}"
         end
 
-        # hello Ireland
-        aws.region = "eu-west-1"
+        # as configured
+        aws.region = VagrantPlugins::AWS::Provider.default_region()
 
         user_data_file = "linux"
         user_data_file = box.vm.guest.to_s if box.vm.guest.is_a?(Symbol)
