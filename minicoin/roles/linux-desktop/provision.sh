@@ -9,6 +9,7 @@ desktop=$(echo $desktop | awk '{print tolower($1)}')
 
 echo "Installing desktop. Requested: '${desktop:-"default"}' on '$distro'"
 
+olddefault=$(systemctl get-default)
 setdefault="systemctl set-default graphical.target"
 startdesktop="systemctl isolate graphical.target"
 
@@ -67,7 +68,7 @@ case $distro in
     case $desktop in
       *)
         desktop="kde"
-        packages=( "-t pattern kde" sddm konsole)
+        packages=( "-t pattern kde" sddm konsole xorg-x11-server-extra)
         ;;
     esac
 
@@ -154,6 +155,29 @@ fi
 
 echo "Launching desktop environment"
 $startdesktop 2>&1
+sleep 1
+
+# if we run on a machine without any display, then starting the GUI
+# will fail. In that case, we reset to the old default target, and
+# let each run of a job start the Xvfb server and the desktop
+# on top of it.
+if ! pidof Xorg && ! pidof X > /dev/null
+then
+  >&2 echo "Failed to start X11 desktop; will use Xvfb server"
+  systemctl set-default $olddefault
+  which Xvfb > /dev/null || $command "xvfb"
+  pidof Xvfb > /dev/null || Xvfb :0 -screen 0 1600x1200x24 &
+  mkdir /home/vagrant/.minicoin 2> /dev/null
+  cat << BASH > /home/vagrant/.minicoin/start_gui.sh
+#!/bin/sh
+pidof Xvfb > /dev/null || Xvfb :0 -screen 0 1600x1200x24 &
+
+starter=\$(which gnome-session) || \$(which startplasma-x11)
+[ -z "\$starter" ] || \$starter &
+BASH
+  chmod +x /home/vagrant/.minicoin/start_gui.sh
+  chown -R vagrant /home/vagrant/.minicoin
+fi
 
 echo "Setting up remote login with xdotool..."
 if ! which xdotool &> /dev/null
@@ -161,7 +185,12 @@ then
   $command "xdotool" > /dev/null
 fi
 
-if ! grep "XAUTH_FILE" /home/vagrant/.profile
+if ! which xrandr &> /dev/null
+then
+  $command xrandr > /dev/null
+fi
+
+if ! grep "XAUTH_FILE" /home/vagrant/.profile &> /dev/null
 then
   xorg_cmd=$(ps a -C Xorg -o command)
   auth=0
@@ -174,13 +203,17 @@ then
     fi
     [ $cmd == "-auth" ] && auth=1
   done
+fi
 
+if ! grep "DISPLAY" /home/vagrant/.profile &> /dev/null
+then
   echo 'export DISPLAY=:0' >> /home/vagrant/.profile
-  if which xrandr &> /dev/null
-  then
-    echo "Setting X screen resolution"
-    su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
-  fi
+fi
+
+if which xrandr &> /dev/null
+then
+  echo "Setting X screen resolution"
+  su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
 fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target &> /dev/null
