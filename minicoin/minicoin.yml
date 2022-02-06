@@ -16,18 +16,11 @@ urls:
   tqtc:
     - https://tqtcvagrantboxes.z16.web.core.windows.net
     - https://tqtcvagrantboxes-secondary.z16.web.core.windows.net
-    - https://s3.eu-north-1.amazonaws.com/tqtc-vagrant-boxes
 
 # machine definitions
 machines:
 
-## Simple Linux machine
-
-  - name: ubuntu1804
-    box: generic/ubuntu1804
-    roles:
-      - role: linux-desktop
-      - role: linux-builder
+## Simple Linux machines
 
   - name: ubuntu2004
     box: generic/ubuntu2004
@@ -59,20 +52,26 @@ machines:
       - msvc2019
       - role: install
         packages: vulkan-sdk
-    gui: false
+
   - name: windows11
     box: tqtc/$minicoin_key/windows11
     roles:
       - windows-tools
       - msvc2019
 
-### Mac - design to run host binaries
+### Mac - designed to run host binaries
   - name: macos1014
     box: tqtc/$minicoin_key/macos1014
   - name: macos1015
     box: tqtc/$minicoin_key/macos1015
   - name: macos11
     box: tqtc/$minicoin_key/macos11
+    if: Vagrant.has_plugin?("vagrant-vmware-desktop")
+    provider: vmware_desktop
+  - name: macos12
+    box: tqtc/$minicoin_key/macos12
+    if: Vagrant.has_plugin?("vagrant-vmware-desktop")
+    provider: vmware_desktop
 
 ## Specialized machines
 
