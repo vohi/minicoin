@@ -225,9 +225,9 @@ def aws_setup(box, machine)
             STDERR.puts "Failed to read user data for AWS platform #{user_data_file}"
         end
 
-        # destroying an instance is broken in the vagrant plugin, so we
-        # always terminate when the instance is shut down via `vagrant halt`
-        aws.terminate_on_shutdown = true
+        # we want to be able to automatically stop the instance from inside via `shutdown`
+        # but we don't want it to be terminated.
+        aws.terminate_on_shutdown = false
 
         # disable all folder sharing, it makes no sense for a machine in the cloud
         override.vm.synced_folder ".", "/opt/minicoin", disabled: true
@@ -251,6 +251,6 @@ def aws_setup(box, machine)
         override.winrm.timeout = 3600
         override.winrm.ssl_peer_verification = false
 
-        override.vagrant.sensitive = [ aws_password ]
+        override.vagrant.sensitive = [ aws_password, public_key ]
     end
 end
