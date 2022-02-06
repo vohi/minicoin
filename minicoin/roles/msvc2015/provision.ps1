@@ -5,15 +5,11 @@ cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
 .\chocolatey feature enable -n=allowGlobalConfirmation
 
 .\choco install --no-progress -y "VisualStudio2015Community" `
-  -packageParameters "--AdminFile $($env:SystemDrive)\minicoin\roles\msvc2015\AdminDeployment.xml"
+  -packageParameters "--AdminFile $($env:SystemDrive)\opt\minicoin\roles\msvc2015\AdminDeployment.xml"
 
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 
 .\chocolatey feature disable -n=allowGlobalConfirmation
-
-write-host "Copying helper scripts to Desktop!"
-Copy-Item -Force -Recurse "$($env:SystemDrive)\minicoin\roles\msvc2015\env_helpers\" `
-  -Destination "$HOME\Desktop\"
 
 write-host "Updating PATH"
 refreshenv

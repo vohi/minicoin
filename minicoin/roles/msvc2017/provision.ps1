@@ -8,10 +8,6 @@ ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
 
 .\chocolatey feature disable -n=allowGlobalConfirmation
 
-write-host "Copying helper scripts to Desktop!"
-Copy-Item -Force -Recurse "$($env:SystemDrive)\minicoin\roles\msvc2017\env_helpers\" `
-  -Destination "$HOME\Desktop\"
-
 write-host "Updating PATH"
 refreshenv
 
