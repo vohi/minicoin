@@ -40,17 +40,18 @@ module Minicoin
                 return if machine.nil?
                 folder = folders[machine.box.provider]
                 return if folder.nil?
+
+                # enable auto-shutdown, if implemented in our provider subclass
+                machine.provider.auto_shutdown(machine) if Minicoin.get_config(machine).auto_shutdown
+
                 if skip_prepare(machine)
                     machine.ui.output "#{machine.box.provider} machine already prepared, use the `--provision` flag to force a re-run."
                     return
                 end
                 machine.ui.output "Preparing #{machine.box.provider} machine #{machine.name} with minicoin requirements for #{machine.config.vm.guest}"
 
-                # enable auto-shutdown, if implemented in our provider subclass
-                machine.provider.auto_shutdown(machine)
-
+                machine.ui.detail "Uploading files"
                 if machine.config.vm.guest == :windows
-                    machine.ui.detail "Uploading data"
                     machine.communicate.upload("~/.ssh/id_rsa.pub", "c:\\Windows\\Temp\\id_rsa.pub")
                     machine.communicate.upload("./lib/cloud_provision", "C:\\Windows\\Temp")
                     machine.communicate.upload("./util", "c:\\opt\\minicoin")
@@ -59,7 +60,6 @@ module Minicoin
                         echo(machine.ui, type, data)
                     end
                 else
-                    machine.ui.detail "Uploading scripts"
                     machine.communicate.sudo("echo \"127.0.0.1 $(hostname)\" >> /etc/hosts
                                               [ -d /opt/minicoin ] || sudo mkdir /opt/minicoin && sudo chown vagrant /opt/minicoin") do |type, data|
                         echo(machine.ui, type, data)

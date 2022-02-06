@@ -144,26 +144,24 @@ module VagrantPlugins
             end
 
             def auto_shutdown(machine)
+                auto_shutdown = Minicoin.get_config(machine).auto_shutdown
+                machine.ui.detail "Enabling auto-shutdown after #{auto_shutdown} minutes of low CPU usage"
                 stdout, stderr, status = call(:cloudwatch, "put-metric-alarm", {
                     "alarm-name" => "#{machine.name}-auto-shutdown",
-                    "alarm-description" => "Shut down when CPU is idle for >= 60 minutes",
-                    "metric-name" => :CPUUtilization,
+                    "alarm-description" => "Shut down when CPU is idle for >= #{auto_shutdown} minutes",
                     :namespace => "AWS/EC2",
                     :period => 60,                                  # sample every minute
-                    "evaluation-periods" => 60,                     # if of the 60 last checks
-                    "datapoints-to-alar" => 60,                     # for all 60
-                    :statistic => :Maximum,                         # the max CPU usage
+                    "evaluation-periods" => auto_shutdown,          # set alarm if for all samples
+                    "datapoints-to-alarm" => auto_shutdown,
+                    :statistic => :Maximum,                         # the max
+                    "metric-name" => :CPUUtilization,               # CPU usage
                     "comparison-operator" => :LessThanThreshold,    # was never above
                     :threshold => 20,                               # 20%
                     :unit => :Percent,
                     "alarm-action" => "arn:aws:swf:#{@@default_region}:#{@@aws_account}:action/actions/AWS_EC2.InstanceId.Stop/1.0",
                     "dimensions" => "Name=InstanceId,Value=#{machine.id}"
                 })
-                if status != 0
-                    machine.ui.warn "Failed to set up auto-shutdown alarm in cloudwatch: #{stderr}"
-                else
-                    machine.ui.detail "Auto-shutdown enabled"
-                end
+                machine.ui.warn "Failed to set up auto-shutdown alarm in cloudwatch: #{stderr}" if status != 0
             end
         end
     end
