@@ -3,7 +3,6 @@ def aws_provision(box, name, args, machine)
     box.vm.provider :aws do |aws, override|
         args.each do |key, value|
             case key
-            when "role", "role_path"
             when "region_config"
                 raise "Argument error: region_config needs to be a hash" unless value.is_a?(Array)
                 value.each do |region_config|

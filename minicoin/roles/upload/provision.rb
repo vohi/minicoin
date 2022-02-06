@@ -1,8 +1,6 @@
 def upload_provision(box, name, role_params, machine)
   files = role_params["files"]
-  if !files.is_a?(Hash)
-    raise "Argument error: expecting a 'files' hash table from source to destination"
-  end
+  raise "Argument error: expecting a 'files' hash table from source to destination" unless files.is_a?(Hash)
   files.each do |source, destination|
     source = source.gsub("~", $HOME)
     if box.vm.guest == :windows

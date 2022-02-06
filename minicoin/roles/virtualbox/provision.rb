@@ -4,7 +4,6 @@ def virtualbox_provision(box, name, args, machine)
     end
     box.vm.provider :virtualbox do |vb|
         args.each do |command, params|
-            next if command == "role" || command == "role_path"
             if !params.is_a?(Hash)
                 raise "Argument error in virtualbox role: parameters for '#{command}' must be a hash"
             end

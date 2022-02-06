@@ -4,7 +4,6 @@ def vmware_desktop_provision(box, name, args, machine)
     end
     box.vm.provider :vmware_desktop do |vmware|
         args.each do |key, value|
-            next if key == "role" || key == "role_path"
             vmware.vmx[key] = value
         end
     end

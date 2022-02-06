@@ -2,9 +2,7 @@ require 'digest'
 
 def script_provision(box, name, args, machine)
     script = args["script"]
-    if !script.is_a?(String)
-        raise "Argument error: expecting a 'script' string"
-    end
+    raise "Argument error: expecting a 'script' string" unless script.is_a?(String)
     name = args["name"]
     if name
         scriptid = Digest::MD5.hexdigest(script)

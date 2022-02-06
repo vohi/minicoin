@@ -130,16 +130,25 @@ end
 
 ## Add role as provisioning step for box
 def add_role(box, role, name, machine)
-    role = { "role" => role } unless role.is_a?(Hash)
+    # We try to accept all sorts of YAML:
 
-    role_params = role
-    role, role_name = role.shift
-    if role == "role"
-        role = role_name
-    elsif role_name != nil
-        role_params[role] = role_name
+    # flat list:
+    #   roles:
+    #     - role1
+    #     - role2
+    role = { "role" => role } unless role.is_a?(Hash)
+    if role.key?("role")
+        # list of explicitly named roles (the role name must come first)
+        role_params = role
+        role_name, role = role.shift
+    else
+        # no explicit "role", hash of hashes
+        #   roles:
+        #     - role1:
+        #         p1: v1
+        role, role_params = role.shift
     end
-    
+
     role_params.each do |key, value|
         next if value.nil?
         if value.is_a?(String)
@@ -192,8 +201,6 @@ def add_role(box, role, name, machine)
     end
     activity = false
 
-    role_params["role"] = role
-    role_params["role_path"] = role_path
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
         pre_provision = lambda do |vagrant|
@@ -283,22 +290,24 @@ def add_role(box, role, name, machine)
     provisioning_file = "#{role_path}/provision#{script_ext}"
     if File.file?(provisioning_file)
         activity = true
-        if role_params.is_a?(Hash)
-            role_params.each do |key, param|
-                array=param
-                if !param.is_a?(Array)
-                    array=[]
-                    array << param
-                end
-                if combine_array
-                    script_args << "#{arg_marker}#{key}"
-                    script_args << array.join(",")
-                else
-                    array.each do |value|
-                        script_args << "#{arg_marker}#{key}" unless combine_array
-                        value = value.to_json if value.is_a?(Hash)
-                        script_args << "#{value}" unless value.nil?
-                    end
+        # scripts might need to know about name and path of the role
+        role_params["role"] = role
+        role_params["role_path"] = role_path
+
+        role_params.each do |key, param|
+            array=param
+            if !param.is_a?(Array)
+                array=[]
+                array << param
+            end
+            if combine_array
+                script_args << "#{arg_marker}#{key}"
+                script_args << array.join(",")
+            else
+                array.each do |value|
+                    script_args << "#{arg_marker}#{key}" unless combine_array
+                    value = value.to_json if value.is_a?(Hash)
+                    script_args << "#{value}" unless value.nil?
                 end
             end
         end
