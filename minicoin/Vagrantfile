@@ -85,9 +85,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define name, autostart: false do |box|
       box.minicoin.machine = machine
-      if !machine["provider"].nil?
-        box.vm.provider machine["provider"]
-      end
+      box.vm.provider machine["provider"] unless machine["provider"].nil?
 
       next if machine[:disabled] # only declare disabled machines if we get here
       if machine["os"].nil?
