@@ -8,6 +8,13 @@ module Minicoin
                 super
             end
 
+            def pause(machine)
+                stdout, stderr, status = SyncedFolderMutagen.call_mutagen("pause", machine.name)
+                if status != 0
+                    machine.ui.error stderr.strip
+                end
+            end
+
             def usable?(machine, raise_error=false)
                 return true if SyncedFolderMutagen.mutagen_path() && File.exist?(SyncedFolderMutagen.public_key())
                 return false if !raise_error

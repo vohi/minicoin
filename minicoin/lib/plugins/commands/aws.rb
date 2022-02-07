@@ -134,17 +134,28 @@ module Minicoin
 
                     if options[:clean]
                         if vm.state.id != :running
-                            vm.ui.error "Instance is not running and cannot be cleaned before packaging; aborting"
+                            vm.ui.error "Instance is not running and cannot be cleaned before packaging; skipping"
                             next
+                        end
+                        vm.ui.info "Pausing all mutagen syncs and deleting betas..."
+                        vm.synced_folders[:mutagen].each do |guest, synced_folder|
+                            vm.ui.detail guest
+                            synced_folder[:plugin].pause(vm)
+                            if vm.guest.name == :windows
+                                vm.communicate.execute("if (Test-Path '#{guest}') { Remove-Item '#{guest}' -Force -Recurse }")
+                            else
+                                vm.communicate.execute("rm -rf #{guest}")
+                            end
                         end
                         vm.ui.info "Cleaning up disk space before packaging..."
                         if vm.guest.name == :windows
-                            vm.communicate.execute("del /Q %TEMP%\\*.*")
-                            vm.communicate.execute("del /Q %SystemRoot%\\Temp\\*.*")
-                            vm.communicate.execute("sdelete64 -z c:") do |type, data|
-                            end
-                            vm.communicate.execute("del /Q %programdata%\\ssh\\administrators_authorized_keys")
+                            vm.communicate.execute('if (Test-Path "$env:USERPROFILE\\.mutagen") { Remove-Item "$env:USERPROFILE\\.mutagen" -Force -Recurse }')
+                            vm.communicate.execute('Remove-Item @("$env:TEMP\\*", "$env:SystemRoot\\Temp\\*") -Force -Recurse')
+                            vm.communicate.execute('Optimize-Volume -DriveLetter C -Defrag')
+                            vm.communicate.execute('if (Get-Command sdelete64) { sdelete64 -z c: }')
+                            vm.communicate.execute('Remove-Item "$env:ProgramData\\ssh\\administrators_authorized_keys" -Force')
                         else
+                            vm.communicate.execute("rm -rf ~/.mutagen 2> /dev/null || true")
                             vm.communicate.execute("rm -rf /tmp/* || true")
                             vm.communicate.execute("cat /dev/zero > wipeout; rm wipeout")
                             vm.communicate.execute("rm ~/.ssh/authorized_keys 2> /dev/null || true")
