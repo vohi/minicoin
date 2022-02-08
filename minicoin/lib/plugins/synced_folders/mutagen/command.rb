@@ -284,6 +284,10 @@ module Minicoin
                                 break
                             end
                         end
+                        if waitcount > 0
+                            puts "\n"
+                            vm.ui.success "Done"
+                        end
                     end
                     rescue Timeout::Error
                         vm.ui.detail "", **{ prefix: false } # flush newline
