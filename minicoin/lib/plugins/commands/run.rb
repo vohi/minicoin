@@ -297,8 +297,9 @@ module Minicoin
                             vm.ui.error "Failed to bring up machine"
                             raise Vagrant::Errors::MachineGuestNotReady
                         end
+                        vm.env.cli("mutagen", "wait", vm.name.to_s) unless (vm.synced_folders[:mutagen] || []).empty?
                     end
-    
+
                     log_verbose(vm.ui, "Starting job on #{vm.name}")
                     thread = JobThread.new(self, vm) do
                         Thread.current.do_execute(job_options)
