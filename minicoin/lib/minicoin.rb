@@ -28,7 +28,7 @@ module Minicoin
             error_message("Mutagen is not installed on the host")
         end
         class NoSshKey < MinicoinError
-            error_message("User has no SSH key in ~/.ssh")
+            error_message("User has no default SSH key in ~/.ssh")
         end
         class MutagenSyncFail < MinicoinError
             error_message("Mutagen failed to create the sync session")

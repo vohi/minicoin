@@ -19,8 +19,12 @@ module Minicoin
                 mutagen_key_destination = ".ssh/#{$USER}.pub"
                 mutagen_key_add = "cat #{mutagen_key_destination} >> .ssh/authorized_keys"
             end
-            machine.communicate.upload(SyncedFolderMutagen.public_key(), mutagen_key_destination)
-            machine.communicate.execute(mutagen_key_add)
+            begin
+                machine.communicate.upload(SyncedFolderMutagen.public_key(), mutagen_key_destination)
+                machine.communicate.execute(mutagen_key_add)
+            rescue
+                raise Minicoin::Errors::NoSshKey
+            end
         end
         def self.revoke_trust(machine, force=false)
             return if !machine.ssh_info
