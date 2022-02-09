@@ -59,10 +59,18 @@ then
     fi
     if [[ ! -z $vbox_version ]]
     then
-        echo "Installing VirtualBox extension pack. This requires sudo, your password may be required"
-        filename="Oracle_VM_VirtualBox_Extension_Pack-${vbox_version}.vbox-extpack"
-        curl -L -O "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}"
-        sudo VBoxManage extpack install "${filename}"
+        vbox_extension=`VBoxManage list extpacks`
+        echo "vbox_extension: $vbox_extension"
+        regex='Pack no\. .*:.*Oracle VM VirtualBox Extension Pack'
+        if [[ $vbox_extension =~ $regex ]]
+        then
+            echo "VirtualBox Extension Pack found!"
+        else
+            echo "Installing VirtualBox extension pack. This requires sudo, your password may be required"
+            filename="Oracle_VM_VirtualBox_Extension_Pack-${vbox_version}.vbox-extpack"
+            curl -L -O "https://download.virtualbox.org/virtualbox/${vbox_version}/${filename}"
+            sudo VBoxManage extpack install "${filename}"
+        fi
     fi
 
     case $distro in
