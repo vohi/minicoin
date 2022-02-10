@@ -160,7 +160,23 @@ $startdesktop 2>&1
 # will fail. In that case, we reset to the old default target, and
 # let each run of a job start the Xvfb server and the desktop
 # on top of it.
-if timeout 15s xset q &>/dev/null
+echo -n "Waiting for X11 desktop to start"
+foundx=`false`
+findxtimeout=15
+while [[ $findxtimeout -ge 0 ]]
+do
+    if pidof Xorg || pidof X || pidof Xwayland > /dev/null
+    then
+        echo -n ".started"
+        foundx=`true`
+        break
+    fi
+    echo -n "."
+    ((findxtimeout--))
+done
+echo ""
+
+if ! $foundx
 then
   >&2 echo "Failed to start X11 desktop; will use Xvfb server"
   systemctl set-default $olddefault
