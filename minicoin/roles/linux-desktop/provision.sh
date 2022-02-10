@@ -155,17 +155,16 @@ fi
 
 echo "Launching desktop environment"
 $startdesktop 2>&1
-sleep 1
 
 # if we run on a machine without any display, then starting the GUI
 # will fail. In that case, we reset to the old default target, and
 # let each run of a job start the Xvfb server and the desktop
 # on top of it.
-if ! pidof Xorg && ! pidof X > /dev/null
+if timeout 15s xset q &>/dev/null
 then
   >&2 echo "Failed to start X11 desktop; will use Xvfb server"
   systemctl set-default $olddefault
-  which Xvfb > /dev/null || $command "xvfb"
+  which Xvfb > /dev/null || $command "xvfb" || $command "Xvfb"
   pidof Xvfb > /dev/null || Xvfb :0 -screen 0 1600x1200x24 &
   mkdir /home/vagrant/.minicoin 2> /dev/null
   cat << BASH > /home/vagrant/.minicoin/start_gui.sh
