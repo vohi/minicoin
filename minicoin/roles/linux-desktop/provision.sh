@@ -157,31 +157,46 @@ echo "Launching desktop environment"
 $startdesktop 2>&1
 
 # if we run on a machine without any display, then starting the GUI
-# will fail. In that case, we reset to the old default target, and
-# let each run of a job start the Xvfb server and the desktop
-# on top of it.
+# will fail. X might never start, or die again when failing to connect
+# to a display.
 echo -n "Waiting for X11 desktop to start"
-foundx=`false`
 findxtimeout=15
+pidx=
 while [[ $findxtimeout -ge 0 ]]
 do
-    if pidof Xorg || pidof X || pidof Xwayland > /dev/null
+    pidx=$(pidof Xorg || pidof X || pidof Xwayland)
+    if [ -n "$pidx" ]
     then
-        echo -n ".started"
-        foundx=`true`
+        sleep 5
+        if ! ps $pidx &> /dev/null
+        then
+          echo -n ".aborted"
+          pidx=
+        else
+          echo -n ".started with PID $pidx"
+        fi
         break
     fi
     echo -n "."
+    sleep 1
     ((findxtimeout--))
 done
 echo ""
 
-if ! $foundx
+# If X failed to start, then we reset to the old default target, and let
+# each run of a job start the Xvfb server and the desktop on top of it.
+if [ -z "$pidx" ]
 then
   >&2 echo "Failed to start X11 desktop; will use Xvfb server"
   systemctl set-default $olddefault
   which Xvfb > /dev/null || $command "xvfb" || $command "Xvfb"
-  pidof Xvfb > /dev/null || Xvfb :0 -screen 0 1600x1200x24 &
+  pidx=$(pidof Xvfb)
+  if [ -z "$pidx" ]
+  then
+    Xvfb :0 -screen 0 1600x1200x24 &
+    pidx=$!
+    echo "Xvfb running with process ID $pidx"
+  fi
   mkdir /home/vagrant/.minicoin 2> /dev/null
   cat << BASH > /home/vagrant/.minicoin/start_gui.sh
 #!/bin/sh
@@ -194,41 +209,44 @@ BASH
   chown -R vagrant /home/vagrant/.minicoin
 fi
 
-echo "Setting up remote login with xdotool..."
-if ! which xdotool &> /dev/null
+if [ -n "$pidx" ]
 then
-  $command "xdotool" > /dev/null
-fi
+  echo "Setting up remote login to X server process $pidx with xdotool..."
+  if ! which xdotool &> /dev/null
+  then
+    $command "xdotool" > /dev/null
+  fi
 
-if ! which xrandr &> /dev/null
-then
-  $command xrandr > /dev/null
-fi
+  if ! which xrandr &> /dev/null
+  then
+    $command xrandr > /dev/null
+  fi
 
-if ! grep "XAUTH_FILE" /home/vagrant/.profile &> /dev/null
-then
-  xorg_cmd=$(ps a -C Xorg -o command)
-  auth=0
-  for cmd in $xorg_cmd
-  do
-    if [ $auth == 1 ]
-    then
-      echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
-      break
-    fi
-    [ $cmd == "-auth" ] && auth=1
-  done
-fi
+  if ! grep "XAUTH_FILE" /home/vagrant/.profile &> /dev/null
+  then
+    xorg_cmd=$(ps -p $pidx -o command)
+    auth=0
+    for cmd in $xorg_cmd
+    do
+      if [ $auth == 1 ]
+      then
+        echo "Xauth token found at $cmd"
+        echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
+        break
+      fi
+      [ $cmd == "-auth" ] && auth=1
+    done
+  fi
+  if ! grep "DISPLAY" /home/vagrant/.profile &> /dev/null
+  then
+    echo 'export DISPLAY=:0' >> /home/vagrant/.profile
+  fi
 
-if ! grep "DISPLAY" /home/vagrant/.profile &> /dev/null
-then
-  echo 'export DISPLAY=:0' >> /home/vagrant/.profile
-fi
-
-if which xrandr &> /dev/null
-then
-  echo "Setting X screen resolution"
-  su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
+  if which xrandr &> /dev/null
+  then
+    echo "Setting X screen resolution"
+    su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
+  fi
 fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target &> /dev/null
