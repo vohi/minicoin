@@ -21,7 +21,7 @@ module VagrantPlugins
             @@aws_account = nil
             @@default_region = nil
 
-            def call(service, method, json={})
+            def self.call(service, method, json={})
                 params = ""
                 json.each do |option, value|
                     params += " --#{option} "
@@ -55,14 +55,14 @@ module VagrantPlugins
                 begin
                     @@aws_account = "" # don't try again
                     # check that there are credentials
-                    stdout, stderr, status = call(:sts, "get-caller-identity")
+                    stdout, stderr, status = Provider.call(:sts, "get-caller-identity")
                     raise "Failed to read AWS account information" if status != 0
                     aws_profile = JSON.parse(stdout)
                     @@aws_account = aws_profile['Account']
                     machine.ui.info "Verifying AWs account #{@@aws_account}"
 
                     # verify that there is a default VPC
-                    stdout, stderr, status = call(:ec2, "describe-vpcs", {
+                    stdout, stderr, status = Provider.call(:ec2, "describe-vpcs", {
                         :filter => { "is-default" => true, "state" => "available"}
                     })
                     raise "Failed to read VPC information: #{stderr}" if status != 0
@@ -71,7 +71,7 @@ module VagrantPlugins
                     machine.ui.detail "Using Virtual private cloud #{default_vpc['VpcId']}"
 
                     # check if there's a minicoin security group, and create it if not
-                    stdout, stderr, status = call(:ec2, "describe-security-groups", {
+                    stdout, stderr, status = Provider.call(:ec2, "describe-security-groups", {
                         :filters => {
                             "group-name" => "minicoin",
                             "vpc-id" => default_vpc['VpcId']
@@ -81,7 +81,7 @@ module VagrantPlugins
                     minicoin_group = JSON.parse(stdout)['SecurityGroups'][0]
                     if minicoin_group.nil?
                         machine.ui.detail "minicoin security group not found, creating..."
-                        stdout, stderr, status = call(:ec2, "create-security-group", {
+                        stdout, stderr, status = Provider.call(:ec2, "create-security-group", {
                             "group-name" => "minicoin",
                             "description" => "Default group for minicoin machines",
                             "vpc-id" => default_vpc['VpcId']
@@ -128,7 +128,7 @@ module VagrantPlugins
                         if ingress_permission.empty?
                             machine.ui.detail "... #{rule[:description]} (#{rule[:port]} over #{rule[:protocol].to_s})"
                             rule_string = "FromPort=#{port},ToPort=#{port},IpProtocol=#{protocol},IpRanges=[{CidrIp='#{public_ip}/32',Description='#{description} (#{hostname})'}]"
-                            stdout, stderr, status = call(:ec2, "authorize-security-group-ingress", {
+                            stdout, stderr, status = Provider.call(:ec2, "authorize-security-group-ingress", {
                                 "group-id" => minicoin_group_id,
                                 "ip-permissions" => "\"#{rule_string}\""
                             })
@@ -146,7 +146,7 @@ module VagrantPlugins
             def auto_shutdown(machine)
                 auto_shutdown = Minicoin.get_config(machine).auto_shutdown
                 machine.ui.detail "Enabling auto-shutdown after #{auto_shutdown} minutes of low CPU usage"
-                stdout, stderr, status = call(:cloudwatch, "put-metric-alarm", {
+                stdout, stderr, status = Provider.call(:cloudwatch, "put-metric-alarm", {
                     "alarm-name" => "#{machine.name}-auto-shutdown",
                     "alarm-description" => "Shut down when CPU is idle for >= #{auto_shutdown} minutes",
                     :namespace => "AWS/EC2",
