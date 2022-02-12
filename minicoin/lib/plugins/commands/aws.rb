@@ -27,6 +27,9 @@ module Minicoin
                 @subcommands.register(:package) do
                     Package
                 end
+                @subcommands.register(:prune) do
+                    PruneSecurityGroup
+                end
             end
 
             def execute()
@@ -176,6 +179,67 @@ module Minicoin
                             vm.ui.success "Package creation initiated: #{JSON.parse(stdout)["ImageId"]}", **ui_options
                         end
                     end
+                end
+            end
+        end
+        class PruneSecurityGroup < Vagrant.plugin("2", :command)
+            def self.synopsis
+                "Removes ingress rules for IP addresses other than the current public IP"
+            end
+
+            def initialize(argv, env)
+                @env = env
+                @argv = argv
+            end
+
+            def call(service, method, json={})
+                VagrantPlugins::AWS::Provider.call(service, method, json)
+            end
+
+            def execute()
+                parser = OptionParser.new do |option|
+                    option.banner = "Usage: minicoin aws prune"
+                    option.separator ""
+                    option.separator PruneSecurityGroup::synopsis
+                    option.separator ""
+                end
+                argv = parse_options(parser)
+                unless argv == []
+                    @env.ui.error "This command doesn't take any parameters or machine names"
+                    @env.ui.error ""
+                    @env.ui.info parser.help
+                    return
+                end
+
+                stdout, stderr, status = call(:ec2, "describe-security-groups", {
+                    "group-name" => "minicoin"
+                })
+                raise "Error reading security group: #{stderr}" if status != 0
+                security_group_id = JSON.parse(stdout)["SecurityGroups"].first["GroupId"]
+                @env.ui.info "Pruning security group #{security_group_id}"
+                stdout, stderr, status = call(:ec2, "describe-security-group-rules", {
+                    :filters => { "group-id" => security_group_id }
+                })
+                raise "Error reading security group rules: #{stderr}" if status != 0
+                public_ip = Net::HTTP.get(URI("https://api.ipify.org"))
+                @env.ui.info "Removing all ingress rules for CIDR blocks not including #{public_ip}"
+                sg_rules = JSON.parse(stdout)["SecurityGroupRules"].select do |rule|
+                    next if rule['IsEgress']
+                    !IPAddr.new(rule['CidrIpv4']).include?(public_ip)
+                end
+                if sg_rules.empty?
+                    @env.ui.success "No security groups removed"
+                else
+                    sg_rule_ids=[]
+                    sg_rules.each do |rule|
+                        sg_rule_ids << rule['SecurityGroupRuleId']
+                    end
+                    stdout, stderr, status = call(:ec2, "revoke-security-group-ingress", {
+                        "group-id" => security_group_id,
+                        "security-group-rule-ids" => sg_rule_ids.join(' ')
+                    })
+                    raise "Error reading security group rules: #{stderr}" if status != 0
+                    @env.ui.success "#{sg_rule_ids.count} ingress rule(s) removed"
                 end
             end
         end
