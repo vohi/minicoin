@@ -26,8 +26,15 @@ module Minicoin
                         vm.ui.info "Opening #{vm.id}"
                         `#{start_command()} #{vm.id}`
                     else
-                        vm.ui.warn "Falling back to RDP for #{vm.name} using #{vm.box.provider}"
-                        vm.env.cli("rdp", vm.name.to_s)
+                        provider_opened = false
+                        if vm.provider.methods.include?(:open_gui)
+                            vm.ui.info "Opening VM UI through provider"
+                            provider_opened = vm.provider.open_gui(vm, start_command())
+                        end
+                        unless provider_opened
+                            vm.ui.warn "Falling back to RDP for #{vm.name} using #{vm.box.provider}"
+                            vm.env.cli("rdp", vm.name.to_s)
+                        end
                     end
                 end
             end

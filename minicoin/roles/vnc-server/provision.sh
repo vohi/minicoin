@@ -29,7 +29,8 @@ cat << BASH > /usr/bin/vnc
 PIDFILE=/var/run/x11vnc.pid
 
 prepare() {
-  x11vnc -storepasswd "vagrant" /etc/x11vnc.pwd &> /dev/null
+  PASSWRD=$(date | md5sum)
+  x11vnc -storepasswd "${PASSWRD}" /etc/x11vnc.pwd &> /dev/null
 }
 
 start() {

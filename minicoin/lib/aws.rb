@@ -163,6 +163,49 @@ module VagrantPlugins
                 })
                 machine.ui.warn "Failed to set up auto-shutdown alarm in cloudwatch: #{stderr}" if status != 0
             end
+
+            def open_gui(vm, start_command)
+                if vm.state.id != :running
+                    vm.ui.error "The instance isn't running: #{vm.state.id}"
+                    return
+                end
+                socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+                vnc_port = 5900
+                vnc_host = vm.ssh_info[:host]
+                runs_vnc = false
+                vm.ui.info "Testing VNC connection"
+
+                begin
+                    address = Socket.sockaddr_in(vnc_port, vnc_host)
+                    socket.connect_nonblock(address)
+                rescue Errno::EINPROGRESS
+                    if IO.select(nil, [socket], nil, 1)
+                        begin
+                            socket.connect_nonblock(address)
+                        rescue Errno::EISCONN
+                            runs_vnc = true
+                        rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+                            runs_vnc = false
+                        end
+                    end
+                end
+
+                if runs_vnc
+                    vm.ui.detail "Address: #{vnc_host}:#{vnc_port}"
+                    o = [('a'..'z'), ('A'..'Z'), ('0'..'9')].map(&:to_a).flatten
+                    password = (0...10).map { o[rand(o.length)] }.join
+                    begin
+                        vm.communicate.sudo("x11vnc -storepasswd #{password} /etc/x11vnc.pwd")
+                        vm.ui.success "Machine runs VNC; minicoin will now launch your VNC client with the"
+                        vm.ui.success "connection parameters above."
+                        vm.ui.success "The VNC password for this session will be: #{password}"
+                        `#{start_command} vnc://#{vm.ssh_info[:host]}`
+                    rescue
+                        vm.ui.error "Couldn't write VNC password!"
+                    end
+                end
+                runs_vnc
+            end
         end
     end
 end
