@@ -4,43 +4,53 @@ if [[ $(uname) =~ "Darwin" ]]; then
   exit 0
 fi
 
-if [[ $UID -eq 0 ]]
-then
-    exec sudo -u vagrant -H /bin/bash "$0" "$@"
-fi
+apt-get install -y x11vnc &> /dev/null
 
-mkdir ~/.vnc
-sudo apt-get install -y x11vnc
-cat << BASH > /home/vagrant/.vnc/xstartup
+cat << SYSTEMD > /etc/systemd/system/vnc.service
+[Unit]
+Description=VNC server
+After=syslog.target network.target
+
+[Service]
+Type=fork
+ExecStartPre=/usr/bin/vnc prepare
+ExecStart=/usr/bin/vnc start
+ExecStop=/usr/bin/vnc stop
+ExecReload=/usr/bin/vnc reload
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+SYSTEMD
+
+cat << BASH > /usr/bin/vnc
 #!/bin/sh
-export XKL_XMODMAP_DISABLE=1
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
+PIDFILE=/var/run/x11vnc.pid
 
-[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
-[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
-xsetroot -solid grey
+prepare() {
+  x11vnc -storepasswd "vagrant" /etc/x11vnc.pwd &> /dev/null
+}
 
-vncconfig -iconic &
+start() {
+  start-stop-daemon --start --quiet --pidfile \${PIDFILE} --make-pidfile --background --exec /usr/bin/x11vnc -- -rfbauth /etc/x11vnc.pwd -display :0 -shared -forever -o /var/log/x11vnc.log
+}
+
+stop() {
+  start-stop-daemon --stop --quiet --pidfile \${PIDFILE} --remove-pidfile
+}
+
+reload() {
+  stop
+  start
+}
+
+case \$1 in
+  prepare|start|stop|reload) "\$1" ;;
+esac
+exit 0
 
 BASH
-
-if which gnome-terminal > /dev/null
-then
-    cat << BASH >> /home/vagrant/.vnc/xstartup
-if which gnome-terminal > /dev/null
-then
-  gnome-panel &
-  metacity &
-  gnome-terminal &
-
-fi
-BASH
-fi
-
-killall x11vnc
-x11vnc -storepasswd "vagrant" ~/.vnc/passwd
-chown -R vagrant ~/.vnc
-chmod 0700 ~/.vnc/passwd
-chmod +x ~/.vnc/xstartup
-x11vnc -rfbauth ~/.vnc/passwd -display :0 -nevershared -forever &
+chmod +x /usr/bin/vnc
+systemctl daemon-reload
+systemctl enable --now vnc
