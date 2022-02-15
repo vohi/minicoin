@@ -183,70 +183,164 @@ do
 done
 echo ""
 
-# If X failed to start, then we reset to the old default target, and let
-# each run of a job start the Xvfb server and the desktop on top of it.
+# If X failed to start, then we reset to the old default target, and set up a
+# systemd service that starts Xvfb and the minimal installed desktop on top of it.
 if [ -z "$pidx" ]
 then
   >&2 echo "Failed to start X11 desktop; will use Xvfb server"
   systemctl set-default $olddefault
-  which Xvfb > /dev/null || $command "xvfb" || $command "Xvfb"
-  pidx=$(pidof Xvfb)
-  if [ -z "$pidx" ]
-  then
-    Xvfb :0 -screen 0 1600x1200x24 &
-    pidx=$!
-    echo "Xvfb running with process ID $pidx"
-  fi
-  mkdir /home/vagrant/.minicoin 2> /dev/null
-  cat << BASH > /home/vagrant/.minicoin/start_gui.sh
-#!/bin/sh
-pidof Xvfb > /dev/null || Xvfb :0 -screen 0 1600x1200x24 &
+  systemctl stop display-manager
+  systemctl disable display-manager
+  which Xvfb > /dev/null || $command "xvfb" &> /dev/null || $command "Xvfb" &> /dev/null
 
-starter=\$(which gnome-session) || \$(which startplasma-x11)
-[ -z "\$starter" ] || \$starter &
+  cat << BASH > /etc/systemd/system/xvfb
+#!/bin/sh
+PIDFILE=/var/run/xvfb.pid
+XVFB=\$(which Xvfb)
+case "\$1" in
+  start)
+    XVFBARGS="-screen 0 1920x1280x24 -ac +extension GLX +render -noreset"
+    export DISPLAY=:0
+    echo -n "Starting \$XVFB"
+    start-stop-daemon --start --quiet --pidfile \${PIDFILE} --make-pidfile --background --exec \$XVFB -- \$DISPLAY \$XVFBARGS
+    echo "."
+    sleep 5
+    ;;
+  stop)
+    echo -n "Stopping \$XVFB"
+    start-stop-daemon --stop --quiet --pidfile \${PIDFILE} --remove-pidfile
+    echo "."
+    ;;
+  reload)
+    \$0 stop
+    \$0 start
+    ;;
+  *)
+    echo "Usage: \$0 {start|stop|reload}"
+    exit 1
+esac
+
+exit 0
 BASH
-  chmod +x /home/vagrant/.minicoin/start_gui.sh
-  chown -R vagrant /home/vagrant/.minicoin
+  chmod 755 /etc/systemd/system/xvfb
+
+  cat << SYSTEMD > /etc/systemd/system/xvfb.service
+[Unit]
+Description=The virtual X frame buffer
+After=syslog.target network.target
+Before=vnc.service
+
+[Service]
+Type=oneshot
+ExecStart=/etc/systemd/system/xvfb start
+ExecStop=/etc/systemd/system/xvfb stop
+ExecReload=/etc/systemd/system/xvfb reload
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+SYSTEMD
+
+  systemctl daemon-reload
+  systemctl enable --now xvfb
+  pidx=$(pidof Xvfb)
 fi
 
-if [ -n "$pidx" ]
+if [ -z "$pidx" ]
 then
-  echo "Setting up remote login to X server process $pidx with xdotool..."
-  if ! which xdotool &> /dev/null
-  then
-    $command "xdotool" > /dev/null
-  fi
+  >&2 echo "Failed to start X11 server, giving up"
+  exit 1
+fi
 
-  if ! which xrandr &> /dev/null
-  then
-    $command xrandr > /dev/null
-  fi
+if ! grep "DISPLAY" /home/vagrant/.profile &> /dev/null
+then
+  echo 'export DISPLAY=:0' >> /home/vagrant/.profile
+fi
 
-  if ! grep "XAUTH_FILE" /home/vagrant/.profile &> /dev/null
-  then
-    xorg_cmd=$(ps -p $pidx -o command)
-    auth=0
-    for cmd in $xorg_cmd
-    do
-      if [ $auth == 1 ]
-      then
-        echo "Xauth token found at $cmd"
-        echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
-        break
-      fi
-      [ $cmd == "-auth" ] && auth=1
-    done
-  fi
-  if ! grep "DISPLAY" /home/vagrant/.profile &> /dev/null
-  then
-    echo 'export DISPLAY=:0' >> /home/vagrant/.profile
-  fi
+if ! systemctl status display-manager &> /dev/null
+then
+  echo "Running without display manager; starting simplified desktop environment"
+  cat << BASH > /etc/systemd/system/simple-desktop
+#!/bin/sh
+STARTER=\$(which gnome-shell) || \$(which startplasma-x11)
+case "\$1" in
+  start)
+    echo -n "Launching \$STARTER"
+    DISPLAY=:0 \$STARTER --x11
+    echo "."
+    ;;
+  stop)
+    echo -n "Stopping \$STARTER"
+    killall gnome-shell
+    echo "."
+    ;;
+  reload)
+    \$0 stop
+    \$0 start
+    ;;
+  *)
+    echo "Usage: \$0 {start|stop|reload}"
+    exit 1
+esac
 
-  if which xrandr &> /dev/null
-  then
-    echo "Setting X screen resolution"
-    su vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
-  fi
+exit 0
+BASH
+  chmod 755 /etc/systemd/system/simple-desktop
+
+  cat << SYSTEMD > /etc/systemd/system/simple-desktop.service
+[Unit]
+Description=Starts $desktop running in the virtual X frame buffer
+After=syslog.target network.target xvfb.service
+
+[Service]
+Type=simple
+User=vagrant
+ExecStart=/etc/systemd/system/simple-desktop start
+ExecStop=/etc/systemd/system/simple-desktop stop
+ExecReload=/etc/systemd/system/simple-desktop reload
+
+[Install]
+WantedBy=multi-user.target
+
+SYSTEMD
+
+  echo "Xvfb running with process ID $pidx, starting simplified desktop"
+  systemctl daemon-reload
+  systemctl enable --now simple-desktop
+fi
+
+echo "Setting up remote login to X server process $pidx with xdotool..."
+if ! which xdotool &> /dev/null
+then
+  $command "xdotool" > /dev/null
+fi
+
+if ! grep "XAUTH_FILE" /home/vagrant/.profile &> /dev/null
+then
+  xorg_cmd=$(ps -p $pidx -o command)
+  auth=0
+  for cmd in $xorg_cmd
+  do
+    if [ $auth == 1 ]
+    then
+      echo "Xauth token found at $cmd"
+      echo "export XAUTH_FILE=$cmd" >> /home/vagrant/.profile
+      break
+    fi
+    [ $cmd == "-auth" ] && auth=1
+  done
+fi
+
+if ! which xrandr &> /dev/null
+then
+  $command xrandr > /dev/null
+fi
+
+if which xrandr &> /dev/null
+then
+  echo "Setting X screen resolution"
+  su -l vagrant -c "DISPLAY=:0 xrandr --size 1600x1200"
 fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target &> /dev/null
