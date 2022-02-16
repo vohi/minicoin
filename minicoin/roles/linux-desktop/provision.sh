@@ -19,23 +19,32 @@ case $distro in
 
     case $desktop in
       kde)
+        desktop="KDE"
         packages=( "kubuntu-desktop" "sddm" "konsole" )
+        STARTER="dbus-launch --exit-with-session startplasma-x11"
         ;;
       lxde)
+        desktop="LXQT"
         packages=( "lubuntu-desktop" )
+        STARTER="dbus-launch --exit-with-session startlxqt"
         ;;
       xfce)
+        desktop="Xfce"
         packages=( "xubuntu-desktop" )
+        STARTER="dbus-launch --exit-with-session xfce4-session"
         ;;
       minimal-x11)
+        desktop="Minimal X11"
         packages=( "xserver-xorg" "fluxbox" "xinit" "xterm" "lxdm" )
+        STARTER="fluxbox"
         ;;
       weston)
         packages=( "weston" )
         ;;
       *)
-        desktop="ubuntu-desktop"
+        desktop="GNOME"
         packages=( "ubuntu-desktop" )
+        STARTER="gnome-shell --x11"
         ;;
     esac
 
@@ -50,11 +59,14 @@ case $distro in
 
     case $desktop in
       kde)
+        desktop="KDE"
         packages=( "KDE Plasma Workspaces" "base-x" )
+        STARTER="dbus-launch --exit-with-session startplasma-x11"
         ;;
       *)
-        desktop="gnome"
+        desktop="GNOME"
         packages=( "GNOME" )
+        STARTER="gnome-shell --x11"
         ;;
     esac
 
@@ -67,8 +79,9 @@ case $distro in
     command="zypper --quiet --non-interactive install -y --no-recommends "
     case $desktop in
       *)
-        desktop="kde"
+        desktop="KDE"
         packages=( "-t pattern kde" sddm konsole xorg-x11-server-extra)
+        STARTER="dbus-launch --exit-with-session startplasma-x11"
         ;;
     esac
 
@@ -192,6 +205,7 @@ then
   systemctl stop display-manager
   systemctl disable display-manager
   which Xvfb > /dev/null || $command "xvfb" &> /dev/null || $command "Xvfb" &> /dev/null
+  $command "dbus-x11" &> /dev/null
 
   cat << BASH > /etc/systemd/system/xvfb
 #!/bin/sh
@@ -263,24 +277,15 @@ then
   echo "Running without display manager; starting simplified desktop environment"
   cat << BASH > /etc/systemd/system/simple-desktop
 #!/bin/sh
-STARTER=\$(which gnome-shell) || \$(which startplasma-x11)
 case "\$1" in
   start)
-    echo -n "Launching \$STARTER"
-    DISPLAY=:0 \$STARTER --x11
+    echo -n "Launching $STARTER"
+    export DISPLAY=:0
+    $STARTER
     echo "."
-    ;;
-  stop)
-    echo -n "Stopping \$STARTER"
-    killall gnome-shell
-    echo "."
-    ;;
-  reload)
-    \$0 stop
-    \$0 start
     ;;
   *)
-    echo "Usage: \$0 {start|stop|reload}"
+    echo "Usage: \$0 {start}"
     exit 1
 esac
 
@@ -290,15 +295,13 @@ BASH
 
   cat << SYSTEMD > /etc/systemd/system/simple-desktop.service
 [Unit]
-Description=Starts $desktop running in the virtual X frame buffer
+Description=$desktop session running in the virtual X frame buffer
 After=syslog.target network.target xvfb.service
 
 [Service]
 Type=simple
 User=vagrant
 ExecStart=/etc/systemd/system/simple-desktop start
-ExecStop=/etc/systemd/system/simple-desktop stop
-ExecReload=/etc/systemd/system/simple-desktop reload
 
 [Install]
 WantedBy=multi-user.target
