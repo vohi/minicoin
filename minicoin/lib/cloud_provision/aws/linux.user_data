@@ -1,4 +1,35 @@
 #!/bin/bash
+
+# find and initialize all disks
+home_mounted=
+for device in $(lsblk -f -n -o NAME,TYPE | grep disk | cut -d " " -f 1)
+do
+    DATA_DEVICE=/dev/$device
+    mount | grep "$DATA_DEVICE" && continue
+    FILESYSTEM=$(lsblk -f -n -o FSTYPE "$DATA_DEVICE")
+    # disks without file system get one
+    if [ -z "$FILESYSTEM" ]
+    then
+        FILESYSTEM=ext4
+        mkfs -t "$FILESYSTEM" "$DATA_DEVICE"
+    fi
+    # move home to the first extra disk and mount it at /home
+    if [ -z "$home_mounted" ]
+    then
+        printf "$DATA_DEVICE\t/home\t$FILESYSTEM\tdefaults\t0\t2\n" >> /etc/fstab
+        mv /home /tmp/home
+        mkdir /home
+        mount -a
+        mv /tmp/home/* /home
+        rm -rf /tmp/home
+        home_mounted=y
+    else
+        mkdir /mount/$device
+        printf "$DATA_DEVICE\t/mount/$device\t$FILESYSTEM\tdefaults\t0\t2\n" >> /etc/fstab
+        mount -a
+    fi
+done
+
 useradd -m vagrant -s /bin/bash
 echo "#{aws_password}" | passwd --stdin vagrant
 touch /etc/sudoers.d/vagrant
@@ -6,4 +37,4 @@ echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant
 
 mkdir -p /home/vagrant/.ssh
 echo "#{public_key}" > /home/vagrant/.ssh/authorized_keys
-chown -R vagrant /home/vagrant/.ssh
+chown -R vagrant /home/vagrant

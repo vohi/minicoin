@@ -8,6 +8,11 @@ winrm set winrm/config/service @{AllowUnencrypted="true"}
 sc config WinRM start=auto
 </script>
 <powershell>
+# find and initialize any new disks
+Write-host "Initializing raw disks"
+Get-Disk | Where-Object PartitionStyle -Eq "RAW" | Initialize-Disk -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume
+Get-Disk
+
 # bootstrap the vagrant user in the admin group
 $Password = ConvertTo-SecureString -String "#{aws_password}" -AsPlainText -Force
 New-LocalUser "vagrant" -Password $Password -FullName "vagrant" -Description "Default vagrant user"

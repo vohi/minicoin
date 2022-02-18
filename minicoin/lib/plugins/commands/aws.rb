@@ -157,11 +157,13 @@ module Minicoin
                             vm.communicate.execute('Optimize-Volume -DriveLetter C -Defrag')
                             vm.communicate.execute('if (Get-Command sdelete64) { sdelete64 -z c: }')
                             vm.communicate.execute('Remove-Item "$env:ProgramData\\ssh\\administrators_authorized_keys" -Force')
+                            vm.communicate.execute('C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\InitializeInstance.ps1 -schedule')
                         else
                             vm.communicate.execute("rm -rf ~/.mutagen 2> /dev/null || true")
                             vm.communicate.execute("rm -rf /tmp/* || true")
                             vm.communicate.execute("cat /dev/zero > wipeout; rm wipeout")
                             vm.communicate.execute("rm ~/.ssh/authorized_keys 2> /dev/null || true")
+                            vm.communicate.sudo("rm -rf /var/lib/cloud || true") # run user_data again when instance is created from new AMI
                         end
                         vm.ui.detail "... done"
                     end
