@@ -260,77 +260,81 @@ def add_role(box, role, name, machine)
     
     # always check for a provisioning extension
     provisioning_file = "#{role_path}/provision.rb"
+    valid_role = true
     if File.file?(provisioning_file)
         require provisioning_file
         begin
-            eval("#{role}_provision(box, name, role_params, machine)")
+            valid_role = eval("#{role}_provision(box, name, role_params, machine)")
+            # extensions might not return true, we only care if they explicitly return false
+            valid_role = valid_role != false
             activity = true
         rescue => error
             STDERR.puts "==> #{name}: Error with #{role} role: #{error}"
         end
     end
-    
-    # always check for a provisioning script
-    script_ext = ".sh"
-    arg_marker = "--"
-    combine_array = false
-    script_args = [role, name, $USER]
-    upload_path = "/tmp/vagrant-shell/"
-    if box.vm.guest == :windows
-        script_ext = ".cmd"
-        if File.file?("#{role_path}/provision.ps1")
-            script_ext = ".ps1"
-            arg_marker = "-"
-            combine_array = true
-            script_args = ["-user", $USER]
-        end
-        upload_path = "c:\\Windows\\temp\\"
-    end
-    upload_path += "provision_#{role}#{script_ext}"
-    provisioning_file = "#{role_path}/provision#{script_ext}"
-    if File.file?(provisioning_file)
-        activity = true
-        # scripts might need to know about name and path of the role
-        role_params["role"] = role
-        role_params["role_path"] = role_path
-
-        role_params.each do |key, param|
-            array=param
-            if !param.is_a?(Array)
-                array=[]
-                array << param
+    if valid_role
+        # always check for a provisioning script
+        script_ext = ".sh"
+        arg_marker = "--"
+        combine_array = false
+        script_args = [role, name, $USER]
+        upload_path = "/tmp/vagrant-shell/"
+        if box.vm.guest == :windows
+            script_ext = ".cmd"
+            if File.file?("#{role_path}/provision.ps1")
+                script_ext = ".ps1"
+                arg_marker = "-"
+                combine_array = true
+                script_args = ["-user", $USER]
             end
-            if combine_array
-                script_args << "#{arg_marker}#{key}"
-                script_args << array.join(",")
-            else
-                array.each do |value|
-                    script_args << "#{arg_marker}#{key}" unless combine_array
-                    value = value.to_json if value.is_a?(Hash)
-                    script_args << "#{value}" unless value.nil?
+            upload_path = "c:\\Windows\\temp\\"
+        end
+        upload_path += "provision_#{role}#{script_ext}"
+        provisioning_file = "#{role_path}/provision#{script_ext}"
+        if File.file?(provisioning_file)
+            activity = true
+            # scripts might need to know about name and path of the role
+            role_params["role"] = role
+            role_params["role_path"] = role_path
+
+            role_params.each do |key, param|
+                array=param
+                if !param.is_a?(Array)
+                    array=[]
+                    array << param
+                end
+                if combine_array
+                    script_args << "#{arg_marker}#{key}"
+                    script_args << array.join(",")
+                else
+                    array.each do |value|
+                        script_args << "#{arg_marker}#{key}" unless combine_array
+                        value = value.to_json if value.is_a?(Hash)
+                        script_args << "#{value}" unless value.nil?
+                    end
                 end
             end
-        end
 
-        attributes = {
-            type: :shell,
-            path: "#{provisioning_file}",
-            args: script_args,
-            upload_path: upload_path,
-            privileged: true
-        }
-        attributes[:reboot] = !!role_params["reboot"]
-        begin
-            ex_attributes["shell"].each do |key, value|
-                key = key.to_sym
-                attributes[key] = value
+            attributes = {
+                type: :shell,
+                path: "#{provisioning_file}",
+                args: script_args,
+                upload_path: upload_path,
+                privileged: true
+            }
+            attributes[:reboot] = !!role_params["reboot"]
+            begin
+                ex_attributes["shell"].each do |key, value|
+                    key = key.to_sym
+                    attributes[key] = value
+                end
+            rescue
             end
-        rescue
-        end
 
-        provisioning_name = "#{role}:script"
-        box.vm.provision provisioning_name,
-            **attributes
+            provisioning_name = "#{role}:script"
+            box.vm.provision provisioning_name,
+                **attributes
+        end
     end
     
     # check for post--provisioning script to run locally

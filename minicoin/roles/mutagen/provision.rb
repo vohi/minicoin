@@ -86,6 +86,7 @@ def mutagen_provision(box, name, role_params, machine)
         paths = paths_hash
     end
     raise "Argument error: 'paths' needs to be a list of strings, or a hash from source to destination" unless paths.is_a?(Hash)
+    return false if paths.empty? # nothing to do
     paths.each do |alpha, beta|
         alphas << alpha
         if box.vm.guest == :windows
