@@ -141,7 +141,7 @@ module Minicoin
                             next
                         end
                         vm.ui.info "Pausing all mutagen syncs and deleting betas..."
-                        vm.synced_folders[:mutagen].each do |guest, synced_folder|
+                        (vm.synced_folders[:mutagen] || {}).each do |guest, synced_folder|
                             vm.ui.detail guest
                             synced_folder[:plugin].pause(vm)
                             if vm.guest.name == :windows
@@ -166,7 +166,7 @@ module Minicoin
                         vm.ui.detail "... done"
                     end
 
-                    stdout, stderr, status = vm.provider.call(:ec2, "create-image", {
+                    stdout, stderr, status = vm.provider.class.call(:ec2, "create-image", {
                         "instance-id" => vm.id,
                         :name => options[:name] || "minicoin packaged #{vm.name}"
                     })
