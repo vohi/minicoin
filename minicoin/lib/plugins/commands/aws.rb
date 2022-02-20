@@ -30,6 +30,9 @@ module Minicoin
                 @subcommands.register(:prune) do
                     PruneSecurityGroup
                 end
+                @subcommands.register("create-volume") do
+                    CreateVolume
+                end
             end
 
             def execute()
@@ -242,6 +245,67 @@ module Minicoin
                     })
                     raise "Error reading security group rules: #{stderr}" if status != 0
                     @env.ui.success "#{sg_rule_ids.count} ingress rule(s) removed"
+                end
+            end
+        end
+        class CreateVolume < Vagrant.plugin("2", :command)
+            def self.synopsis
+                "Creates an EBS volume that can be attached to a created instance"
+            end
+
+            def call(service, method, json={})
+                VagrantPlugins::AWS::Provider.call(service, method, json)
+            end
+
+            def initialize(argv, env)
+                @env = env
+                @argv = argv
+            end
+
+            def execute()
+                options = {}
+                parser = OptionParser.new do |option|
+                    option.banner = "Usage: minicoin aws create-volume [options] [name|id]"
+                    option.separator ""
+                    option.separator CreateVolume::synopsis
+                    option.separator ""
+                    option.separator "Options:"
+                    option.separator ""
+                    option.on("--availability-zone ZONE", "The Availability Zone in which to create the volume") do |o|
+                        options[:az] =  o
+                    end
+                    option.on("--size SIZE", "The size of the volume, in GB") do |o|
+                        options[:size] =  o
+                    end
+                    option.on("--snapshot-id SNAPSHOT", "The snapshot from which to create the volume") do |o|
+                        options[:snapshot] =  o
+                    end
+                    option.on("--type TYPE", "The volume type; defaults to 'gp2'") do |o|
+                        options[:type] =  o
+                    end
+                    option.separator ""
+                end
+
+                argv = parse_options(parser)
+                unless argv == [] || argv.nil?
+                    @env.ui.error "This command doesn't take any machine names"
+                    @env.ui.error ""
+                    @env.ui.info parser.help
+                    return
+                end
+
+                params = {
+                    "volume-type" => options[:type] || :gp2,
+                    "availability-zone" => options[:az] || "#{VagrantPlugins::AWS::Provider::default_region}a"
+                }
+                params[:size] = options[:size] if options[:size]
+                params['snapshot-id'] = options[:snapshot] if options[:snapshot]
+                stdout, stderr, status = call(:ec2, "create-volume", params)
+                if status != 0
+                    @env.ui.error "Failed to create volume: #{stderr}"
+                    return
+                else
+                    @env.ui.success "Volume created: #{stdout}"
                 end
             end
         end
