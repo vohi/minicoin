@@ -53,7 +53,7 @@ module Minicoin
                 return if !argv
                 # argv will be [] but not nil if there's a subcommand
 
-                command_class = @subcommands.get(@sub.to_sym) if @sub
+                command_class = @subcommands.get(@sub.to_sym) || @subcommands.get(@sub) if @sub
                 return @env.ui.info(parser.help) if !command_class || !@sub
                 command_class.new(@sub_args, @env).execute
             end
@@ -206,7 +206,7 @@ module Minicoin
                     option.separator ""
                 end
                 argv = parse_options(parser)
-                unless argv == []
+                unless argv == [] || argv.nil?
                     @env.ui.error "This command doesn't take any parameters or machine names"
                     @env.ui.error ""
                     @env.ui.info parser.help
