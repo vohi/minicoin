@@ -45,7 +45,7 @@ module VagrantPlugins
                 @@aws_cli
             end
             def self.default_region()
-                @@default_region
+                @@default_region || `#{@@aws_cli} configure get region`.strip
             end
 
             def prepare_account(machine)
