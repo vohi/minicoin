@@ -203,8 +203,8 @@ def add_role(box, role, name, machine)
 
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
-        pre_provision = lambda do |vagrant|
-            read_process("#{role_path}/pre-provision.sh #{name}", vagrant.ui)
+        pre_provision = lambda do |machine|
+            read_process("#{role_path}/pre-provision.sh #{name}", machine.ui)
         end
         box.vm.provision "#{role}:pre-provision",
             type: :local_command,
@@ -339,8 +339,8 @@ def add_role(box, role, name, machine)
     
     # check for post--provisioning script to run locally
     if File.file?("#{role_path}/post-provision.sh")
-        post_provision = lambda do |vagrant|
-            read_process("#{role_path}/post-provision.sh #{name}", vagrant.ui)
+        post_provision = lambda do |machine|
+            read_process("#{role_path}/post-provision.sh #{name}", machine.ui)
         end
         box.vm.provision "#{role}:post-provision",
             type: :local_command,

@@ -5,6 +5,10 @@ module Minicoin
         end
 
         class Provisioner < Vagrant.plugin("2", :provisioner)
+            def initialize(machine, config)
+                super
+            end
+
             def provision
                 if config.code.is_a?(Proc)
                    config.code.call(@machine)
