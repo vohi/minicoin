@@ -137,8 +137,12 @@ module VagrantPlugins
                         end
                     end
                 rescue => e
-                    machine.ui.error e
-                    raise "The AWS account does not meet the minicoin requirements"
+                    if ['validate'].include?(ARGV[0]) # errors as warnings for validation runs
+                        machine.ui.warn e
+                    else
+                        machine.ui.error e
+                        raise "The AWS account does not meet the minicoin requirements"
+                    end
                 end
                 nil
             end
