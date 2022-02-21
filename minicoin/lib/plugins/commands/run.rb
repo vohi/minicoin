@@ -635,6 +635,7 @@ module Minicoin
 
                     @buffer = []
                     @job.log_verbose(@vm.ui, "Executing command '#{run_command}'")
+                    problem_lines = 0
                     Vagrant::Util::Busy.busy(Proc.new{ interrupt!() }) do
                         begin
                             opts = {
@@ -642,7 +643,7 @@ module Minicoin
                                 sudo: @job.run_options[:privileged]
                             }
                             @exit_code = @vm.communicate.execute(run_command, opts) do |type, data|
-                                process_output(matchers, type, data)
+                                problem_lines += process_output(matchers, type, data)
                             end
                         rescue StandardError => e
                             @job.log_verbose(@vm.ui, "Received error from command:")
@@ -673,13 +674,17 @@ module Minicoin
                         @vm.ui.error "#{e}"
                     end
                     print "\n" if @last_options[:new_line] == false # newline in case the last ouput came without
+                    @vm.ui.warn "Job generated #{problem_lines} problem message(s)!" if problem_lines != 0
                     @exit_code
                 end
 
+                # passes data through all matchers, applies the matcher rules and sends it to the
+                # corresponding channel; returns number of lines that match an error matcher
                 def process_output(matchers, type, data)
                     data.rstrip!
-                    return if data.nil?
+                    return 0 if data.nil?
                     data.chomp!
+                    error_lines = 0
                     data.split("\n").each do |line|
                         if type == :stderr && line.start_with?("minicoin.process.")
                             md = /minicoin\.process\.(?<var>[a-z]+)=?(?<val>.*)?/.match(line)
@@ -708,6 +713,8 @@ module Minicoin
                                     else
                                         options = matcher[:options]
                                     end
+                                    # lines that match an error-matcher are counted
+                                    error_lines += 1 if matcher["error"]
                                     # s/guest_dir/host_dir
                                     if options[:replace]
                                         line.gsub!(@job_args[0], @job_args[1])
@@ -733,6 +740,7 @@ module Minicoin
                             echo(line, options)
                         end
                     end
+                    error_lines
                 end
 
                 def echo(data, options={})
