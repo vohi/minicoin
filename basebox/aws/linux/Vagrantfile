@@ -9,10 +9,5 @@ Vagrant.configure('2') do |config|
         aws.ami = "ami-0a8e758f5e873d1c1"
         # 8 vCPU, 32 GB RAM
         aws.instance_type = "t2.2xlarge"
-        # we need more disk space
-        aws.block_device_mapping = [{
-            "DeviceName" => "/dev/sda1",
-            "Ebs.VolumeSize" => 50
-        }]
     end
 end
