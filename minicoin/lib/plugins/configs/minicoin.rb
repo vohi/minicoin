@@ -50,7 +50,10 @@ module Minicoin
                 hash = {}
                 instance_variables.each do |var|
                     var_name = var.to_s[1..-1]
-                    hash[var_name] = instance_variable_get(var) unless var_name.start_with?("_")
+                    next if var_name.start_with?("_")
+                    value = instance_variable_get(var)
+                    next if value == UNSET_VALUE
+                    hash[var_name] = value
                 end
                 hash
             end
