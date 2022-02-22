@@ -32,16 +32,16 @@ $PWD = File.dirname(__FILE__) #
 ENV["PWD"] = $PWD if ENV["PWD"].nil?
 
 def check_for_updates()
-  return unless File.exist?(".git")
+  return unless File.exist?("../.git")
   if File.exist?("../.git/FETCH_HEAD")
     days = (Time.now - File.stat("../.git/FETCH_HEAD").mtime).to_f / 86400.0
   else
     days = 100
   end
-  if days > 2
-    old_newest=`git describe --abbrev=0`.strip
+  if days > 6
+    old_newest=`git tag --list --sort=-taggerdate`.strip.split("\n").first
     `git fetch --tags`
-    new_newest=`git describe --abbrev=0`.strip
+    new_newest=`git tag --list --sort=-taggerdate`.strip.split("\n").first
     if old_newest != new_newest
       ui = Vagrant::UI::Colored.new
       ui.warn "New minicoin version #{new_newest} available, run 'minicoin update' when ready!"
