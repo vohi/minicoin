@@ -148,7 +148,9 @@ module VagrantPlugins
             end
 
             def auto_shutdown(machine)
-                auto_shutdown = Minicoin.get_config(machine).auto_shutdown
+                provider_settings = Minicoin.get_config(machine).machine["provider"] || {}
+                auto_shutdown = (provider_settings["aws"] || {})["auto_shutdown"]
+                return if auto_shutdown.nil? || auto_shutdown == 0
                 machine.ui.detail "Enabling auto-shutdown after #{auto_shutdown} minutes of low CPU usage"
                 stdout, stderr, status = Provider.call(:cloudwatch, "put-metric-alarm", {
                     "alarm-name" => "#{machine.name}-auto-shutdown",
@@ -363,6 +365,8 @@ def aws_provision(box, name, args, machine)
                         end
                     end
                 end
+            when "auto_shutdown"
+                # do nothing yet, this is handled in the cloud_prepare code
             else
                 if value.is_a?(Array) || value.is_a?(Hash)
                     eval("aws.#{key} = #{value}")

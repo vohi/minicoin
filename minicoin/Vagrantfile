@@ -247,8 +247,6 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      box.minicoin.auto_shutdown = machine["auto_shutdown"] unless machine["auto_shutdown"].nil?
-
       # Definition of provisioning steps
       roles = machine["roles"] || []
       # some default provisioning at the very end

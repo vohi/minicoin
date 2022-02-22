@@ -5,7 +5,6 @@ module Minicoin
             attr_accessor :fs_mappings
             attr_accessor :actual_shared_folders
             attr_accessor :guest_homes
-            attr_accessor :auto_shutdown
 
             def initialize
                 super
@@ -14,7 +13,6 @@ module Minicoin
                 @actual_shared_folders = {}
                 @hash = UNSET_VALUE
                 @guest_homes = UNSET_VALUE
-                @auto_shutdown = UNSET_VALUE
             end
 
             def hash()
@@ -33,7 +31,6 @@ module Minicoin
                     result.fs_mappings = fs_mappings.merge(other.fs_mappings)
                     result.actual_shared_folders = actual_shared_folders.merge(other.actual_shared_folders)
                     result.guest_homes = other.guest_homes if @guest_homes == UNSET_VALUE
-                    result.auto_shutdown = other.auto_shutdown if @auto_shutdown == UNSET_VALUE
                     result.machine = {} if machine == UNSET_VALUE && other.machine == UNSET_VALUE
                 end
             end

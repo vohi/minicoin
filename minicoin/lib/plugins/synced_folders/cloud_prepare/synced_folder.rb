@@ -41,8 +41,8 @@ module Minicoin
                 folder = folders[machine.box.provider]
                 return if folder.nil?
 
-                # enable auto-shutdown, if implemented in our provider subclass
-                machine.provider.auto_shutdown(machine) if Minicoin.get_config(machine).auto_shutdown
+                # enable auto-shutdown (might not be implemented)
+                machine.provider.auto_shutdown(machine)
 
                 if skip_prepare(machine)
                     machine.ui.output "#{machine.box.provider} machine already prepared, use the `--provision` flag to force a re-run."

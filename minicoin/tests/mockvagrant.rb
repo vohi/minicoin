@@ -206,13 +206,11 @@ class MockMinicoin
   attr_accessor :actual_shared_folders
   attr_accessor :hash
   attr_accessor :guest_homes
-  attr_accessor :auto_shutdown
 
   def initialize
     @fs_mappings = {}
     @actual_shared_folders = {}
     @hash = -1
     @guest_homes = nil
-    @auto_shutdown = nil
   end
 end
