@@ -95,3 +95,23 @@ def virtualbox_setup(box, machine)
         end
     end
 end
+
+def virtualbox_provision(box, name, args, machine)
+    return if args.nil?
+    raise "Argument error in virtualbox role: expecting args to be a hash" unless args.is_a?(Hash)
+    box.vm.provider :virtualbox do |vb|
+        args.each do |command, params|
+            if !params.is_a?(Hash)
+                raise "Argument error in virtualbox role: parameters for '#{command}' must be a hash"
+            end
+            if params.is_a?(Hash)
+                params.each do |key, value|
+                    vb.customize [
+                        command, :id,
+                        key, *value
+                    ]
+                end
+            end
+        end
+    end
+end

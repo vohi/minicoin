@@ -108,3 +108,17 @@ def azure_setup(box, machine)
         override.vagrant.sensitive = [ pwd ]
     end
 end
+
+def azure_provision(box, name, args, machine)
+    return if args.nil?
+    raise "Argument error: expecting args to be a hash" unless args.is_a?(Hash)
+    box.vm.provider :azure do |azure, override|
+        args.each do |key, value|
+            if value.is_a?(Array) || value.is_a?(Hash)
+                eval("azure.#{key} = #{value}")
+            else
+                eval("azure.#{key} = \"#{value}\"")
+            end
+        end
+    end
+end

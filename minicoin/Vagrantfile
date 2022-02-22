@@ -12,10 +12,10 @@ require_relative "lib/loader.rb"
 require_relative "lib/roles.rb"
 require_relative "lib/sharing.rb"
 # provider specific setup
-require_relative "lib/virtualbox.rb"
-require_relative "lib/vmware_desktop.rb"
-require_relative "lib/azure.rb"
-require_relative "lib/aws.rb"
+require_relative "lib/providers/virtualbox.rb"
+require_relative "lib/providers/vmware_desktop.rb"
+require_relative "lib/providers/azure.rb"
+require_relative "lib/providers/aws.rb"
 # minicoin command extensions
 require_relative "lib/minicoin.rb"
 
@@ -85,7 +85,17 @@ Vagrant.configure("2") do |config|
 
     config.vm.define name, autostart: false do |box|
       box.minicoin.machine = machine
-      box.vm.provider machine["provider"] unless machine["provider"].nil?
+      if machine["provider"].is_a?(Hash)
+        first_provider = nil
+        machine["provider"].each do |provider, settings|
+          first_provider ||= provider
+          require_relative "lib/providers/#{provider}.rb"
+          eval("#{provider}_provision(box, name, settings, machine)")
+        end
+        box.vm.provider first_provider if first_provider
+      elsif !machine["provider"].nil?
+        box.vm.provider machine["provider"]
+      end
 
       next if machine[:disabled] # only declare disabled machines if we get here
       if machine["os"].nil?
@@ -215,7 +225,8 @@ Vagrant.configure("2") do |config|
         machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil? && !machine["nictype1"].nil?
       end
 
-      # map virtual machine configurations to provider specific settings
+      # map general machine configurations to provider specific settings
+      # This is not covered by the provider handling at the beginning
       begin
         virtualbox_setup(box, machine)
         vmware_setup(box, machine)
