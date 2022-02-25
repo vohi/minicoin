@@ -215,6 +215,18 @@ Vagrant.configure("2") do |config|
         machine["nictype2"] = machine["nictype1"] if machine["nictype2"].nil? && !machine["nictype1"].nil?
       end
 
+      # storage setup, using the experimental 'disks' vagrant feature. It is not implemented
+      # for most providers and anyway won't do anything unless VAGRANT_EXPERIMENTAL="disks"
+      # is set, so the _setup methods that come next will implement the feature where we can.
+      name="data0"
+      storages = machine["storage"] || []
+      storages = [storages] unless storages.is_a?(Array)
+      storages.each do |storage|
+        storage = { "size" => storage } unless storage.is_a?(Hash)
+        box.vm.disk :disk, name: storage['name'] || name, size: "#{storage['size']}GB"
+        name.next!
+      end
+
       # call provider specific plugin extensions to map general minicoin configs to
       # providers, and to execute provider specific configurations
       Vagrant::Plugin::V2::Plugin.manager.registered.each do |plugin|
