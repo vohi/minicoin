@@ -4,7 +4,19 @@ if [[ $(uname) =~ "Darwin" ]]; then
   exit 0
 fi
 
-apt-get install -y x11vnc &> /dev/null
+if which apt-get &> /dev/null
+then
+  apt-get install -y x11vnc &> /dev/null
+elif which zypper &> /dev/null
+then
+  zypper install -y x11vnc &> /dev/null
+elif which yum &> /dev/null
+then
+  yum install -y x11vnc dpkg &> /dev/null
+else
+  >&2 echo "Don't know how to install x11vnc"
+  exit 1
+fi
 
 cat << SYSTEMD > /etc/systemd/system/vnc.service
 [Unit]
@@ -26,11 +38,13 @@ SYSTEMD
 
 cat << BASH > /usr/bin/vnc
 #!/bin/sh
+set -e
+
 PIDFILE=/var/run/x11vnc.pid
 
 prepare() {
-  PASSWRD=$(date | md5sum)
-  x11vnc -storepasswd "${PASSWRD}" /etc/x11vnc.pwd &> /dev/null
+  PASSWRD=\$(date | md5sum | cut -d' ' -f1)
+  x11vnc -storepasswd "\${PASSWRD}" /etc/x11vnc.pwd &> /dev/null
 }
 
 start() {
@@ -54,4 +68,4 @@ exit 0
 BASH
 chmod +x /usr/bin/vnc
 systemctl daemon-reload
-systemctl enable --now vnc
+systemctl enable --now vnc || >&2 systemctl status vnc
