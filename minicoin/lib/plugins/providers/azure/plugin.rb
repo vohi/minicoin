@@ -103,6 +103,27 @@ module Minicoin
                         end
                     end
 
+                    if machine["storage"]
+                        value = machine["storage"]
+                        value = [value] unless value.is_a?(Array)
+
+                        data_disks = []
+                        disk_name = "2"
+                        value.each do |storage|
+                            data_disk = {}
+                            if storage.is_a?(Hash)
+                                data_disk["size_gb"] = storage["size"] if storage["size"]
+                            else
+                                data_disk["size_gb"] = storage if storage
+                            end
+                            data_disk["name"] = "disk#{disk_name}"
+                            disk_name.next!
+                            data_disks << data_disk unless data_disk.empty?
+                        end
+
+                        azure.data_disks = data_disks unless data_disks.empty?
+                    end
+
                     azure.tenant_id = $AZURE_PROFILE["tenantId"]
                     azure.subscription_id = $AZURE_PROFILE["id"]
                     azure.client_id = $AZURE_CREDENTIALS["appId"]
