@@ -84,6 +84,6 @@ function Mount-Paths {
 }
 
 if ($reverse -eq "true") {
-    Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.11.5"
+    Install-Mutagen -InstallPath "$env:SystemDrive\mutagen" -Version "0.13.1"
 }
 Mount-Paths -Alphas $alpha.split(",") -Betas $beta.split(",")

@@ -31,7 +31,7 @@ esac
 # recommended versions
 vbox_version_good=6.1.26
 vagrant_version_good=2.2.18
-mutagen_version_good=0.12.0
+mutagen_version_good=0.13.1
 
 cd /tmp
 
