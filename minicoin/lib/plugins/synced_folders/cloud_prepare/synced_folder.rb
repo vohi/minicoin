@@ -11,8 +11,8 @@ module Minicoin
 
             def usable?(machine, raise_error=false)
                 # assume it's not one of the supported cloud providers; enable will not do anything
-                return true unless machine.provider.class.methods(false).include?(:check_cli)
-                return false unless machine.provider.class.check_cli()
+                return true unless machine.provider.class.methods(false).include?(:cli)
+                return false unless machine.provider.class.cli()
                 error_message = nil
 
                 begin

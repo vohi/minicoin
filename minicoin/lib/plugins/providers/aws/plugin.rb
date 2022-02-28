@@ -17,10 +17,6 @@ end
 module VagrantPlugins
     module AWS
         class Provider < Vagrant.plugin("2", :provider)
-            @@aws_cli = Which.which("aws")
-            @@aws_account = nil
-            @@default_region = nil
-
             def self.call(service, method, json={})
                 params = ""
                 json.each do |option, value|
@@ -38,19 +34,20 @@ module VagrantPlugins
                         params += " #{value}"
                     end
                 end
-                Open3.capture3("#{@@aws_cli} #{service} #{method} #{params}")
+                Open3.capture3("#{cli()} #{service} #{method} #{params}")
             end
 
-            def self.check_cli()
-                @@aws_cli
+            def self.cli()
+                return @@aws_cli if @@tried_cli
+                @@tried_cli = true
+                @@aws_cli ||= Which.which("aws")
             end
             def self.default_region()
-                @@default_region || `#{@@aws_cli} configure get region`.strip
+                @@default_region ||= `#{cli()} configure get region`.strip
             end
 
             def prepare_account(machine)
                 return nil unless @@aws_account.nil?
-                @@default_region = `#{@@aws_cli} configure get region`.strip
                 return unless ['up', 'validate'].include?(ARGV[0]) # don't check AWS for check and shutdown operations
                 begin
                     @@aws_account = "" # don't try again
@@ -164,7 +161,7 @@ module VagrantPlugins
                     "comparison-operator" => :LessThanThreshold,    # was never above
                     :threshold => 20,                               # 20%
                     :unit => :Percent,
-                    "alarm-action" => "arn:aws:swf:#{@@default_region}:#{@@aws_account}:action/actions/AWS_EC2.InstanceId.Stop/1.0",
+                    "alarm-action" => "arn:aws:swf:#{Provider.default_region()}:#{@@aws_account}:action/actions/AWS_EC2.InstanceId.Stop/1.0",
                     "dimensions" => "Name=InstanceId,Value=#{machine.id}"
                 })
                 machine.ui.warn "Failed to set up auto-shutdown alarm in cloudwatch: #{stderr}" if status != 0
@@ -212,6 +209,13 @@ module VagrantPlugins
                 end
                 runs_vnc
             end
+
+        private
+            @@tried_cli = nil
+            @@aws_cli = nil
+            @@aws_account = nil
+            @@default_region = nil
+            @@public_key = nil
         end
     end
 end
@@ -228,7 +232,7 @@ module Minicoin
                 $settings[:aws_boxes] ||= []
 
                 return unless Vagrant.has_plugin?('vagrant-aws')
-                return unless VagrantPlugins::AWS::Provider::check_cli()
+                return unless VagrantPlugins::AWS::Provider::cli()
                 # We need to somehow communicate the admin password to the machine's vagrant file,
                 # and using an environment variable (or alternatively $settings) seems to be the only way,
                 # and we want users to set the admin password for the machines anyway.
@@ -258,7 +262,7 @@ module Minicoin
 
                     # We expect that the user has a key pair in ~/.ssh
                     begin
-                        public_key = File.read("#{$HOME}/.ssh/id_rsa.pub").strip
+                        @@public_key ||= File.read("#{$HOME}/.ssh/id_rsa.pub").strip
                         override.ssh.private_key_path = "~/.ssh/id_rsa"
                         override.winssh.private_key_path = "~/.ssh/id_rsa"
                     rescue => e
@@ -272,7 +276,7 @@ module Minicoin
                     user_data_file = box.vm.guest.to_s if box.vm.guest.is_a?(Symbol)
                     begin
                         user_data = File.read("./lib/cloud_provision/aws/#{user_data_file}.user_data").strip
-                        user_data.sub!('#{public_key}', public_key)
+                        user_data.sub!('#{public_key}', @@public_key)
                         user_data.sub!('#{aws_password}', aws_password)
                         aws.user_data = user_data
                     rescue => e
@@ -351,7 +355,7 @@ module Minicoin
                     override.winrm.timeout = 3600
                     override.winrm.ssl_peer_verification = false
 
-                    override.vagrant.sensitive = [ aws_password, public_key ]
+                    override.vagrant.sensitive = [ aws_password, @@public_key ]
                 end
             end
         end

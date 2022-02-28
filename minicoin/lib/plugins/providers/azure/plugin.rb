@@ -1,25 +1,14 @@
 require 'json'
 require 'open3'
 
-$AZURE_PROFILE = nil
-$AZURE_CREDENTIALS = nil
-$AZURE_CLI_INSTALLED = nil
-
-if $AZURE_CLI_INSTALLED.nil?
-    begin
-        `az version`
-        $AZURE_CLI_INSTALLED = true
-    rescue
-        $AZURE_CLI_INSTALLED = false
-    end
-end
-
 module VagrantPlugins
     module Azure
         class Provider < Vagrant.plugin("2", :provider)
-            @@azure_cli = Which.which("az")
-            def self.check_cli()
-                @@azure_cli
+            @@tried_cli = nil
+            def self.cli()
+                return @@azure_cli if @@tried_cli
+                @@tried_cli = true
+                @@azure_cli ||= Which.which("az")
             end
 
             def prepare_account(machine)
@@ -27,6 +16,9 @@ module VagrantPlugins
 
             def auto_shutdown(machine)
             end
+
+        private
+            @@azure_cli = nil
         end
     end
 end
@@ -41,7 +33,7 @@ module Minicoin
             # Azure specific settings
             def self.minicoin_setup(box, machine)
                 return unless Vagrant.has_plugin?('vagrant-azure')
-                return unless VagrantPlugins::Azure::Provider::check_cli()
+                return unless VagrantPlugins::Azure::Provider::cli()
                 # this has to happen on machine level, even though it's only needed for the
                 # provider, otherwise the plugin runs after machine-level provisioners, which
                 # is too late.
@@ -57,16 +49,16 @@ module Minicoin
                     shared_folder.each do |host, guest|
                         override.vm.synced_folder host, guest, disabled: true
                     end
-                    if $AZURE_PROFILE.nil?
+                    if @@AZURE_PROFILE.nil?
                         stdout, stderr, status = Open3.capture3('az account show')
                         if status != 0
-                            $AZURE_PROFILE = {}
-                            $AZURE_CREDENTIALS = {}
+                            @@AZURE_PROFILE = {}
+                            @@AZURE_CREDENTIALS = {}
                             STDERR.puts "Azure CLI installed, but failed to get azure account information."
                             STDERR.puts "Make sure you are logged in with 'az login'"
                             next
                         end
-                        $AZURE_PROFILE = JSON.parse(stdout)
+                        @@AZURE_PROFILE = JSON.parse(stdout)
                         azure_clientname = "http://minicoin-azure"
                         stdout, stderr, status = Open3.capture3("az ad sp show --id \"#{azure_clientname}\"")
                         if status != 0
@@ -76,10 +68,10 @@ module Minicoin
                                 STDERR.puts "Failed to generate azure account credentials" if status != 0
                             end
                         end
-                        $AZURE_CREDENTIALS = JSON.parse(stdout) if status == 0
+                        @@AZURE_CREDENTIALS = JSON.parse(stdout) if status == 0
                     end
 
-                    next if $AZURE_CREDENTIALS.nil?
+                    next if @@AZURE_CREDENTIALS.nil?
 
                     override.ssh.private_key_path = "~/.ssh/id_rsa"
                     override.ssh.keep_alive = true
@@ -124,9 +116,9 @@ module Minicoin
                         azure.data_disks = data_disks unless data_disks.empty?
                     end
 
-                    azure.tenant_id = $AZURE_PROFILE["tenantId"]
-                    azure.subscription_id = $AZURE_PROFILE["id"]
-                    azure.client_id = $AZURE_CREDENTIALS["appId"]
+                    azure.tenant_id = @@AZURE_PROFILE["tenantId"]
+                    azure.subscription_id = @@AZURE_PROFILE["id"]
+                    azure.client_id = @@AZURE_CREDENTIALS["appId"]
                     azure.client_secret = pwd
 
                     azure.admin_username = "vagrant"
@@ -136,6 +128,10 @@ module Minicoin
                     override.vagrant.sensitive = [ pwd ]
                 end
             end
+
+        private
+            @@AZURE_PROFILE = nil
+            @@AZURE_CREDENTIALS = nil
         end
 
         class Extension
