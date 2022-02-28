@@ -791,13 +791,13 @@ module Minicoin
 
                     guest_dir = nil
                     # check whether we are in a subdirectory of a mapped path, and use the best match
+                    match_length = -1
                     minicoin.fs_mappings.each do |hostpath, guestpath|
                         hostpath = hostpath.gsub("~", "$HOME")
                         hostpath = expand_env(hostpath)
-                        match_length = -1
-                        if project_dir.start_with?(hostpath) && hostpath.length > match_length
+                        if project_dir.start_with?(hostpath) && hostpath.count('/') > match_length
                             match_length = hostpath.count('/') unless hostpath == ENV["HOME_SHARE"]
-                            guest_dir = project_dir.dup #[hostpath.length, -1]
+                            guest_dir = project_dir.dup
                             guest_dir[hostpath] = guestpath
                         end
                     end
