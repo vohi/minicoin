@@ -78,31 +78,35 @@ def share_folders(box, machine, shares)
     default_shares = {}
     shares.each do |share|
         next if share.nil?
-        # each entry could be just alpha; or alpha => beta or host => alpha; guest => beta
-        host = share["host"] || share.first[0]
-        guest = share["guest"] || share.first[1] || host
-        host = expand_env(host)
-        host = "." if host == $PWD # this prevents duplicate PWD sharing from vagrant
-        guest = expand_env(guest)
-        if guest.nil? || host.nil?
-            STDERR.puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
-            next
-        end
-        if !box.nil? && box.vm.guest == :windows
-            guest = guest.gsub("/C:\\", "C:\\")
-            guest = guest.gsub("/", "\\\\")
-        end
+        share_type = share["type"]
+        share.delete("type")
+        share = share["paths"] if share["paths"]
+        share.each do |host, guest|
+            # each entry could be just alpha; or alpha => beta or host => alpha; guest => beta
+            guest ||= host
+            host = expand_env(host)
+            host = "." if host == $PWD # this prevents duplicate PWD sharing from vagrant
+            guest = expand_env(guest)
+            if guest.nil? || host.nil?
+                STDERR.puts "==> #{machine['name']}: Unexpanded environment variable in '#{share}' - skipping share"
+                next
+            end
+            if !box.nil? && box.vm.guest == :windows
+                guest = guest.gsub("/C:\\", "C:\\")
+                guest = guest.gsub("/", "\\\\")
+            end
 
-        case share["type"]
-        when 'mutagen'
-            mutagen_share(box, { "paths" => { host => guest } }, machine)
-        when 'rsync'
-            guest = adjust_guest_path(guest, box)
-            host = host.gsub("~", $HOME)
-            box.vm.synced_folder host, guest, type: :rsync
-            box.minicoin.fs_mappings.merge!({host => guest})
-        else
-            default_shares[host] = guest
+            case share_type
+            when 'mutagen'
+                mutagen_share(box, { "paths" => { host => guest } }, machine)
+            when 'rsync'
+                guest = adjust_guest_path(guest, box)
+                host = host.gsub("~", $HOME)
+                box.vm.synced_folder host, guest, type: :rsync
+                box.minicoin.fs_mappings.merge!({host => guest})
+            else
+                default_shares[host] = guest
+            end
         end
     end
 
