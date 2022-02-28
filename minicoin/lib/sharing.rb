@@ -96,6 +96,11 @@ def share_folders(box, machine, shares)
         case share["type"]
         when 'mutagen'
             mutagen_share(box, { "paths" => { host => guest } }, machine)
+        when 'rsync'
+            guest = adjust_guest_path(guest, box)
+            host = host.gsub("~", $HOME)
+            box.vm.synced_folder host, guest, type: :rsync
+            box.minicoin.fs_mappings.merge!({host => guest})
         else
             default_shares[host] = guest
         end
