@@ -2,7 +2,7 @@
 # global values and machine defaults
 settings:
   home_share: $HOME
-  defaults:
+  /.*/: # for all machines
     shared_folders:
       - $PWD: /opt/minicoin # required by provisioning scripts
       - $HOME_SHARE: $GUEST_HOMES/$USER
