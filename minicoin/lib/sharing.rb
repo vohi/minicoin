@@ -73,6 +73,8 @@ def mutagen_share(box, role_params, machine)
 end
 
 def share_folders(box, machine, shares)
+    return if shares.nil?
+
     shares = Marshal.load(Marshal.dump(shares))
     raise "shared_folders needs to be a list of mappings" if !shares.is_a?(Array)
     default_shares = {}
@@ -81,6 +83,7 @@ def share_folders(box, machine, shares)
         share_type = share["type"]
         share.delete("type")
         share = share["paths"] if share["paths"]
+        share = [share] unless share.respond_to?(:each)
         share.each do |host, guest|
             # each entry could be just alpha; or alpha => beta or host => alpha; guest => beta
             guest ||= host
@@ -108,6 +111,27 @@ def share_folders(box, machine, shares)
                 default_shares[host] = guest
             end
         end
+    end
+
+    # if default folder sharing is disabled, then upload the needed guest-side scripts
+    if shares.include?("disabled")
+        box.vm.synced_folder ".", "/opt/minicoin", disabled: true
+        if box.vm.guest == :windows
+            box.vm.provision "minicoin guest scripts:upload",
+                type: :file,
+                source: "./util",
+                destination: "C:\\opt\\minicoin\\"
+        else
+            box.vm.provision "minicoin guest scripts:script",
+                type: :shell,
+                inline: "sudo mkdir -p /opt/minicoin/util; chown -R vagrant /opt/minicoin",
+                upload_path: "/tmp/vagrant-shell_minicoin_guest_scripts"
+            box.vm.provision "minicoin guest scripts:upload",
+                type: :file,
+                source: "./util",
+                destination: "/opt/minicoin/"
+        end
+        return
     end
 
     # set up default shares, take care of resulting network drives on guests
