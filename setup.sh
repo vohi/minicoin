@@ -49,15 +49,19 @@ then
         default_dhcp=$(VBoxManage list dhcpservers | grep NetworkName: | awk '{print $2}')
         VBoxManage dhcpserver remove --netname ${default_dhcp} # workaround https://github.com/hashicorp/vagrant/issues/3083
         vbox_version=`VBoxManage --version`
-    else
+    elif [[ -n "$vbox_version" ]]
+    then
         echo "VirtualBox version ${vbox_version} found!"
+    elif [[ -n "$vmware_version" ]]
+    then
+        echo "VMware version ${vmware_version} found!"
     fi
     regex='([0-9]+\.[0-9]+\.[0-9]+).*'
     if [[ $vbox_version =~ $regex ]]
     then
         vbox_version=${BASH_REMATCH[1]}
     fi
-    if [[ ! -z $vbox_version ]]
+    if [[ -n "$vbox_version" ]]
     then
         vbox_extension=`VBoxManage list extpacks`
         echo "vbox_extension: $vbox_extension"
