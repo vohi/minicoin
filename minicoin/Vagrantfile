@@ -259,6 +259,21 @@ Vagrant.configure("2") do |config|
       unless shares.nil?
         if shares.include?("disabled")
           box.vm.synced_folder ".", "/opt/minicoin", disabled: true
+          if box.vm.guest == :windows
+            box.vm.provision "minicoin guest scripts:upload",
+              type: :file,
+              source: "./util",
+              destination: "C:\\opt\\minicoin\\"
+          else
+            box.vm.provision "minicoin guest scripts:script",
+              type: :shell,
+              inline: "sudo mkdir -p /opt/minicoin/util; chown -R vagrant /opt/minicoin",
+              upload_path: "/tmp/vagrant-shell_minicoin_guest_scripts"
+            box.vm.provision "minicoin guest scripts:upload",
+              type: :file,
+              source: "./util",
+              destination: "/opt/minicoin/"
+          end
         else
           share_folders(box, machine, shares)
         end
