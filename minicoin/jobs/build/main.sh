@@ -68,7 +68,7 @@ fi
 
 [ -d $build_dir ] || mkdir -p $build_dir &> /dev/null
 cd $build_dir
-echo "Building '$projectname' from '$JOBDIR' into '$build_dir'"
+echo "Building '$projectname' from '$JOBDIR' into '$PWD'"
 
 if [ ! -z $FLAG_reconfigure ]
 then

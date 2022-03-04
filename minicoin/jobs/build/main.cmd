@@ -34,6 +34,7 @@ if "!PARAM_build!"=="" (
   SET "PARAM_build=!projectname!-build"
 )
 SET "build_dir=!PARAM_build!"
+SET "build_dir=%build_dir:/=\%"
 SET "target=!PARAM_target!"
 
 SET error=0
@@ -45,7 +46,7 @@ if DEFINED FLAG_clean (
 
 if NOT EXIST !build_dir! mkdir !build_dir!
 cd !build_dir!
-echo Building '!projectname!' from '!JOBDIR!' into '%cd%\!build_dir!'
+echo Building '!projectname!' from '!JOBDIR!' into '%cd%'
 
 if DEFINED FLAG_reconfigure (
   if EXIST build.ninja del build.ninja
