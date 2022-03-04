@@ -48,9 +48,11 @@ def mutagen_share(box, role_params, machine)
     if paths.is_a?(String)
         paths = { paths.dup => paths.dup }
     elsif paths.is_a?(Array)
-        paths = {}.tap do |path|
+        paths_hash = {}
+        paths.each do |path|
             paths_hash[path] = path.dup
         end
+        paths = paths_hash
     end
     raise "Argument error: 'paths' needs to be a list of strings, or a hash from source to destination" unless paths.is_a?(Hash)
     return false if paths.empty? # nothing to do
@@ -74,6 +76,7 @@ end
 
 def share_folders(box, machine, shares)
     return if shares.nil?
+    return if shares == "disabled"
 
     shares = Marshal.load(Marshal.dump(shares))
     raise "shared_folders needs to be a list of mappings" if !shares.is_a?(Array)
