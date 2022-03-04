@@ -155,7 +155,7 @@ def share_folders(box, machine, shares)
         box.vm.synced_folder host, guest, options
         # host-side, slashes are always unix-style
         host_path = host.gsub("\\", "/")
-        box.minicoin.actual_shared_folders[host_path] = guest
+        box.minicoin.default_shared_folders[host_path] = guest
         box.minicoin.fs_mappings[host_path] = win_links[guest[1..-1]] || guest
     end
     win_link_folders(box, win_links) if box.vm.guest == :windows

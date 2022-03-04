@@ -3,14 +3,14 @@ module Minicoin
         class Minicoin < Vagrant.plugin(2, :config)
             attr_accessor :machine
             attr_accessor :fs_mappings
-            attr_accessor :actual_shared_folders
+            attr_accessor :default_shared_folders
             attr_accessor :guest_homes
 
             def initialize
                 super
                 @machine = UNSET_VALUE
                 @fs_mappings = {}
-                @actual_shared_folders = {}
+                @default_shared_folders = {}
                 @hash = UNSET_VALUE
                 @guest_homes = UNSET_VALUE
             end
@@ -29,7 +29,7 @@ module Minicoin
             def merge(other)
                 super.tap do |result|
                     result.fs_mappings = fs_mappings.merge(other.fs_mappings)
-                    result.actual_shared_folders = actual_shared_folders.merge(other.actual_shared_folders)
+                    result.default_shared_folders = default_shared_folders.merge(other.default_shared_folders)
                     result.guest_homes = other.guest_homes if @guest_homes == UNSET_VALUE
                     result.machine = {} if machine == UNSET_VALUE && other.machine == UNSET_VALUE
                 end

@@ -45,8 +45,7 @@ module Minicoin
                     pwd = ENV['minicoin_key']
 
                     override.vm.synced_folder ".", "/opt/minicoin", disabled: true
-                    shared_folder = box.minicoin.actual_shared_folders
-                    shared_folder.each do |host, guest|
+                    box.minicoin.default_shared_folders.each do |host, guest|
                         override.vm.synced_folder host, guest, disabled: true
                     end
                     if @@AZURE_PROFILE.nil?
