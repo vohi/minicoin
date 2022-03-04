@@ -38,7 +38,7 @@ machines:
 
   - name: opensuse15
     box: generic/opensuse15
-    box_versin: ">= 3.6.8"
+    box_version: ">= 3.6.8"
     roles:
       - role: linux-builder
       - role: linux-desktop
