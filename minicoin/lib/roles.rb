@@ -161,6 +161,7 @@ def add_role(box, role, name, machine)
         elsif value.is_a?(Array)
             array = []
             value.each do |entry|
+                next if entry.nil?
                 new_entry = expand_env(entry)
                 if new_entry.nil?
                     STDERR.puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
@@ -172,6 +173,7 @@ def add_role(box, role, name, machine)
         elsif value.is_a?(Hash)
             new_hash = {}
             value.each do |k, v|
+                next if v.nil?
                 new_key = expand_env(k)
                 new_value = expand_env(v)
                 if new_key.nil? || new_value.nil?
