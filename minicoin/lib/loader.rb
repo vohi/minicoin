@@ -46,6 +46,10 @@ def merge_yaml(first, second)
         if first.has_value?(second)
             return first
         end
+        if second.is_a?(String)
+            first[second] = nil
+            return first
+        end
         STDERR.puts "Can't insert #{second.class} '#{second}' into hash #{first}"
         return first
     end
