@@ -3,7 +3,7 @@
 # Drop the contents of this file into ~/minicoin/minicoin.yml
 settings:
   # defaults are applied to all machines
-  defaults:
+  /.*/:
     # all machines get the following roles
     roles:
       # upload your .gitconfig to all VMs
