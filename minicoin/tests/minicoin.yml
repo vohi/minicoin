@@ -8,7 +8,7 @@ settings:
   home_share: $HOME
   defaults:
     shared_folders:
-      - "Host": "Guest"
+      "Host": "Guest"
   /^.*\d$/:
     matched: global
 

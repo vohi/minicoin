@@ -44,7 +44,6 @@ def mutagen_share(box, role_params, machine)
     paths = role_params["paths"]
     role_params.delete("paths")
 
-    sessions = {}
     if paths.is_a?(String)
         paths = { paths.dup => paths.dup }
     elsif paths.is_a?(Array)
@@ -56,6 +55,7 @@ def mutagen_share(box, role_params, machine)
     end
     raise "Argument error: 'paths' needs to be a list of strings, or a hash from source to destination" unless paths.is_a?(Hash)
     return false if paths.empty? # nothing to do
+    sessions = {}
     paths.each do |alpha, beta|
         beta = adjust_guest_path(beta, box)
         sessions[alpha] = beta
@@ -76,17 +76,31 @@ end
 
 def share_folders(box, machine, shares)
     return if shares.nil?
-    return if shares == "disabled"
 
+    raise "shared_folders needs to be a list of mappings" if !shares.respond_to?(:each)
     shares = Marshal.load(Marshal.dump(shares))
-    raise "shared_folders needs to be a list of mappings" if !shares.is_a?(Array)
     default_shares = {}
     shares.each do |share|
         next if share.nil?
-        share_type = share["type"]
-        share.delete("type")
-        share = share["paths"] if share["paths"]
-        share = [share] unless share.respond_to?(:each)
+        if share.is_a?(Array)
+            if share.count > 1 && share[1].respond_to?(:each) # if the value is an iterable, then the key is the type
+                share_type = share[0]
+                share = share[1]
+            elsif share.count == 2
+                share = { share[0] => share[1] }
+            end
+        end
+        if share.is_a?(Array)
+            share_hash = {}
+            share.each do |path|
+                if path.is_a?(Hash)
+                    share_hash.merge!(path)
+                else
+                    share_hash[path] = path
+                end
+            end
+            share = share_hash
+        end
         share.each do |host, guest|
             # each entry could be just alpha; or alpha => beta or host => alpha; guest => beta
             guest ||= host
@@ -110,14 +124,20 @@ def share_folders(box, machine, shares)
                 host = host.gsub("~", $HOME)
                 box.vm.synced_folder host, guest, type: :rsync
                 box.minicoin.fs_mappings.merge!({host => guest})
+            when 'disabled'
+                default_shares.delete(host)
             else
                 default_shares[host] = guest
             end
         end
     end
 
-    # if default folder sharing is disabled, then upload the needed guest-side scripts
-    if shares.include?("disabled")
+    if shares.has_key?("disabled") && shares["disabled"] == nil
+        default_shares = {}
+    end
+
+    # if the minicoin folder sharing is disabled, then upload the needed guest-side scripts
+    unless default_shares.include?($PWD) || default_shares.include?(".")
         box.vm.synced_folder ".", "/opt/minicoin", disabled: true
         if box.vm.guest == :windows
             box.vm.provision "minicoin guest scripts:upload",
@@ -134,7 +154,6 @@ def share_folders(box, machine, shares)
                 source: "./util",
                 destination: "/opt/minicoin/"
         end
-        return
     end
 
     # set up default shares, take care of resulting network drives on guests
