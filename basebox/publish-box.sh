@@ -32,7 +32,7 @@ echo "Generated ${metafile}:"
 cat "${metafile_up}"
 
 boxpath="tqtc"
-[ -z ${minicoin_key} ] || boxpath="${boxpath}\/${minicoin_key}"
+[ -z ${minicoin_key} ] || boxpath="${boxpath}/${minicoin_key}"
 
 function to_aws()
 {
@@ -47,7 +47,7 @@ function to_azure()
     exists=$(az storage blob exists -n ${boxpath}/${2} -c \$web --account-name tqtcvagrantboxes -o tsv 2> /dev/null)
     if [ $exists == "True" ]
     then
-        >&2 echo "The blob ${2} already exists. Press any key to skip!"
+        >&2 echo "The blob ${2} already exists at ${boxpath}/${2}. Press any key to skip!"
         read -t 5 -n 1
         if [ $? = 0 ]
         then
