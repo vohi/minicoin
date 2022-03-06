@@ -149,6 +149,7 @@ def add_role(box, role, name, machine)
         role, role_params = role.shift
     end
 
+    role_params ||= {}
     role_params.each do |key, value|
         next if value.nil?
         if value.is_a?(String)
