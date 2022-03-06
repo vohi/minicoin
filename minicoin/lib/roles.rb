@@ -204,6 +204,27 @@ def add_role(box, role, name, machine)
     end
     activity = false
 
+    # load attributes for the role, and add all required roles
+    if File.file?("#{role_path}/attributes.yml")
+        ex_attributes = YAML.load_file("#{role_path}/attributes.yml")
+
+        if ex_attributes["requires"]
+            ex_attributes["requires"].each do |required_role|
+                matching_roles = machine["roles"].select do |existing|
+                    existing == required_role || existing["role"] == required_role || 
+                        (existing.is_a?(Hash) && existing.key?(required_role))
+                end
+                add_role(box, required_role, name, machine) if matching_roles.empty?
+            end
+        end
+        if ex_attributes["alias"]
+            add_role(box, ex_attributes["alias"], name, machine)
+            activity = true
+        end
+    else
+        ex_attributes = {}
+    end
+
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
         pre_provision = lambda do |machine|
@@ -212,11 +233,6 @@ def add_role(box, role, name, machine)
         box.vm.provision "#{role}:pre-provision",
             type: :local_command,
             code: pre_provision
-    end
-    begin
-        ex_attributes = YAML.load_file("#{role_path}/attributes.yml")
-    rescue
-        ex_attributes = {}
     end
 
     if File.file?("#{role_path}/playbook.yml")
