@@ -107,10 +107,10 @@ then
     if [ $count -eq 0 ]; then
         echo "No machines running, bring up test machines for more tests"
     else
-        echo "Running test on $count machines in sequence"
+        echo "Running selftest on $count machines in sequence"
         stdout=""
         stderr=""
-        minicoin run --jobconfig 0 test ${machines[@]} -- error > .std.out 2> .std.err
+        minicoin run --jobconfig 0 selftest ${machines[@]} -- error > .std.out 2> .std.err
         return=$?
 
         stdout=`grep "Hello" .std.out`
@@ -132,13 +132,13 @@ then
             printf "${RED}Skipping advanced tests due to earlier errors${NOCOL}\n"
         else
             echo "Running test on $count machines in parallel"
-            minicoin run --parallel --jobconfig 0 test "${machines[@]}" > .std.out 2> .std.err
+            minicoin run --parallel --jobconfig 0 selftest "${machines[@]}" > .std.out 2> .std.err
             return=$?
             rm .std.out
             rm .std.err
             assert $return 0
 
-            minicoin run --parallel --jobconfig 0 test "${machines[@]}" -- error > .std.out 2> .std.err
+            minicoin run --parallel --jobconfig 0 selftest "${machines[@]}" -- error > .std.out 2> .std.err
             return=$?
             rm .std.out
             rm .std.err

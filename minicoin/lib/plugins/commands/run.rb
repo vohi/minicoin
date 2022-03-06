@@ -772,7 +772,7 @@ module Minicoin
                     begin
                         require "#{@job.path}/#{type}-run"
                         @job.log_verbose(@vm.ui, "Running #{type}-run ruby script for #{@job.name}")
-                        eval("#{@job.name.gsub("-", "_").capitalize}::#{type}_run(@vm)")
+                        eval("::#{@job.name.gsub("-", "_").capitalize}::#{type}_run(@vm)")
                     rescue LoadError => e
                     end
                     ext = Vagrant::Util::Platform.windows? ? "cmd" : "sh"

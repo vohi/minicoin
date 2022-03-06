@@ -9,14 +9,14 @@ settings:
     no-hostname: true
 
 jobconfigs: &testconfigs
-  - job: test
+  - job: selftest
     name: simple
     options:
       param1: value1
       param2: value2
       flag:
 
-  - job: test
+  - job: selftest
     name: complicated
     options:
       array1:
@@ -25,7 +25,7 @@ jobconfigs: &testconfigs
       spacey: foo bar
       quoted: hello "world"
 
-  - job: test
+  - job: selftest
     name: colored
     options:
       param1: text
