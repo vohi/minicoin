@@ -3,8 +3,6 @@ param (
     [string]$package = "mingw"
 )
 
-write-host "Installing ${package} version ${version}"
+. "c:\opt\minicoin\util\install_helper.ps1"
 
-cd "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
-
-.\choco install --no-progress -y $package --version $version
+Install-Software $package $version

@@ -1,5 +1,5 @@
 param (
-    [String[]]$Version = "2022"
+    [String]$Version = "2022"
 )
 
 $variables = @{
@@ -32,21 +32,7 @@ $packages = (
 
 chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) {
-    $measurement = Measure-Command {
-        Run-KeepAlive -ScriptBlock {
-            param($package)
-            write-host "Installing $package"
-            & chocolatey install --no-progress --limitoutput -y $package | Out-Default
-            write-host "Done Installing $package"
-        } -Arguments $p -HeartBeat 30
-    }
-    $duration = ""
-    if ($measurement.TotalMinutes -lt 1) {
-        $duration = "$($measurement.TotalSeconds) Seconds"
-    } else {
-        $duration = $measurement.ToString("hh\:mm\:ss")
-    }
-    Write-Host "Installation of $p completed after $duration"
+    Install-Software $p
 }
 
 $vc_workloads = (
@@ -55,21 +41,11 @@ $vc_workloads = (
 )
 
 ForEach ( $p in $vc_workloads ) {
-    $measurement = Measure-Command {
-        Run-KeepAlive -ScriptBlock {
-            param($package)
-            write-host "Installing Visual Studio component $package"
-            & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --norestart --quiet --productId Microsoft.VisualStudio.Product.BuildTools --channelId $channelId --add $package | Out-Default
-            write-host "Done Installing $package"
-        } -Arguments $p -HeartBeat 30
-    }
-    $duration = ""
-    if ($measurement.TotalMinutes -lt 1) {
-        $duration = "$($measurement.TotalSeconds) Seconds"
-    } else {
-        $duration = $measurement.ToString("hh\:mm\:ss")
-    }
-    Write-Host "Installation of $p completed after $duration"
+    Install-Software -package $p -command "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" -arguments @(
+        "modify", "--norestart", "--quiet",
+        "--productId", "Microsoft.VisualStudio.Product.BuildTools",
+        "--channelId", "$channelId", "--add"
+    )
 }
 
 chocolatey feature disable -n=allowGlobalConfirmation
