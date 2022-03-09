@@ -13,7 +13,8 @@ module Minicoin
         end
         def self.upload_key(machine)
             if machine.config.vm.guest == :windows
-                mutagen_key_destination = "..\\.ssh\\#{$USER}.pub"
+                mutagen_key_destination = ".ssh\\#{$USER}.pub"
+                mutagen_key_destination = "..\\#{mutagen_key_destination}" if machine.config.vm.communicator == :winrm
                 mutagen_key_add = "Get-Content -Path $env:USERPROFILE\\.ssh\\#{$USER}.pub | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys -Encoding utf8"
             else
                 mutagen_key_destination = ".ssh/#{$USER}.pub"
@@ -22,7 +23,8 @@ module Minicoin
             begin
                 machine.communicate.upload(SyncedFolderMutagen.public_key(), mutagen_key_destination)
                 machine.communicate.execute(mutagen_key_add)
-            rescue
+            rescue => e
+                machine.ui.error "Failed to authorize host key: #{e}"
                 raise Minicoin::Errors::NoSshKey
             end
         end

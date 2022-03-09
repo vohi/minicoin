@@ -141,10 +141,14 @@ def share_folders(box, machine, shares)
     unless default_shares.include?($PWD) || default_shares.include?(".")
         box.vm.synced_folder ".", "/opt/minicoin", disabled: true
         if box.vm.guest == :windows
+            box.vm.provision "minicoin guest scripts:script",
+                type: :shell,
+                inline: "mkdir C:\\opt\\minicoin\\util",
+                upload_path: "/tmp/vagrant-shell_minicoin_guest_scripts"
             box.vm.provision "minicoin guest scripts:upload",
                 type: :file,
                 source: "./util",
-                destination: "C:\\opt\\minicoin\\"
+                destination: "C:\\opt\\minicoin\\util"
         else
             box.vm.provision "minicoin guest scripts:script",
                 type: :shell,

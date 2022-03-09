@@ -547,7 +547,12 @@ module Minicoin
                     end
 
                     @vm.ui.info "Uploading '#{@job.path}'"
-                    @vm.communicate.upload(@job.path, @target_path)
+                    if @vm.communicate.class.name.include?("WinSSH")
+                        @vm.communicate.execute("mkdir Documents\\#{@target_path}")
+                        @vm.communicate.upload(@job.path, "Documents\\#{@target_path}")
+                    else
+                        @vm.communicate.upload(@job.path, @target_path)
+                    end
 
                     run_command +=  "#{script_file}"
                     job_config = jobconfig(options)
