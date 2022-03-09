@@ -15,7 +15,8 @@ def win_link_folders(box, links)
         end
         symlink_lines << "}"
     end
-    
+    return if symlink_lines.empty?
+
     link_cmd = <<-SCRIPT
 function Link-Host {
     Param($Hostname)
