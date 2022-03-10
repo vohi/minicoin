@@ -255,6 +255,9 @@ module Minicoin
                     option.on("--timeout TIMEOUT", "Wait for TIMEOUT seconds") do |o|
                         options[:timeout] = o.to_i
                     end
+                    option.on("--alpha ALPHA", "Only wait for the sync sessions for ALPHA to be idle") do |o|
+                        options[:alphas] = o.split(',')
+                    end
                 end
 
                 argv = parse_options(parser)
@@ -266,19 +269,30 @@ module Minicoin
                         Timeout::timeout(options[:timeout]) do
                         loop do
                             waiting = nil
-                            SyncedFolderMutagen.parse_sessions(vm).each do |session|
+                            sessions = SyncedFolderMutagen.parse_sessions(vm)
+                            if options[:alphas]
+                                sessions = sessions.select do |session|
+                                    options[:alphas].include?(session['Alpha']['URL'])
+                                end
+                                if sessions.empty?
+                                    vm.ui.error "No matching sessions for #{options[:alphas]}"
+                                    return 1
+                                end
+                            end
+                            sessions.each do |session|
                                 unless ["Watching for changes"].include?(session["Status"])
                                     waiting = session
                                     break
                                 end
                             end
                             if waiting
-                                options = { new_line: false }
-                                waitcount += 1
-                                vm.ui.clear_line
                                 alpha = waiting["Alpha"]
-                                options[:color] = alpha["Connection state"] != "Connected" ? :yellow : :green
-                                vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", **options
+                                raise "Mutagen session for #{alpha["URL"]} is paused, won't wait" if waiting["Status"] == "[Paused]"
+                                ui_options = { new_line: false }
+                                waitcount += 3
+                                vm.ui.clear_line
+                                ui_options[:color] = alpha["Connection state"] != "Connected" ? :yellow : :green
+                                vm.ui.detail "[#{waitcount}] Waiting for #{alpha["URL"]} => #{waiting["Beta"]["URL"]}: #{waiting["Status"]}", **ui_options
                                 sleep(3)
                             else
                                 break
@@ -292,6 +306,10 @@ module Minicoin
                     rescue Timeout::Error
                         vm.ui.detail "", **{ prefix: false } # flush newline
                         vm.ui.error "Timed out waiting"
+                        return 1
+                    rescue => e
+                        vm.ui.detail "", **{ prefix: false } # flush newline
+                        vm.ui.error e
                         return 1
                     end
                 end
