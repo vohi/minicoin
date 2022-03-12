@@ -300,12 +300,17 @@ module Minicoin
                             up_options << ["--provider", @run_options[:provider]]
                         end
                         up_options << vm.name.to_s
-                        vm.env.cli(up_options)
-                        if !vm.communicate.wait_for_ready(60)
-                            vm.ui.error "Failed to bring up machine"
-                            raise Vagrant::Errors::MachineGuestNotReady
+                        up_result = vm.env.cli(up_options)
+                        vm.ui.error "Booting the machine exited with failure, the job might fail" if (up_result != 0)
+                        vm.communicate.reset!
+                    end
+                    unless (vm.synced_folders[:mutagen] || []).empty?
+                        ready = vm.env.cli("mutagen", "wait", vm.name.to_s)
+                        if ready != 0
+                            vm.ui.error "Failed to wait for folder sync to complete, skipping"
+                            exit_code += 1
+                            next
                         end
-                        vm.env.cli("mutagen", "wait", vm.name.to_s) unless (vm.synced_folders[:mutagen] || []).empty?
                     end
 
                     log_verbose(vm.ui, "Starting job on #{vm.name}")
