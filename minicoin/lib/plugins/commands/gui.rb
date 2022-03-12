@@ -24,7 +24,7 @@ module Minicoin
                         `VBoxManage startvm #{vm.id} --type separate`
                     when "vmware_desktop", :vmware_desktop
                         vm.ui.info "Opening #{vm.id}"
-                        `#{start_command()} #{vm.id}`
+                        `#{start_command()} '#{vm.id}'`
                     else
                         provider_opened = false
                         if vm.provider.methods.include?(:open_gui)
