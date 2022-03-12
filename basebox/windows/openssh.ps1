@@ -12,5 +12,7 @@ Set-Service ssh-agent -StartupType Automatic
 Start-Service sshd
 Start-Service ssh-agent
 
+mkdir $env:userprofile\.ssh
+curl -o $env:userprofile\.ssh\authorized_keys https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant.pub
 # put the public insecure vagrant key into C:\ProgramData\ssh\administrators_authorized_keys
-icacls.exe "C:\ProgramData\ssh\administrators_authorized_keys" /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+# icacls.exe "C:\ProgramData\ssh\administrators_authorized_keys" /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"

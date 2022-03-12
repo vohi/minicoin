@@ -46,7 +46,7 @@ if (!(Test-Path $ChocoInstallPath)) {
 
 cd $ChocoInstallPath
 
-$packages = ( "pstools" )
+$packages = ( "pstools", "sdelete" )
 
 .\chocolatey feature enable -n=allowGlobalConfirmation
 ForEach ( $p in $packages ) { .\choco install --no-progress -y $p }
