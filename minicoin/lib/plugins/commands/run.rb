@@ -82,7 +82,7 @@ module Minicoin
             def initialize(argv, env)
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
                 # special case, since we have a main command argument that takes a value
-                ["--repeat", "--jobconfig", "--env"].each do |option|
+                ["--repeat", "--jobconfig", "--env", "--provider"].each do |option|
                     if @argv[-1] == option
                         loop do
                             @argv << @job_name
@@ -159,6 +159,9 @@ module Minicoin
                     end
                     option.on("--jobconfig JOBCONFIG", "Select a pre-defined job configuration") do |o|
                         options[:jobconfig] = o
+                    end
+                    option.on("--provider PROVIDER", "Bring machine up with PROVIDER") do |o|
+                        options[:provider] = o
                     end
                     option.on("--powershell", "Prefer a powershell main script on Windows guests") do |o|
                         options[:powershell] = o
@@ -292,7 +295,12 @@ module Minicoin
                 with_target_vms(argv) do |vm|
                     unless vm.communicate.ready?
                         vm.ui.warn "Machine not ready, trying to bring it up"
-                        vm.env.cli("up", vm.name.to_s)
+                        up_options = ["up"]
+                        if @run_options[:provider]
+                            up_options << ["--provider", @run_options[:provider]]
+                        end
+                        up_options << vm.name.to_s
+                        vm.env.cli(up_options)
                         if !vm.communicate.wait_for_ready(60)
                             vm.ui.error "Failed to bring up machine"
                             raise Vagrant::Errors::MachineGuestNotReady
