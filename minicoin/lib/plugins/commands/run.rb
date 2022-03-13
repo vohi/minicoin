@@ -82,13 +82,12 @@ module Minicoin
             def initialize(argv, env)
                 @argv, @job_name, @job_args = split_main_and_subcommand(argv)
                 # special case, since we have a main command argument that takes a value
-                ["--repeat", "--jobconfig", "--env", "--provider"].each do |option|
-                    if @argv[-1] == option
-                        loop do
-                            @argv << @job_name
-                            @job_name = @job_args.delete_at(0)
-                            break unless @job_name.start_with?("-")
-                        end
+                special_params = ["--repeat", "--jobconfig", "--env", "--provider"]
+                while special_params.include?(@argv[-1])
+                    loop do
+                        @argv << @job_name
+                        @job_name = @job_args.delete_at(0)
+                        break unless @job_name.start_with?("-")
                     end
                 end
                 super(@argv, env)
