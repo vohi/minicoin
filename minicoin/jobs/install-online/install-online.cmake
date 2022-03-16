@@ -57,10 +57,29 @@ if(NOT EXISTS "${maintenance_tool_file}") # maintenance tool not present, instal
     set(installer_file "./${installer_file}")
   endif()
 
-  message(STATUS "Running ${installer_file}")
+  if(NOT INITIAL_PACKAGES)
+    set(INITIAL_PACKAGES
+      qt.tools.qtcreator
+      qt.tools.cmake
+      qt.tools.ninja
+  )
+  endif()
+  if(NOT EXTRA_INSTALL_ARGS)
+    set(EXTRA_INSTALL_ARGS "--no-default-installations")
+  endif()
+
+  set(command
+    ${installer_file} install ${INITIAL_PACKAGES}
+    --root
+    "${INSTALL_ROOT}"
+    ${INSTALL_ARGS}
+    ${EXTRA_INSTALL_ARGS}
+  )
+
+  message(STATUS "Running Qt online installer")
   execute_process(
-    COMMAND
-      ${installer_file} install --root "${INSTALL_ROOT}" ${INSTALL_ARGS}
+    COMMAND ${command}
+    COMMAND_ECHO STDOUT
   )
 
   if(APPLE)
@@ -79,6 +98,7 @@ if (SEARCH)
       "${maintenance_tool_file}" search ${SEARCH}
     RESULT_VARIABLE
       exitcode
+    COMMAND_ECHO STDOUT
   )
   return()
 endif()
@@ -104,6 +124,7 @@ execute_process(
     "${maintenance_tool_file}" install ${PACKAGE} --root "${INSTALL_ROOT}" ${INSTALL_ARGS}
   RESULT_VARIABLE
     exitcode
+  COMMAND_ECHO STDOUT
 )
 
 message(DEBUG "Maintenance tool exited with ${exitcode}")
