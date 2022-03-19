@@ -1,11 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-if (! grep "added by packer" ~/.zshrc)
-then
-    echo 'export PATH="/usr/local/bin:$PATH" # added by packer' >> ~/.zshrc
-fi
-
 echo "Running update"
 /usr/local/bin/brew update
 echo "Running cleanup"
