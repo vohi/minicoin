@@ -1,5 +1,6 @@
 # fix for locale not being set correctly
 echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.bashrc
+. /opt/minicoin/util/parse-opts.sh $HOME "$@"
 . /etc/os-release
 
 distro=${ID}${VERSION_ID}
@@ -54,6 +55,34 @@ case $distro in
             "libgstreamer1.0-dev" "libgstreamer-plugins-base1.0-dev"
             "libgstreamer-plugins-good1.0-dev" "linux-libc-dev"
     )
+    for sqldriver in ${PARAM_sqldrivers[@]}
+    do
+      case $sqldriver in
+        mysql)
+          packages+=( libmysqlclient-dev )
+          ;;
+
+        mariadb)
+          packages+=( libmariadb-dev )
+          ;;
+
+        odbc)
+          packages+=( unixodbc-dev )
+          ;;
+
+        psql)
+          packages+=( libpq-dev )
+          ;;
+
+        ibase)
+          packages+=( firebird-dev )
+          ;;
+
+        *)
+          >&2 echo "Don't know how to install SDK for SQL driver '$sqldriver' on $distro"
+          ;;
+      esac
+    done
   ;;
 
   centos*)
@@ -98,6 +127,34 @@ case $distro in
             # qttools
             llvm llvm-libs llvm-devel
     )
+    for sqldriver in ${PARAM_sqldrivers[@]}
+    do
+      case $sqldriver in
+        mysql)
+          packages+=( mysql-devel )
+          ;;
+
+        mariadb)
+          packages+=( mariadb-devel )
+          ;;
+
+        odbc)
+          packages+=( unixODBC-devel )
+          ;;
+
+        psql)
+          packages+=( libpq-devel )
+          ;;
+
+        ibase)
+          packages+=( firebird-devel )
+          ;;
+
+        *)
+          >&2 echo "Don't know how to install SDK for SQL driver '$sqldriver' on $distro"
+          ;;
+      esac
+    done
     echo ". /opt/rh/gcc-toolset-9/enable" >> /home/vagrant/.bashrc
   ;;
 
@@ -141,6 +198,34 @@ case $distro in
       # qdoc
       libclang9 libllvm9-devel libllvm
     )
+    for sqldriver in ${PARAM_sqldrivers[@]}
+    do
+      case $sqldriver in
+        mysql)
+          packages+=( libmysqlclient-devel )
+          ;;
+
+        mariadb)
+          packages+=( libmariadb-devel )
+          ;;
+
+        odbc)
+          packages+=( unixODBC-devel )
+          ;;
+
+        psql)
+          packages+=( libpqxx-devel )
+          ;;
+
+        ibase)
+          packages+=( firebird-devel )
+          ;;
+
+        *)
+          >&2 echo "Don't know how to install SDK for SQL driver '$sqldriver' on $distro"
+          ;;
+      esac
+    done
   ;;
 esac
 
