@@ -85,6 +85,8 @@ case $distro in
             libXcomposite-devel
             # OpenGL
             mesa-libGL-devel
+            # GTK+
+            gtk3-devel
             # SSL
             libssl.*
             openssl-devel
