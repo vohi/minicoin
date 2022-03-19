@@ -41,6 +41,16 @@
                     "url": "file:///tmp/vmware_desktop/macos12-vmware-0.0.4.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.5",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "vmware_desktop",
+                    "url": "file:///tmp/vmware_desktop/macos12-vmware-0.0.5.box"
+                }
+            ]
         }
     ]
 }
