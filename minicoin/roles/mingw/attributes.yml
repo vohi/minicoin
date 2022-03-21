@@ -1,2 +1,3 @@
-requires:
-  - dev-tools
+alias:
+  role: qt-builder
+  compiler: mingw

@@ -1,2 +1,2 @@
-requires:
-  - dev-tools
+alias:
+  - qt-builder
