@@ -310,49 +310,51 @@ def add_role(box, role, name, machine)
         end
         upload_path += "provision_#{role}#{script_ext}"
         provisioning_file = "#{role_path}/provision#{script_ext}"
-        if File.file?(provisioning_file)
+        if File.file?(provisioning_file) # allow empty scripts to silence warning
             activity = true
-            # scripts might need to know about name and path of the role
-            role_params["role"] = role
-            role_params["role_path"] = role_path
+            unless File.zero?(provisioning_file)
+                # scripts might need to know about name and path of the role
+                role_params["role"] = role
+                role_params["role_path"] = role_path
 
-            role_params.each do |key, param|
-                array=param
-                if !param.is_a?(Array)
-                    array=[]
-                    array << param
-                end
-                if combine_array
-                    script_args << "#{arg_marker}#{key}"
-                    script_args << array.join(",")
-                else
-                    array.each do |value|
-                        script_args << "#{arg_marker}#{key}" unless combine_array
-                        value = value.to_json if value.is_a?(Hash)
-                        script_args << "#{value}" unless value.nil?
+                role_params.each do |key, param|
+                    array=param
+                    if !param.is_a?(Array)
+                        array=[]
+                        array << param
+                    end
+                    if combine_array
+                        script_args << "#{arg_marker}#{key}"
+                        script_args << array.join(",")
+                    else
+                        array.each do |value|
+                            script_args << "#{arg_marker}#{key}" unless combine_array
+                            value = value.to_json if value.is_a?(Hash)
+                            script_args << "#{value}" unless value.nil?
+                        end
                     end
                 end
-            end
 
-            attributes = {
-                type: :shell,
-                path: "#{provisioning_file}",
-                args: script_args,
-                upload_path: upload_path,
-                privileged: true
-            }
-            attributes[:reboot] = !!role_params["reboot"]
-            begin
-                ex_attributes["shell"].each do |key, value|
-                    key = key.to_sym
-                    attributes[key] = value
+                attributes = {
+                    type: :shell,
+                    path: "#{provisioning_file}",
+                    args: script_args,
+                    upload_path: upload_path,
+                    privileged: true
+                }
+                attributes[:reboot] = !!role_params["reboot"]
+                begin
+                    ex_attributes["shell"].each do |key, value|
+                        key = key.to_sym
+                        attributes[key] = value
+                    end
+                rescue
                 end
-            rescue
-            end
 
-            provisioning_name = "#{role}:script"
-            box.vm.provision provisioning_name,
-                **attributes
+                provisioning_name = "#{role}:script"
+                box.vm.provision provisioning_name,
+                    **attributes
+            end
         end
     end
     
