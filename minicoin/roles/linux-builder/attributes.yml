@@ -1,0 +1,4 @@
+alias:
+  role: qt-builder
+
+deprecated: true

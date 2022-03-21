@@ -1,9 +1,25 @@
-# fix for locale not being set correctly
-echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.bashrc
-. /opt/minicoin/util/parse-opts.sh $HOME "$@"
-. /etc/os-release
+#!/bin/bash
+if [ $(uname) == "Darwin" ]
+then
+  distro="darwin"
+else
+  . /etc/os-release
+  distro=${ID}${VERSION_ID}
+  # fix for locale not being set correctly
+  echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.profile
+fi
 
-distro=${ID}${VERSION_ID}
+. /opt/minicoin/util/parse-opts.sh $HOME "$@"
+
+function brew_install_set_rootpath
+{
+  local package=$1
+  local module=$2
+  echo "Installing $package, registering $module"
+  su -l vagrant -c "brew install $package"
+  prefix=$(brew --prefix $package)
+  echo "export ${module}_ROOT=$prefix" >> /Users/vagrant/.profile
+}
 
 case $distro in
   ubuntu*)
@@ -227,6 +243,35 @@ case $distro in
       esac
     done
   ;;
+
+  darwin)
+    command=brew_install_set_rootpath
+    packages=()
+    for sqldriver in ${PARAM_sqldrivers[@]}
+    do
+      case $sqldriver in
+        mysql)
+          packages+=( "mysql-client MySQL" )
+        ;;
+        mariadb)
+          packages+=( "mariadb-connector-c" )
+        ;;
+        odbc)
+          packages+=( "unixodbc ODBC" )
+        ;;
+        psql)
+          packages+=( "libpq PostgreSQL" )
+        ;;
+        *)
+          >&2 echo "Don't know how to install SDK for SQL driver '$sqldriver' on $distro"
+        ;;
+      esac
+    done
+  ;;
+
+  *)
+    >&2 echo "Don't know how to provision compiler and dependencies to build Qt for $distro"
+  ;;
 esac
 
 for package in "${packages[@]}"
@@ -235,8 +280,11 @@ do
     $command $package > /dev/null
 done
 
-sysctl -w fs.inotify.max_user_watches=1048576
-sysctl -p /etc/sysctl.conf
+if command inotify &> /dev/null
+then
+  sysctl -w fs.inotify.max_user_watches=1048576
+  sysctl -p /etc/sysctl.conf
+fi
 
 mkdir -p /tmp
 cd /tmp
