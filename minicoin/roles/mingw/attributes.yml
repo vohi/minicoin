@@ -1,3 +1,5 @@
 alias:
   role: qt-builder
   compiler: mingw
+
+deprecated: "Use qt-builder with compiler: mingw instead"

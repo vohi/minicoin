@@ -217,6 +217,14 @@ def add_role(box, role, name, machine)
                 add_role(box, required_role, name, machine) if matching_roles.empty?
             end
         end
+        unless ex_attributes["deprecated"].nil?
+            if ex_attributes["deprecated"].is_a?(String)
+                message = ex_attributes["deprecated"]
+            else
+                message = "Use '#{ex_attributes["alias"]}' instead"
+            end
+            STDERR.puts "==> #{name}: The role '#{role}' is deprecated. #{message}!"
+        end
         if ex_attributes["alias"]
             add_role(box, ex_attributes["alias"], name, machine)
             activity = true

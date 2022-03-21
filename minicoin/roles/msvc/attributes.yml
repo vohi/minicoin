@@ -1,2 +1,4 @@
 alias:
-  - qt-builder
+  role: qt-builder
+
+deprecated: true
