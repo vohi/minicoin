@@ -129,6 +129,12 @@ do {
         Set-Item -Path Env:${key} -Value ${value}
     }
 
+    # log all environment variables
+    if ($verbose) {
+        Log-Verbose "Environment variables:"
+        Get-ChildItem env:
+    }
+
     $workingdirectory = $ENV:USERPROFILE
     if (Test-Path "D:") {
         $workingdirectory = "D:"
