@@ -26,7 +26,7 @@ machines:
     box: generic/ubuntu2004
     roles:
       - role: linux-desktop
-      - role: linux-builder
+      - role: qt-builder
 
   - name: centos8
     box: generic/centos8
@@ -34,27 +34,27 @@ machines:
       - role: script
         script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
       - role: linux-desktop
-      - role: linux-builder
+      - role: qt-builder
 
   - name: opensuse15
     box: generic/opensuse15
     box_version: ">= 3.6.8"
     roles:
-      - role: linux-builder
+      - role: qt-builder
       - role: linux-desktop
 
 ### Simple Windows boxes - different versions, different compilers
   - name: windows10
     box: tqtc/$minicoin_key/windows10
     roles:
-      - msvc2019
+      - qt-builder
       - role: install
         packages: vulkan-sdk
 
   - name: windows11
     box: tqtc/$minicoin_key/windows11
     roles:
-      - msvc2019
+      - qt-builder
 
 ### Mac - designed to run host binaries
   - name: macos1014
@@ -69,13 +69,15 @@ machines:
     box: tqtc/$minicoin_key/macos12
     if: Vagrant.has_plugin?("vagrant-vmware-desktop")
     provider: vmware_desktop
+    roles:
+      - qt-builder
 
 ## Specialized machines
 
   - name: android-builder
     box: generic/ubuntu2004
     roles:
-      - role: linux-builder
+      - role: qt-builder
       - role: android-builder
     jobconfigs:
       - name: host-tools
@@ -112,7 +114,7 @@ machines:
     box: generic/ubuntu2004
     if: Which.which("ansible")
     roles:
-      - linux-builder
+      - qt-builder
       - doc-server
     jobconfigs:
       - name: qt
