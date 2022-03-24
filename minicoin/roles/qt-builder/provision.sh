@@ -1,14 +1,5 @@
 #!/bin/bash
-if [ $(uname) == "Darwin" ]
-then
-  distro="darwin"
-else
-  . /etc/os-release
-  distro=${ID}${VERSION_ID}
-  # fix for locale not being set correctly
-  echo "LC_ALL=en_US.UTF-8" >> /home/vagrant/.profile
-fi
-
+. /opt/minicoin/util/install_helper.sh
 . /opt/minicoin/util/parse-opts.sh $HOME "$@"
 
 function brew_install_set_rootpath
@@ -23,18 +14,6 @@ function brew_install_set_rootpath
 
 case $distro in
   ubuntu*)
-    command="apt-get -qq -y install"
-    # add google's dns server for fast and reliable lookups
-    echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
-
-    # enable source repositories for apt
-    sed -i 's/us.archive.ubuntu.com/archive.ubuntu.com/' /etc/apt/sources.list
-    sed -i '/deb-src http.*xenial.* main restricted$/s/^# //g' /etc/apt/sources.list
-
-    # install dependencies for building and running Qt 5
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update > /dev/null
-
     packages=(
             "build-essential"
             "inotify-tools"
@@ -102,13 +81,6 @@ case $distro in
   ;;
 
   centos*)
-    yum install -y epel-release > /dev/null
-    yum install -y dnf-plugins-core > /dev/null
-    yum config-manager --set-enabled powertools > /dev/null
-    yum update -y > /dev/null
-    command="yum install -y"
-
-    yum group install -y 'Development Tools' > /dev/null
     packages=(
             clang gcc-toolset-9-gcc-c++
             ninja-build
@@ -175,8 +147,6 @@ case $distro in
   ;;
 
   opensuse*)
-    zypper refresh
-    command="zypper --quiet --non-interactive install -y"
     packages=(
       # build essentials
       git-core
@@ -245,7 +215,7 @@ case $distro in
   ;;
 
   darwin)
-    command=brew_install_set_rootpath
+    install_command=brew_install_set_rootpath
     packages=()
     for sqldriver in ${PARAM_sqldrivers[@]}
     do
@@ -277,7 +247,7 @@ esac
 for package in "${packages[@]}"
 do
     echo "Installing $package"
-    $command $package > /dev/null
+    install_package $package > /dev/null
 done
 
 if command inotify &> /dev/null
@@ -304,7 +274,7 @@ have_build=${BASH_REMATCH[3]}
 if [[ $install_cmake -gt 0 ]]
 then
   echo "Installing cmake ${cmake_major}.${cmake_minor}.${cmake_build}"
-  $command cmake=${cmake_major}.${cmake_minor}
+  install_package cmake=${cmake_major}.${cmake_minor}
   if [ $? -gt 0 ]
   then
       echo "... Downloading cmake $cmake_version"

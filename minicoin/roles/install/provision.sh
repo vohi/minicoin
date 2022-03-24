@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
+. /opt/minicoin/util/install_helper.sh
 . /opt/minicoin/util/parse-opts.sh $HOME "$@"
-
-if [[ $(uname) =~ "Darwin" ]]
-then
-    distro="darwin"
-else
-    . /etc/os-release
-    distro=${ID}${VERSION_ID}
-fi
 
 case $distro in
     ubuntu*)
