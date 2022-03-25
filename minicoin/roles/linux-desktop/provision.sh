@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
+. /opt/minicoin/util/install_helper.sh
 . /opt/minicoin/util/parse-opts.sh $HOME "$@"
 . /etc/os-release
 
-distro=${ID}${VERSION_ID}
 desktop=${PARAM_desktop:-$PARAM_linux_desktop}
 session=${PARAM_session}
 desktop=$(echo $desktop | awk '{print tolower($1)}')
