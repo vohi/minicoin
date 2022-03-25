@@ -15,15 +15,6 @@ function brew_install_set_rootpath
 case $distro in
   ubuntu*)
     packages=(
-            "build-essential"
-            "inotify-tools"
-            "gcc-8 g++-8"
-            "python"
-            "perl"
-            "bison"
-            "flex"
-            "gperf"
-            "ninja-build"
             "^libxcb.*-dev libx11-xcb-dev libxrender-dev libxi-dev"
             "libxkbcommon-dev libxkbcommon-x11-dev"
             "libglu1-mesa-dev freeglut3-dev mesa-common-dev libopengl-dev"
@@ -45,10 +36,11 @@ case $distro in
             "avahi-daemon"
             "docker docker-compose"
             # qdoc
-            "clang-10" "libclang-10-dev" "llvm-10"
+            "libclang-10-dev" "llvm-10"
             # gstreamer
-            "libgstreamer1.0-dev" "libgstreamer-plugins-base1.0-dev"
-            "libgstreamer-plugins-good1.0-dev" "linux-libc-dev"
+            "libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev"
+            "libgstreamer-plugins-good1.0-dev"
+            "linux-libc-dev"
     )
     for sqldriver in ${PARAM_sqldrivers[@]}
     do
@@ -82,10 +74,6 @@ case $distro in
 
   centos*)
     packages=(
-            clang gcc-toolset-9-gcc-c++
-            ninja-build
-            perl-core
-            inotify-tools
             zlib-devel
             # Xcb
             libxcb.*
@@ -148,13 +136,6 @@ case $distro in
 
   opensuse*)
     packages=(
-      # build essentials
-      git-core
-      gcc-c++ gcc10-c++
-      cmake make ninja
-      inotify-tools
-      # webkit
-      flex bison gperf libicu-devel ruby
       # xcb
       xorg-x11-libxcb-devel
       xcb-util-devel
@@ -166,17 +147,6 @@ case $distro in
       libxkbcommon-x11-devel
       libxkbcommon-devel
       libXi-devel
-      # webengine
-      alsa-devel
-      dbus-1-devel
-      libXcomposite-devel
-      libXcursor-devel
-      libXrandr-devel
-      libXtst-devel
-      mozilla-nspr-devel
-      mozilla-nss-devel
-      nodejs10
-      nodejs10-devel
       # vulkan
       vulkan libvulkan1 vulkan-utils mesa-vulkan-drivers
       # shader tools
@@ -255,36 +225,3 @@ then
   sysctl -w fs.inotify.max_user_watches=1048576
   sysctl -p /etc/sysctl.conf
 fi
-
-mkdir -p /tmp
-cd /tmp
-
-# install latest cmake
-cmake_major=3
-cmake_minor=21
-cmake_build=2
-install_cmake=1
-have_version=$(su -l vagrant -c "cmake --version | head -n1") # root might use different PATH, i.e. /bin on centos
-re='cmake version ([0-9]+)\.([0-9]+)\.([0-9]+)'
-[[ $have_version =~ $re ]]
-have_major=${BASH_REMATCH[1]}
-have_minor=${BASH_REMATCH[2]}
-have_build=${BASH_REMATCH[3]}
-[[ $have_major -ge $cmake_major ]] && [[ $have_minor -ge $cmake_minor ]] && [[ $have_build -ge $cmake_build ]] && install_cmake=0
-if [[ $install_cmake -gt 0 ]]
-then
-  echo "Installing cmake ${cmake_major}.${cmake_minor}.${cmake_build}"
-  install_package cmake=${cmake_major}.${cmake_minor}
-  if [ $? -gt 0 ]
-  then
-      echo "... Downloading cmake $cmake_version"
-      wget -q https://cmake.org/files/v${cmake_major}.${cmake_minor}/cmake-${cmake_major}.${cmake_minor}.${cmake_build}-linux-x86_64.sh 2>&1 > /dev/null
-      echo "... Installing cmake"
-      /bin/sh ./cmake-${cmake_major}.${cmake_minor}.${cmake_build}-linux-x86_64.sh --skip-license --prefix=/usr/local
-  fi
-fi
-echo "cmake version installed:"
-su -l vagrant -c "cmake --version"
-
-
-cd - > /dev/null

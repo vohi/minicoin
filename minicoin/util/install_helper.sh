@@ -47,6 +47,7 @@ case $distro in
 ubuntu*)
     install_command="apt-get -qq -y install"
     prepare_command=ubuntu_prepare
+    export DEBIAN_FRONTEND=noninteractive
     ;;
 centos*)
     install_command="yum install -y"
