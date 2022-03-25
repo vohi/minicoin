@@ -261,10 +261,10 @@ class Tester
 
   def test_if()
     matcher_data = [
-      {"if" => "machine[\"os\"] == :windows", "pattern" => "stderr"},
-      {"if" => "machine[\"os\"] == :linux", "color" => "black" },
-      {"if" => "machine[\"os\"] == :windows", "color" => "blue" },
-      {"if" => "machine[\"os\"] == :macos", "color" => "gray" }
+      {"if" => "@machine[\"os\"] == :windows", "pattern" => "stderr"},
+      {"if" => "@machine[\"os\"] == :linux", "color" => "black" },
+      {"if" => "@machine[\"os\"] == :windows", "color" => "blue" },
+      {"if" => "@machine[\"os\"] == :macos", "color" => "gray" }
     ]
     test_data =
       { "set1: machines" => [
@@ -294,8 +294,8 @@ class Tester
       }
     test_data.each do |key, data|
       @data_count += 1
-      context = Minicoin::Context.new
       input = Marshal.load(Marshal.dump(data[0])) # extra deep copy
+      context = Minicoin::Context.new(input)
       expected = data[1]
       context_data = data[2] || []
       context_data.each do |variable, value|

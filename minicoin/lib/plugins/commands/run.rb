@@ -230,8 +230,7 @@ module Minicoin
 
             def matchers(vm)
                 minicoin = Minicoin.get_config(vm)
-                context = Minicoin::Context.new
-                context.machine = minicoin.machine
+                context = Minicoin::Context.new([minicoin.machine])
 
                 matcherfile = File.join(@run_options[:jobpath], "matchers.yml")
                 matchers = File.exist?(matcherfile) ? YAML.load_file(matcherfile) : {}

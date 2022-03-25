@@ -246,18 +246,28 @@ end
 module Minicoin
     class Context
         attr_accessor :machines
-        attr_accessor :machine
-        def initialize()
-            @machines = nil
-            @machine = nil
+        def initialize(machines)
+            @all_machines = machines.dup
+            @machine_rx = Regexp.new('^\/machines/(\d+)\/$')
+            @current_machine = nil
+        end
+        def if_eval(value)
+            machine = @all_machines[@current_machine]
+            eval(value)
         end
         def preprocess(data, path)
+            machine_match = @machine_rx.match(path)
+            if machine_match
+                @current_machine = machine_match[1].to_i
+            elsif !path.start_with?('/machine')
+                @current_machine = nil
+            end
             return true unless data.is_a?(Hash)
             data.each do |key, value|
                 if key == "if"
                     Dir.chdir($MINICOIN_PROJECT_DIR) do
                         begin
-                            exp = eval(value)
+                            exp = if_eval(value)
                             return [exp, "#{value} => #{exp}"] if !exp
                             # if-conditions that evaluate to true can be removed
                             data.delete(key)
@@ -358,8 +368,7 @@ def load_minicoin()
 
     detect_os(machines)
 
-    context = Minicoin::Context.new
-    context.machines = machines
+    context = Minicoin::Context.new(machines)
     context.preprocess(yaml, "/")
 
     $TEST_OUTPUT=yaml
