@@ -214,6 +214,22 @@ def extend_machines(machines)
     end
 end
 
+def detect_os(machines)
+    machines.each do |machine|
+        name = machine["name"]
+        box = machine["box"]
+        if machine["os"].nil?
+            if ((name =~ /windows/i) || (box =~ /windows/i)) != nil
+                machine["os"] = "windows"
+            elsif ((name =~ /mac/i) || (box =~ /mac/i)) != nil
+                machine["os"] = "macos"
+            else
+                machine["os"] = "linux"
+            end
+        end
+    end
+end
+
 def find_config(root, config_name)
     while !Dir.exist?(File.join(root, config_name)) do
         old_root = root
@@ -339,6 +355,8 @@ def load_minicoin()
             STDERR.puts "Settings from MINICOIN environment are not valid yaml"
         end
     end
+
+    detect_os(machines)
 
     context = Minicoin::Context.new
     context.machines = machines

@@ -103,7 +103,7 @@ class Tester
       "machines" => [
         {"name" => "machine1", "box" => "duplicate", "gui" => true, "shared_folders"=>{"Host"=>"Guest"}, "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
         {"name" => "machine2", "box" => "generic2", "shared_folders"=>{"Host"=>"Guest"}, "matched" => "user", "os" => "macos", "nictype1" => "82545EM", "nictype2" => "82545EM" },
-        {"name" => "override", "gui" => true, "shared_folders"=>{"Host"=>"Guest"}},
+        {"name" => "override", "gui" => true, "shared_folders"=>{"Host"=>"Guest"}, "os" => "linux"},
         {"name" => "environment1", "box" => "$USER", "shared_folders"=>{"Host"=>"Guest"}, "matched" => "global", "os"=>"linux" },
         {"name" => "environment2", "box" => "private/box", "shared_folders"=>{"Host"=>"Guest"}, "matched" => "global", "os"=>"linux" },
         {"name" => "base", "box" => "generic",
@@ -160,9 +160,9 @@ class Tester
         "box" => "generic",
         "os"=>"linux"
       },
-      {"name" => "notthere", "if" => "false", "shared_folders"=>{"Host"=>"Guest"}, :disabled => "false => false"},
-      {"name" => "nojob", "jobconfigs" => [], "shared_folders"=>{"Host"=>"Guest"}},
-      {"name" => "nojob_either", "jobconfigs" => [{"name" => "jobB"}], "shared_folders"=>{"Host"=>"Guest"}},
+      {"name" => "notthere", "if" => "false", "shared_folders"=>{"Host"=>"Guest"}, "os" => "linux", :disabled => "false => false"},
+      {"name" => "nojob", "jobconfigs" => [], "shared_folders"=>{"Host"=>"Guest"}, "os" => "linux"},
+      {"name" => "nojob_either", "jobconfigs" => [{"name" => "jobB"}], "shared_folders"=>{"Host"=>"Guest"}, "os" => "linux"},
       {"name" => "submachine", "box" => "subgeneric", "shared_folders"=>{"Host"=>"Guest"}, "os"=>"macos", "nictype1"=>"82545EM", "nictype2"=>"82545EM" }
       ]
     }
