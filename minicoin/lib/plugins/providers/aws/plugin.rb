@@ -245,6 +245,8 @@ module Minicoin
 
                 box.vm.provider :aws do |aws, override|
                     # this group is created by minicoin with permissions for SSH, RDP, and WinRM
+                    aws_profile = ENV[ "AWS_PROFILE"]
+                    aws.aws_profile = aws_profile if aws_profile
                     aws.security_groups = [ "minicoin" ]
 
                     # Workaround for https://github.com/mitchellh/vagrant-aws/issues/538: if the box we
