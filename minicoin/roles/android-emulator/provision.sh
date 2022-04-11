@@ -48,6 +48,6 @@ echo "Starting adb"
 su -l vagrant -c "$ANDROID_SDK_ROOT/platform-tools/adb start-server"
 echo "Starting emulator"
 su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window >&2 /dev/null &"
-while ! pgrep -f "qemu" > /dev/null; do
+while ! $ANDROID_SDK_ROOT/platform-tools/adb devices | grep emulator > /dev/null; do
     sleep 1
 done

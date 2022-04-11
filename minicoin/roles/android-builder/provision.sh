@@ -13,8 +13,8 @@ apt-get -q install -y gradle
 
 ndkVersion="${PARAM_ndkVersion:-23.1.7779620}"
 ndkHost="linux-x86_64"
-sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-30.0.3}"
-sdkApiLevel="${PARAM_sdkApiLevel:-android-30}"
+sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-31.0.0}"
+sdkApiLevel="${PARAM_sdkApiLevel:-android-31}"
 
 repository="https://dl.google.com/android/repository"
 toolsFile="commandlinetools-linux-7583922_latest.zip"
