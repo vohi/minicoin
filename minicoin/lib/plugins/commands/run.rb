@@ -877,8 +877,11 @@ module Minicoin
                     jobconfigs = []
                     machine["jobconfigs"].each do |jobconfig|
                         jobconfig[:_index] = jobconfigs.length
-                        jobconfigs << jobconfig
+                        jobconfigs << jobconfig if jobconfig["job"] == @job.run_options[:jobname]
                     end
+                    configs_for_job = jobconfigs.dup
+                    return {} if configs_for_job.count == 0
+
                     begin
                         @job.run_options[:jobconfig_index] = Integer(@job.run_options[:jobconfig])
                         @job.run_options.delete(:jobconfig)
@@ -890,20 +893,20 @@ module Minicoin
                     default_config = nil
                     jobconfigs = jobconfigs.select do |jc|
                         res = true
-                        res &&= jc["job"] == @job.run_options[:jobname]
                         res &&= jc["name"] == @job.run_options[:jobconfig] if @job.run_options.key?(:jobconfig)
                         res &&= jc[:_index] == @job.run_options[:jobconfig_index] if @job.run_options.key?(:jobconfig_index)
                         default_config = jc if res && jc["default"]
                         res
                     end
-                    @job.log_verbose(@vm.ui, "Candidates: #{jobconfigs}")
-                    
-                    if jobconfigs.count == 0
-                        jobconfig = {}
-                    elsif default_config
-                        jobconfig = default_config
-                    elsif jobconfigs.count > 1
-                        # start dialog if multiple configurations, otherwise 
+                    @job.log_verbose(@vm.ui, "Candidates for #{@job.run_options[:jobconfig]}: #{jobconfigs}")
+
+                    if !@job.run_options[:jobconfig] && default_config # nothing requested, use default if available
+                        job_config = default_config
+                    elsif jobconfigs.count == 1 # exact match
+                        jobconfig = jobconfigs.first
+                    else
+                        # start dialog if multiple configurations, or if nothing was matched
+                        jobconfigs = configs_for_job if jobconfigs.count == 0
                         @job.log_verbose(@vm.ui, "#{jobconfigs.count} matching configurations found for job '#{name()}'")
                         if Vagrant.version?(">= 2.2.14")
                             if @vm.ui.is_a?(Vagrant::UI::MachineReadable) || @vm.ui.is_a?(Vagrant::UI::NonInteractive)
@@ -936,9 +939,8 @@ module Minicoin
                             raise Vagrant::Errors::UIExpectsTTY if !jobconfig && !@vm.ui.stdin.tty?
                         end
                         @vm.ui.info "Selected: '#{jobconfig['name']}' (run job '#{jobconfig['job']}' with '--jobconfig #{jobconfig['name']}' to skip this dialog)\n", **ui_channel
-                    else
-                        jobconfig = jobconfigs.first
                     end
+                    @vm.ui.info "Using job configuration: '#{jobconfig["name"]}'"
                     jobconfig
                 end
             end
