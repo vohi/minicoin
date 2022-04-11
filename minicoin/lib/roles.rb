@@ -229,6 +229,23 @@ def add_role(box, role, name, machine)
             add_role(box, ex_attributes["alias"], name, machine)
             activity = true
         end
+        (ex_attributes["jobconfigs"] || []).each do |jobconfig|
+            eval_params = role_params.dup
+            (ex_attributes["parameters"] || []).each do |parameter, defvalue|
+                eval_params[parameter] = defvalue unless eval_params[parameter]
+            end
+            context = Minicoin::Context.new([machine])
+            context.variables["machine"] = machine
+            context.variables["role"] = eval_params
+            begin
+                result = context.preprocess(jobconfig)
+                if result == true && jobconfig
+                    machine["jobconfigs"] = (machine["jobconfigs"] || []) << jobconfig 
+                end
+            rescue => e
+                STDERR.puts "Error in jobconfig statement: #{e}"
+            end
+        end
     else
         ex_attributes = {}
     end
