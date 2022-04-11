@@ -246,16 +246,31 @@ end
 module Minicoin
     class Context
         attr_accessor :machines
+        attr_accessor :variables
         def initialize(machines)
+            @variables = {}
             @all_machines = machines.dup
             @machine_rx = Regexp.new('^\/machines/(\d+)\/$')
             @current_machine = nil
         end
-        def if_eval(value)
-            machine = @all_machines[@current_machine]
-            eval(value)
+        def if_eval(expr)
+            @variables[:machine] = @all_machines[@current_machine] if @current_machine
+            if_context = binding
+            variables.each do |name, value|
+                if value.is_a?(Hash)
+                    variable = Object.new
+                    value.each do |k, v|
+                        variable.class.module_eval { attr_reader k.to_sym}
+                        variable.instance_variable_set("@#{k}", v)
+                    end
+                    if_context.local_variable_set(name.to_sym, variable)
+                else
+                    if_context.local_variable_set(name.to_sym, value)
+                end
+            end
+            if_context.eval(expr)
         end
-        def preprocess(data, path)
+        def preprocess(data, path = "/")
             machine_match = @machine_rx.match(path)
             if machine_match
                 @current_machine = machine_match[1].to_i
@@ -369,7 +384,7 @@ def load_minicoin()
     detect_os(machines)
 
     context = Minicoin::Context.new(machines)
-    context.preprocess(yaml, "/")
+    context.preprocess(yaml)
 
     $TEST_OUTPUT=yaml
 

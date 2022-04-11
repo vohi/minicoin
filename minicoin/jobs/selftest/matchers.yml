@@ -1,11 +1,11 @@
 ---
 matchers:
-  - if: machine["os"] == "linux"
+  - if: machine.os == "linux"
     pattern: stdout
     color: green
-  - if: machine["os"] == "windows"
+  - if: machine.os == "windows"
     pattern: stdout
     color: blue
-  - if: machine["os"] == "macos"
+  - if: machine.os == "macos"
     pattern: stdout
     color: magenta

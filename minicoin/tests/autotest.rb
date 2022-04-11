@@ -296,6 +296,7 @@ class Tester
       @data_count += 1
       input = Marshal.load(Marshal.dump(data[0])) # extra deep copy
       context = Minicoin::Context.new(input)
+      context.variables[:machine] = input
       expected = data[1]
       context_data = data[2] || []
       context_data.each do |variable, value|
