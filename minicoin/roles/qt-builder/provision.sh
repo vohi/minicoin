@@ -219,9 +219,3 @@ do
     echo "Installing $package"
     install_package $package > /dev/null
 done
-
-if command inotify &> /dev/null
-then
-  sysctl -w fs.inotify.max_user_watches=1048576
-  sysctl -p /etc/sysctl.conf
-fi
