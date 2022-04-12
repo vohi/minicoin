@@ -77,7 +77,6 @@ machines:
   - name: android-builder
     box: generic/ubuntu2004
     roles:
-      - role: qt-builder
       - role: android-builder
     jobconfigs:
       - name: host-tools
