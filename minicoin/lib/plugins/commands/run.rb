@@ -902,7 +902,7 @@ module Minicoin
                     @job.log_verbose(@vm.ui, "Candidates for #{@job.run_options[:jobconfig]}: #{jobconfigs}")
 
                     if !@job.run_options[:jobconfig] && default_config # nothing requested, use default if available
-                        job_config = default_config
+                        jobconfig = default_config
                     elsif jobconfigs.count == 1 # exact match
                         jobconfig = jobconfigs.first
                     else
