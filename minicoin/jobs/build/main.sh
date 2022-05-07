@@ -122,11 +122,11 @@ error=$?
 
 if [[ -f build.ninja ]]
 then
-  maketool=ninja
+  maketool="ninja -k 0"
 elif [[ -f Makefile ]]
 then
   cpus=$(nproc 2> /dev/null || sysctl -n hw.ncpu)
-  maketool="make -j${cpus}"
+  maketool="make -j${cpus} -k"
 else
   >&2 echo "No build system generated, aborting"
   exit 1
