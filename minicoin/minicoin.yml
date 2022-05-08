@@ -105,8 +105,6 @@ machines:
     provider: vmware_desktop
     if: Vagrant.has_plugin?("vagrant-vmware-desktop")
     roles:
-      - role: linux-desktop
-        desktop: lxde
       - role: android-emulator
 
   - name: doc-server

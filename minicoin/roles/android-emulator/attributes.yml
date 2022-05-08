@@ -1,2 +1,5 @@
 requires:
-  - android-builder
+  - role: android-builder
+  - role: linux-desktop
+    if: machine.os == "linux"
+    desktop: lxde
