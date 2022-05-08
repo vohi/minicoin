@@ -13,8 +13,8 @@ then
     exit 1
 fi
 
-androidArch="${PARAM_androidArch:-armeabi-v7a}"
-androidImage="${PARAM_androidImage:-android-25}"
+androidArch="${PARAM_androidArch:-x86_64}"
+androidImage="${PARAM_androidImage:-android-31}"
 
 echo "Installing emulator"
 echo "y" | sdkmanager --install "emulator" "patcher;v4" >> sdkmanager.log
@@ -47,7 +47,7 @@ su -l vagrant -c "avdmanager list avd"
 echo "Starting adb"
 su -l vagrant -c "$ANDROID_SDK_ROOT/platform-tools/adb start-server"
 echo "Starting emulator"
-su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window >&2 /dev/null &"
+su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window &> /dev/null &"
 while ! $ANDROID_SDK_ROOT/platform-tools/adb devices | grep emulator > /dev/null; do
     sleep 1
 done
