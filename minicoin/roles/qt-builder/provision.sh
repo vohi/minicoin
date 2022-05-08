@@ -152,7 +152,7 @@ case $distro in
       # shader tools
       spirv-tools
       # qdoc
-      libclang9 libllvm9-devel libllvm
+      libclang9 llvm-devel
     )
     for sqldriver in ${PARAM_sqldrivers[@]}
     do
