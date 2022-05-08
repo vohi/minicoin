@@ -210,9 +210,17 @@ def add_role(box, role, name, machine)
 
         if ex_attributes["requires"]
             ex_attributes["requires"].each do |required_role|
+                if required_role.is_a?(Hash)
+                    context = Minicoin::Context.new([machine])
+                    context.variables["machine"] = machine
+                    next if context.preprocess(required_role) != true
+                    required_role_name = required_role["role"]
+                else
+                    required_role_name = required_role
+                end
                 matching_roles = machine["roles"].select do |existing|
-                    existing == required_role || existing["role"] == required_role || 
-                        (existing.is_a?(Hash) && existing.key?(required_role))
+                    existing == required_role_name || existing["role"] == required_role_name || 
+                        (existing.is_a?(Hash) && existing.key?(required_role_name))
                 end
                 add_role(box, required_role, name, machine) if matching_roles.empty?
             end
