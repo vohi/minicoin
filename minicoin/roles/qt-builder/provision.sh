@@ -148,7 +148,7 @@ case $distro in
       libxkbcommon-devel
       libXi-devel
       # vulkan
-      vulkan libvulkan1 vulkan-utils mesa-vulkan-drivers
+      vulkan libvulkan1 vulkan-devel vulkan-tools Mesa-libVulkan-devel libvulkan_intel
       # shader tools
       spirv-tools
       # qdoc
