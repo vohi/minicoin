@@ -87,13 +87,19 @@ machines:
           configure: -release -developer-build -nomake tests -nomake examples -no-warnings-are-errors
           target: host_tools
           build: qt-host-tools
-      - name: qt-for-android
+      - name: qt-for-android-arm
         description: cross-platform build of Qt for Android
         job: build
         if: File.exist?("configure")
         options:
           configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
           build: android
+      - name: qt-for-android-x86
+        job: build
+        if: File.exist?("configure")
+        options:
+          configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-abis x86_64 -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
+          build: androidx86
       - name: standalone
         description: cross-compile the current project for Android
         job: build
