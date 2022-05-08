@@ -55,6 +55,7 @@ projectname="$(basename $JOBDIR)"
 
 # set defaults
 [ -z $PARAM_build ] && PARAM_build="${projectname}-build"
+[[ "$PARAM_build" =~ ^-.* ]] && PARAM_build="${projectname}-build${PARAM_build}"
 build_dir=$PARAM_build
 target=$PARAM_target
 

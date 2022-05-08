@@ -1,2 +1,23 @@
 requires:
   - dev-tools
+
+parameters:
+  compiler: msvc
+  version: 2022
+
+jobconfigs:
+  - name: msvc
+    job: build
+    if: machine.os == "windows" && ([*role.compiler] & ["msvc"]).any?
+    options:
+      if: File.exist?("configure.bat")
+      cxx: cl.exe
+      build: -msvc
+
+  - name: mingw
+    job: build
+    if: machine.os == "windows" && (['mingw', 'gcc'] & [*role.compiler]).any?
+    options:
+      if: File.exist?("configure.bat")
+      cxx: g++.exe
+      build: -mingw

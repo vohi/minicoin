@@ -33,6 +33,10 @@ REM set defaults
 if "!PARAM_build!"=="" (
   SET "PARAM_build=!projectname!-build"
 )
+REM a build parameter starting with - makes it a suffix
+if /i "!PARAM_build:~0,1%!"=="-" (
+  SET "PARAM_build=!projectname!-build!PARAM_build!"
+)
 SET "build_dir=!PARAM_build!"
 SET "build_dir=%build_dir:/=\%"
 SET "target=!PARAM_target!"
