@@ -9,6 +9,10 @@ case $distro in
             libdotconf-dev  # needed to build speechd
             libsndfile-dev
             texinfo
+            autoconf
+            autopoint
+            libtool
+            gettext
         )
     ;;
     centos*)
