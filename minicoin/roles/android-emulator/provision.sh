@@ -47,7 +47,7 @@ su -l vagrant -c "avdmanager list avd"
 echo "Starting adb"
 su -l vagrant -c "$ANDROID_SDK_ROOT/platform-tools/adb start-server"
 echo "Starting emulator"
-su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window &> /dev/null &"
+su -l vagrant -c "$ANDROID_SDK_ROOT/emulator/emulator -avd \"${androidImage}-${androidArch}\" -no-window -no-snapshot &> /dev/null &"
 while ! $ANDROID_SDK_ROOT/platform-tools/adb devices | grep emulator > /dev/null; do
     sleep 1
 done
