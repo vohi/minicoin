@@ -8,6 +8,35 @@ param (
 
 chocolatey feature enable -n=allowGlobalConfirmation
 
+# create shared folders that Qt I/O tests access through UNC paths
+
+$readonly='testshare'
+$writable='testsharewritable'
+$readonlypath="${env:SystemDrive}\${readonly}"
+$writablepath="${env:SystemDrive}\${writable}"
+
+if ($(Test-Path -Path $readonlypath)) {
+    Remove-SmbShare -Name $readonly -Force
+    Remove-Item -Path $readonlypath -Force -Recurse
+}
+if ($(Test-Path -Path $writablepath)) {
+    Remove-SmbShare -Name $writable -Force
+    Remove-Item -Path $writablepath -Force -Recurse
+}
+
+New-Item ${readonlypath} -ItemType Directory
+New-Item "${readonlypath}\tmp" -ItemType Directory
+New-SmbShare -Name ${readonly} -Path ${readonlypath} -ReadAccess Users
+# As expected by tst_networkselftest, exactly 34 bytes
+"This is 34 bytes. Do not change..." `
+    | Out-File -Encoding ascii -FilePath "${readonlypath}\test.pri" -NoNewline
+New-Item "${readonlypath}\readme.txt" -ItemType File
+
+New-Item ${writablepath} -ItemType Directory
+New-SmbShare -Name ${writable} -Path ${writablepath} -ChangeAccess Users
+
+# install the requested compilers
+
 $index = 0
 $Versions = @($Versions.split(","))
 ForEach ($Compiler in $Compilers.split(",")) {
