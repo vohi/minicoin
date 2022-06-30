@@ -336,6 +336,11 @@ def load_minicoin()
         user_yaml = YAML.load_file(user_file)
     end
     user_yaml = load_includes(user_yaml, $HOME)
+    Dir["#{$HOME}/minicoin/machines/**/*.yml"].each do |machineFile|
+        machineFileData = YAML.load_file(machineFile)
+        user_yaml["machines"] = "" if user_yaml["machines"].nil?
+        user_yaml["machines"] << machineFileData
+    end
 
     local_yaml = nil
     if $MINICOIN_PROJECT_DIR

@@ -47,6 +47,11 @@ module Minicoin
                 require_relative "aws.rb"
                 AWS
             end
+
+            command(:machine) do
+                require_relative "machine.rb"
+                Machine
+            end
         end
     end
 end
