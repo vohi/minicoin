@@ -49,6 +49,7 @@ module Minicoin
                         @env.ui.machine("state", indicator, **output_options)
                     else
                         provider = " (#{provider})" if provider
+                        machine_box ||= "[not set]"
                         @env.ui.output "#{indicator || " "} #{(name).ljust(25)} #{(machine_box + provider.to_s).ljust(25)}", **output_options
                     end
                 end
