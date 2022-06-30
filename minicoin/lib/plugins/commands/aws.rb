@@ -49,7 +49,7 @@ module Minicoin
                         option.separator "     #{key.to_s.ljust(31)} #{klass.synopsis}"
                     end
                     option.separator ""
-                    option.separator "For help with any individual subcommand run `minicoin mutagen <subcommand> -h"
+                    option.separator "For help with any individual subcommand run `minicoin aws <subcommand> -h"
                     option.separator ""
                 end
                 argv = parse_options(parser)
