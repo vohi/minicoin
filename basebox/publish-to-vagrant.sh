@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $# -eq 0 ]
+then
+    >&2 echo "Usage: $0 version"
+    exit
+fi
+
 version=${1:-"0.0.1"}
 
 for os in "windows" "macos" "linux"

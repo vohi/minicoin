@@ -6,7 +6,7 @@ Vagrant.configure('2') do |config|
     config.vm.provider :aws
     config.vm.provider :aws do |aws, override|
         # Microsoft Windows Server 2019 Base
-        aws.ami = "ami-00a452e228b12f42b"
+        aws.ami = "ami-0a4722105d5286695"
         # 8 vCPU, 32 GB RAM
         aws.instance_type = "t2.2xlarge"
     end
