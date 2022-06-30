@@ -31,7 +31,13 @@ Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotif
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotification" -Value 1
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotificationOnLockScreen" -Value 1
 
+choco install --confirm sdelete
+
+# doesn't block, so no point in running this here
+# cleanmgr /sagerun:1
+
 Remove-Item $tempfolders -force -recurse
 Optimize-Volume -DriveLetter C -Defrag
+sdelete64 -z c:
 
 exit 0
