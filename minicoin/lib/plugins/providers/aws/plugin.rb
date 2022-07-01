@@ -259,7 +259,8 @@ module Minicoin
                     aws.ami = "dummy" unless $settings[:aws_boxes].include?(box.minicoin.machine['box'])
 
                     aws.tags = {
-                        "minicoin" => box.minicoin.machine['name']
+                        "minicoin" => box.minicoin.machine['name'],
+                        "Name" => box.minicoin.machine['name']
                     }
 
                     # We expect that the user has a key pair in ~/.ssh
