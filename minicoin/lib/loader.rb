@@ -201,15 +201,19 @@ def extend_machines(machines)
         basename = machine["extends"]
         unless basename.nil?
             basemachine = machines.select{|m| m["name"] == basename}.first
-            basemachine.each do |key, value|
-                machine_value = machine[key]
-                if !machine.has_key?(key)
-                    machine[key] = value
-                elsif key != "name"
-                    machine[key] = merge_yaml(value, machine_value)
+            if basemachine.nil?
+                STDERR.puts "#{machine["name"]} extends #{basename}, which does not exist!"
+            else
+                basemachine.each do |key, value|
+                    machine_value = machine[key]
+                    if !machine.has_key?(key)
+                        machine[key] = value
+                    elsif key != "name"
+                        machine[key] = merge_yaml(value, machine_value)
+                    end
                 end
+                machine.delete("extends")
             end
-            machine.delete("extends")
         end
     end
 end
