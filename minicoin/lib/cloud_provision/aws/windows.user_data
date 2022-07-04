@@ -44,4 +44,9 @@ Set-Service winrm -StartupType Automatic
 New-NetFirewallRule -Name winrm-http -DisplayName 'WinRM-HTTP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985
 New-NetFirewallRule -Name winrm-https -DisplayName 'WinRM-HTTPS' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5986
 
+# Allow incoming connections to VNC and RDP servers
+New-NetFirewallRule -Name vnc-tcp -DisplayName 'VNC-TCP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 3283
+New-NetFirewallRule -Name vnc-udp -DisplayName 'VNC-UDP' -Enabled True -Direction Inbound -Protocol UDP -Action Allow -LocalPort 3283
+New-NetFirewallRule -Name rdp -DisplayName 'RDP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 3389
+
 </powershell>
