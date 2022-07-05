@@ -1,0 +1,8 @@
+name: macos-aws
+box: minicoin/macos-cloud
+provider: aws
+if: Vagrant.has_plugin?("vagrant-aws")
+roles:
+  - role: install
+    packages: [ cmake, ninja ]
+storage: 100

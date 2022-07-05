@@ -1,0 +1,12 @@
+name: windows-cloud
+box: minicoin/windows-cloud
+provider:
+  aws:
+  azure:
+    vm_size: Standard_D5_v2 # 16 vCPU, 56GB RAM
+roles:
+  - role: qt-builder
+    sqldrivers:
+      - mysql
+      - odbc
+storage: 100

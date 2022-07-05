@@ -1,0 +1,14 @@
+name: linux-aws
+box: minicoin/linux-cloud
+provider:
+  aws:
+    instance_type: t2.medium
+    ami: ami-0d2a4a5d69e46ea0b
+#    ami: ami-0e0669c0b39d3a79f # CentOS 8
+#    ami: ami-065751a220689a53a # OpenSUSE 15.3
+#   auto_shutdown: 60 # shut down after 60 minutes of idleness
+roles:
+  - linux-desktop
+  - vnc-server
+  - qt-builder
+storage: 100
