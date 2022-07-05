@@ -5,7 +5,7 @@ Vagrant.configure('2') do |config|
     config.vm.guest = :darwin
     config.vm.provider :aws
     config.vm.provider :aws do |aws, override|
-        aws.ami = "ami-0e985ceaa52d29eda" # macOS Monterey 12.1
+        aws.ami = "ami-040b028f24b0f17d5" # macOS Monterey 12.4
         # macOS can only be run on dedicated hosts
         aws.instance_type = "mac1.metal"
         aws.tenancy = "host"
