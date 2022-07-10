@@ -28,14 +28,6 @@ machines:
       - role: linux-desktop
       - role: qt-builder
 
-  - name: centos8
-    box: generic/centos8
-    roles:
-      - role: script
-        script: "sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config"
-      - role: linux-desktop
-      - role: qt-builder
-
   - name: opensuse15
     box: generic/opensuse15
     box_version: ">= 3.6.8"
@@ -44,21 +36,12 @@ machines:
       - role: linux-desktop
 
 ### Simple Windows boxes - different versions, different compilers
-  - name: windows10
-    box: tqtc/$minicoin_key/windows10
-    roles:
-      - qt-builder
-      - role: install
-        packages: vulkan-sdk
-
   - name: windows11
     box: tqtc/$minicoin_key/windows11
     roles:
       - qt-builder
 
 ### Mac - designed to run host binaries
-  - name: macos1014
-    box: tqtc/$minicoin_key/macos1014
   - name: macos1015
     box: tqtc/$minicoin_key/macos1015
   - name: macos11
@@ -71,67 +54,3 @@ machines:
     provider: vmware_desktop
     roles:
       - qt-builder
-
-## Specialized machines
-
-  - name: android-builder
-    box: generic/ubuntu2004
-    roles:
-      - role: android-builder
-    jobconfigs:
-      - name: host-tools
-        description: builds and installs host-side tools for Qt
-        job: build
-        if: File.exist?("configure")
-        options:
-          configure: -release -developer-build -nomake tests -nomake examples -no-warnings-are-errors
-          target: host_tools
-          build: qt-host-tools
-      - name: qt-for-android-arm
-        description: cross-platform build of Qt for Android
-        job: build
-        if: File.exist?("configure")
-        options:
-          configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
-          build: android
-      - name: qt-for-android-x86
-        job: build
-        if: File.exist?("configure")
-        options:
-          configure: "-qt-host-path ~/qt-host-tools/qtbase -developer-build -xplatform android-clang -android-abis x86_64 -android-ndk $ANDROID_NDK_ROOT -android-sdk $ANDROID_SDK_ROOT -no-warnings-are-errors"
-          build: androidx86
-      - name: standalone
-        description: cross-compile the current project for Android
-        job: build
-        options:
-          configure: "-DQT_HOST_PATH:PATH=~/qt-host-tools/qtbase"
-
-  - name: android-tester
-    extends: android-builder
-    provider: vmware_desktop
-    if: Vagrant.has_plugin?("vagrant-vmware-desktop")
-    roles:
-      - role: android-emulator
-
-  - name: doc-server
-    box: generic/ubuntu2004
-    if: Which.which("ansible")
-    roles:
-      - qt-builder
-      - doc-server
-    jobconfigs:
-      - name: qt
-        job: build
-        description: build Qt
-      - name: qdoc
-        job: build
-        description: build qdoc and tools
-        options:
-          configure: -release -developer-build
-          target: qdoc qtattributionsscanner
-      - name: documentation
-        job: build
-        default: true
-        description: build the documentation
-        options:
-          target: html_docs

@@ -1,0 +1,22 @@
+name: doc-server
+box: generic/ubuntu2004
+if: Which.which("ansible")
+roles:
+  - qt-builder
+  - doc-server
+jobconfigs:
+  - name: qt
+    job: build
+    description: build Qt
+  - name: qdoc
+    job: build
+    description: build qdoc and tools
+    options:
+      configure: -release -developer-build
+      target: qdoc qtattributionsscanner
+  - name: documentation
+    job: build
+    default: true
+    description: build the documentation
+    options:
+      target: html_docs

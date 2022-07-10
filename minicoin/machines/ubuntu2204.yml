@@ -1,0 +1,6 @@
+name: ubuntu2204
+box: generic/ubuntu2204
+roles:
+  - role: linux-desktop
+  - role: qt-builder
+  - role: qtspeech-builder
