@@ -128,8 +128,99 @@ def read_process(cmd, ui)
     end
 end
 
-## Add role as provisioning step for box
-def add_role(box, role, name, machine)
+# find the location of the definition of 'role'
+def get_role_path(role)
+    role_path = nil
+    # local roles have precendence
+    project_dir = ENV['MINICOIN_PROJECT_DIR']
+    if project_dir && project_dir != $PWD && project_dir != $HOME
+        role_path = File.join(ENV["MINICOIN_PROJECT_DIR"], ".minicoin/roles/#{role}")
+        role_path = nil unless File.exist?(role_path)
+    end
+    if role_path.nil?
+    # user can add or override roles
+        role_path = File.join($HOME, "minicoin/roles/#{role}")
+        if !File.exist?(role_path)
+            # global roles come last
+            role_path = "#{$PWD}/roles/#{role}"
+        end
+    end
+end
+
+# add role to roles, following alias and dependencies,
+# and adding jobconfigs from the role attributes.yml file.
+def add_role_recursively(roles, role, machine)
+    return if roles.include?(role) # don't add duplicates
+    role_name = role[:role_name]
+    role_params = role[:role_params]
+    role_path = get_role_path(role_name)
+    if File.file?("#{role_path}/attributes.yml")
+        ex_attributes = YAML.load_file("#{role_path}/attributes.yml")
+
+        if ex_attributes["requires"]
+            ex_attributes["requires"].each do |required_role|
+                if required_role.is_a?(Hash)
+                    context = Minicoin::Context.new([machine])
+                    context.variables["machine"] = machine
+                    next if context.preprocess(required_role) != true
+                    required_role_name = required_role["role"]
+                else
+                    required_role_name = required_role
+                end
+                matching_roles = machine["roles"].select do |existing|
+                    existing == required_role_name || existing["role"] == required_role_name || 
+                        (existing.is_a?(Hash) && existing.key?(required_role_name))
+                end
+                if matching_roles.empty?
+                    required_role = preprocess_role(required_role.dup, machine)
+                    add_role_recursively(roles, required_role, machine)
+                else
+                    matching_roles.each do |matching_role|
+                        matching_role = preprocess_role(matching_role.dup, machine)
+                        add_role_recursively(roles, matching_role, machine)
+                    end
+                end
+            end
+        end
+        unless ex_attributes["deprecated"].nil?
+            if ex_attributes["deprecated"].is_a?(String)
+                message = ex_attributes["deprecated"]
+            else
+                message = "Use '#{ex_attributes["alias"]}' instead"
+            end
+            STDERR.puts "==> #{machine_name}: The role '#{role_name}' is deprecated. #{message}!"
+        end
+        if ex_attributes["alias"]
+            add_role_recursively(roles, ex_attributes["alias"], machine)
+            activity = true
+        end
+        (ex_attributes["jobconfigs"] || []).each do |jobconfig|
+            eval_params = role_params.dup
+            (ex_attributes["parameters"] || []).each do |parameter, defvalue|
+                eval_params[parameter] = defvalue unless eval_params[parameter]
+            end
+            context = Minicoin::Context.new([machine])
+            context.variables["machine"] = machine
+            context.variables["role"] = eval_params
+            begin
+                result = context.preprocess(jobconfig)
+                if result == true && jobconfig
+                    machine["jobconfigs"] = (machine["jobconfigs"] || []) << jobconfig 
+                end
+            rescue => e
+                STDERR.puts "Error in jobconfig statement: #{e}"
+            end
+        end
+    else
+        ex_attributes = {}
+    end
+
+    roles << role.dup
+end
+
+def preprocess_role(role, machine)
+    machine_name = machine["name"]
+
     # We try to accept all sorts of YAML:
 
     # flat list:
@@ -155,7 +246,7 @@ def add_role(box, role, name, machine)
         if value.is_a?(String)
             new_value = expand_env(value)
             if new_value.nil?
-                STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+                STDERR.puts "==> #{machine_name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                 return
             end
             role_params[key] = new_value
@@ -165,7 +256,7 @@ def add_role(box, role, name, machine)
                 next if entry.nil?
                 new_entry = expand_env(entry)
                 if new_entry.nil?
-                    STDERR.puts "==> #{name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
+                    STDERR.puts "==> #{machine_name}: Unexpanded environment variable in '#{entry}' - skipping role '#{role}'"
                     return
                 end
                 array << new_entry
@@ -178,7 +269,7 @@ def add_role(box, role, name, machine)
                 new_key = expand_env(k)
                 new_value = expand_env(v)
                 if new_key.nil? || new_value.nil?
-                    STDERR.puts "==> #{name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
+                    STDERR.puts "==> #{machine_name}: Unexpanded environment variable in '#{value}' - skipping role '#{role}'"
                     return
                 end
                 new_hash[new_key] = new_value
@@ -187,72 +278,46 @@ def add_role(box, role, name, machine)
         end
     end
 
-    role_path = nil
-    # local roles have precendence
-    project_dir = ENV['MINICOIN_PROJECT_DIR']
-    if project_dir && project_dir != $PWD && project_dir != $HOME
-        role_path = File.join(ENV["MINICOIN_PROJECT_DIR"], ".minicoin/roles/#{role}")
-        role_path = nil unless File.exist?(role_path)
+    {
+        :role_name => role,
+        :role_params => role_params.dup
+    }
+end
+
+def add_roles(box, roles, machine)
+    return if roles.empty?
+    ordered_roles = []
+    roles.each do |role|
+        role = preprocess_role(role.dup, machine)
+        next unless role.key?(:role_name)
+        add_role_recursively(ordered_roles, role.dup, machine)
     end
-    if role_path.nil?
-    # user can add or override roles
-        role_path = File.join($HOME, "minicoin/roles/#{role}")
-        if !File.exist?(role_path)
-            # global roles come last
-            role_path = "#{$PWD}/roles/#{role}"
+    machine["applied_roles"] = ordered_roles
+    ordered_roles.each do |role|
+        next if role.nil?
+        begin
+            add_role(box, role, machine)
+        rescue => e
+            STDERR.puts "==> #{machine["name"]}: Error when adding role #{role}:"
+            STDERR.puts "             #{e}"
         end
     end
+end
+
+## Add role as provisioning step for box
+def add_role(box, role, machine)
+    machine_name = machine["name"]
+    role_params = role[:role_params]
+    role_name = role[:role_name]
+    role_path = get_role_path(role_name)
+
     activity = false
 
     # load attributes for the role, and add all required roles
     if File.file?("#{role_path}/attributes.yml")
         ex_attributes = YAML.load_file("#{role_path}/attributes.yml")
-
-        if ex_attributes["requires"]
-            ex_attributes["requires"].each do |required_role|
-                if required_role.is_a?(Hash)
-                    context = Minicoin::Context.new([machine])
-                    context.variables["machine"] = machine
-                    next if context.preprocess(required_role) != true
-                    required_role_name = required_role["role"]
-                else
-                    required_role_name = required_role
-                end
-                matching_roles = machine["roles"].select do |existing|
-                    existing == required_role_name || existing["role"] == required_role_name || 
-                        (existing.is_a?(Hash) && existing.key?(required_role_name))
-                end
-                add_role(box, required_role, name, machine) if matching_roles.empty?
-            end
-        end
-        unless ex_attributes["deprecated"].nil?
-            if ex_attributes["deprecated"].is_a?(String)
-                message = ex_attributes["deprecated"]
-            else
-                message = "Use '#{ex_attributes["alias"]}' instead"
-            end
-            STDERR.puts "==> #{name}: The role '#{role}' is deprecated. #{message}!"
-        end
         if ex_attributes["alias"]
-            add_role(box, ex_attributes["alias"], name, machine)
             activity = true
-        end
-        (ex_attributes["jobconfigs"] || []).each do |jobconfig|
-            eval_params = role_params.dup
-            (ex_attributes["parameters"] || []).each do |parameter, defvalue|
-                eval_params[parameter] = defvalue unless eval_params[parameter]
-            end
-            context = Minicoin::Context.new([machine])
-            context.variables["machine"] = machine
-            context.variables["role"] = eval_params
-            begin
-                result = context.preprocess(jobconfig)
-                if result == true && jobconfig
-                    machine["jobconfigs"] = (machine["jobconfigs"] || []) << jobconfig 
-                end
-            rescue => e
-                STDERR.puts "Error in jobconfig statement: #{e}"
-            end
         end
     else
         ex_attributes = {}
@@ -261,16 +326,16 @@ def add_role(box, role, name, machine)
     # check for pre--provisioning script to run locally
     if File.file?("#{role_path}/pre-provision.sh")
         pre_provision = lambda do |machine|
-            read_process("#{role_path}/pre-provision.sh #{name}", machine.ui)
+            read_process("#{role_path}/pre-provision.sh #{machine_name}", machine.ui)
         end
-        box.vm.provision "#{role}:pre-provision",
+        box.vm.provision "#{role_name}:pre-provision",
             type: :local_command,
             code: pre_provision
     end
 
     if File.file?("#{role_path}/playbook.yml")
         if Which.which("ansible")
-            box.vm.provision "#{role}:ansible",
+            box.vm.provision "#{role_name}:ansible",
                 type: :ansible do |ansible|
                     ansible.playbook = "#{role_path}/playbook.yml"
                     ansible.become = true unless box.vm.guest == :windows
@@ -283,7 +348,7 @@ def add_role(box, role, name, machine)
         if ["up", "provision", "reload", "validate"].include? ARGV[0]
             activity = true
             if !insert_disk(box, "#{role_path}/disk.yml", role_params)
-                STDERR.puts "==> #{name}: Attaching disk failed for role '#{role}'"
+                STDERR.puts "==> #{machine_name}: Attaching disk failed for role '#{role_name}'"
             end
         end
     elsif File.file?("#{role_path}/Dockerfile")
@@ -299,13 +364,13 @@ def add_role(box, role, name, machine)
                 docker_args += " --#{param} \"#{value}\""
             end
         end
-        box.vm.provision "#{role}:dockerfile",
+        box.vm.provision "#{role_name}:dockerfile",
             type: :file,
             source: "#{role_path}/Dockerfile",
-            destination: "#{role}/Dockerfile"
-        box.vm.provision "#{role}:dockerbuild",
+            destination: "#{role_name}/Dockerfile"
+        box.vm.provision "#{role_name}:dockerbuild",
             type: :docker do |docker|
-                docker.build_image "#{role}", args: docker_args
+                docker.build_image "#{role_name}", args: docker_args
             end
         activity = true
     end
@@ -316,12 +381,12 @@ def add_role(box, role, name, machine)
     if File.file?(provisioning_file)
         require provisioning_file
         begin
-            valid_role = eval("#{role}_provision(box, name, role_params, machine)")
+            valid_role = eval("#{role_name}_provision(box, machine_name, role_params, machine)")
             # extensions might not return true, we only care if they explicitly return false
             valid_role = valid_role != false
             activity = true
         rescue => error
-            STDERR.puts "==> #{name}: Error with #{role} role: #{error}"
+            STDERR.puts "==> #{machine_name}: Error with #{role_name} role: #{error}"
         end
     end
     if valid_role
@@ -329,7 +394,7 @@ def add_role(box, role, name, machine)
         script_ext = ".sh"
         arg_marker = "--"
         combine_array = false
-        script_args = [role, name, $USER]
+        script_args = [role_name, machine_name, $USER]
         upload_path = "/tmp/vagrant-shell/"
         if box.vm.guest == :windows
             script_ext = ".cmd"
@@ -341,13 +406,13 @@ def add_role(box, role, name, machine)
             end
             upload_path = "c:\\Windows\\temp\\"
         end
-        upload_path += "provision_#{role}#{script_ext}"
+        upload_path += "provision_#{role_name}#{script_ext}"
         provisioning_file = "#{role_path}/provision#{script_ext}"
         if File.file?(provisioning_file) # allow empty scripts to silence warning
             activity = true
             unless File.zero?(provisioning_file)
                 # scripts might need to know about name and path of the role
-                role_params["role"] = role
+                role_params["role"] = role_name
                 role_params["role_path"] = role_path
 
                 role_params.each do |key, param|
@@ -384,7 +449,7 @@ def add_role(box, role, name, machine)
                 rescue
                 end
 
-                provisioning_name = "#{role}:script"
+                provisioning_name = "#{role_name}:script"
                 box.vm.provision provisioning_name,
                     **attributes
             end
@@ -394,12 +459,12 @@ def add_role(box, role, name, machine)
     # check for post--provisioning script to run locally
     if File.file?("#{role_path}/post-provision.sh")
         post_provision = lambda do |machine|
-            read_process("#{role_path}/post-provision.sh #{name}", machine.ui)
+            read_process("#{role_path}/post-provision.sh #{machine_name}", machine.ui)
         end
-        box.vm.provision "#{role}:post-provision",
+        box.vm.provision "#{role_name}:post-provision",
             type: :local_command,
             code: post_provision
     end
 
-    STDERR.puts "==> #{name}: Provisioning script for role #{role} at '#{provisioning_file}' not found!" unless activity
+    STDERR.puts "==> #{machine_name}: Provisioning script for role #{role_name} at '#{provisioning_file}' not found!" unless activity
 end

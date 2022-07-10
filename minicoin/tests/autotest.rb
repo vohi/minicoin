@@ -173,7 +173,7 @@ class Tester
       if result.is_a?(Array)
         index = 0
         result.each do |result_entry|
-          result_entry.delete("hash") if result_entry.is_a?(Hash)
+          result_entry.delete("applied_roles") if result_entry.is_a?(Hash)
           compare(name, result_entry, data[index])
           index += 1
         end
