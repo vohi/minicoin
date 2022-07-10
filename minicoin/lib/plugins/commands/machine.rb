@@ -102,10 +102,13 @@ module Minicoin
             def execute()
                 options = {}
                 parser = OptionParser.new do |option|
-                    option.banner = "Usage: minicoin machine add [name]"
+                    option.banner = "Usage: minicoin machine add [options] [name]"
                     option.separator ""
                     option.separator Add::synopsis
                     option.separator ""
+                    option.on("--force", "Overwrite already installed machines from library") do
+                        options[:force] = :true
+                    end
                 end
 
                 argv = parse_options(parser)
@@ -116,9 +119,17 @@ module Minicoin
                     return
                 end
 
+                installed_machines = []
+                ::Minicoin.machines.each do |installed_machine|
+                    installed_machines << installed_machine["name"]
+                end
                 ymlFiles = Dir['machines/**/*.yml']
                 Dir.mkdir("#{$HOME}/minicoin/machines") unless Dir.exist?("#{$HOME}/minicoin/machines")
                 argv.each do |machineName|
+                    if installed_machines.include?(machineName) && !options[:force]
+                        puts "#{machineName} already installed, set --force to overwrite"
+                        next
+                    end
                     found = false
                     ymlFiles.each do |ymlFile|
                         machineData = YAML.load_file(ymlFile)
@@ -129,6 +140,12 @@ module Minicoin
                         if machineName == machineData["name"]
                             @env.ui.info "Adding machine file #{ymlFile} to the minicoin configuration in #{$HOME}/minicoin"
                             FileUtils.cp(ymlFile, "#{$HOME}/minicoin/#{ymlFile}")
+                            if machineData["extends"]
+                                args = ["machine", "add"]
+                                args << "--force" if options[:force]
+                                args << machineData["extends"]
+                                @env.cli(*args)
+                            end
                             found = true
                             break
                         end
