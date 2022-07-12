@@ -76,6 +76,9 @@ module Minicoin
                     option.separator ""
                     option.separator "Options:"
                     option.separator ""
+                    option.on("--all", "List all machines, include those that are installed") do
+                        options[:all] = :true
+                    end
                 end
 
                 argv = parse_options(parser)
@@ -86,10 +89,19 @@ module Minicoin
                     return
                 end
 
+                installed_machines = []
+                ::Minicoin.machines.each do |machine|
+                    installed_machines << machine["name"]
+                end
                 ymlFiles = Dir['machines/**/*.yml']
                 ymlFiles.each do |ymlFile|
                     machine = YAML.load_file(ymlFile)
-                    puts "- #{machine["name"]}"
+                    detail = "- #{machine['name']}"
+                    if installed_machines.include?(machine["name"])
+                        next unless options[:all]
+                        detail += " (installed)"
+                    end
+                    @env.ui.detail(detail)
                 end
             end
         end
