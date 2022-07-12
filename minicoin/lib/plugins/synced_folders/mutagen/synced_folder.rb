@@ -68,6 +68,14 @@ module Minicoin
                     machine.communicate.execute("mkdir -p #{beta}")
                     Vagrant.global_logger.debug("Creating sync session with command '#{command}'")
                     stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
+                    # mutagen bug: fails to start the agent when the beta's login shell is powershell. So try
+                    # to work around this bug by setting the login shell to cmd.exe, which will then be reverted
+                    # by the default provisioning for Windows hosts.
+                    if status != 0 && machine.guest.name == :windows && stderr.include?("CommandNotFoundException")
+                        machine.ui.warn("Retrying with cmd.exe as login shell...")
+                        machine.communicate.execute('New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\system32\cmd.exe" -PropertyType String -Force')
+                        stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
+                    end
                     if status != 0
                         machine.ui.error("Error setting up mutagen sync to #{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}: #{stderr}")
                         raise Minicoin::Errors::MutagenSyncFail
