@@ -45,6 +45,20 @@ module VagrantPlugins
             def self.default_region()
                 @@default_region ||= `#{cli()} configure get region`.strip
             end
+            def self.keypair()
+                return @@keypair if @@keypair
+                stdout, stderr, status = Provider.call("ec2", "describe-key-pairs", {
+                    "key-names" => "minicoin"
+                })
+                if status == 0
+                    keypairs = JSON.parse(stdout)
+                    keypairs.each do |keypair|
+                        # ['keypairs', [{"KeyPairId" => "..."}]]
+                        @@keypair = keypair[1][0]
+                    end
+                end
+                @keypair ||= {}
+            end
 
             def prepare_account(machine)
                 return nil unless @@aws_account.nil?
@@ -133,6 +147,10 @@ module VagrantPlugins
                             machine.ui.warn "Failed to add ingress rule for port #{port}: #{stderr}" if status != 0
                         end
                     end
+                    
+                    unless (Provider.keypair() || {}).empty?
+                        machine.ui.detail "Key pair '#{@@keypair['KeyPairId']}' with fingerprint #{@@keypair['KeyFingerprint']} found"
+                    end
                 rescue => e
                     if ['validate'].include?(ARGV[0]) # errors as warnings for validation runs
                         machine.ui.warn e
@@ -216,6 +234,7 @@ module VagrantPlugins
             @@aws_account = nil
             @@default_region = nil
             @@public_key = nil
+            @@keypair = nil
         end
     end
 end
@@ -236,7 +255,7 @@ module Minicoin
                 # We need to somehow communicate the admin password to the machine's vagrant file,
                 # and using an environment variable (or alternatively $settings) seems to be the only way,
                 # and we want users to set the admin password for the machines anyway.
-                aws_password = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})"
+                aws_password = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})" || "$Vagrant(0)"
 
                 # this has to happen on machine level, even though it's only needed for the
                 # provider, otherwise the plugin runs after machine-level provisioners, which
@@ -248,6 +267,8 @@ module Minicoin
                     aws_profile = ENV[ "AWS_PROFILE"]
                     aws.aws_profile = aws_profile if aws_profile
                     aws.security_groups = [ "minicoin" ]
+                    keypair = VagrantPlugins::AWS::Provider::keypair()
+                    aws.keypair_name = keypair['KeyName'] unless keypair.nil? || keypair.empty?
 
                     # Workaround for https://github.com/mitchellh/vagrant-aws/issues/538: if the box we
                     # want is not installed yet, then the AWS plugin fails the validation before the box
