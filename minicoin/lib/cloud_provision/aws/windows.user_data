@@ -39,12 +39,13 @@ Start-Service ssh-agent
 
 # write and secure the ssh keys
 $public_key = "#{public_key}"
-Set-Content -Path ${env:ProgramData}\\ssh\\administrators_authorized_keys -Value $public_key
-icacls.exe ${env:ProgramData}\\ssh\\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+Set-Content -Path "${env:ProgramData}\\ssh\\administrators_authorized_keys" -Value "${public_key}"
+icacls.exe "${env:ProgramData}\\ssh\\administrators_authorized_keys" /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
 
 # configure WinRM
 Enable-PSRemoting -Force
 Set-Service winrm -StartupType Automatic
+Start-Service winrm
 
 # Allow incoming connections to WinRM server
 New-NetFirewallRule -Name winrm-http -DisplayName 'WinRM-HTTP' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 5985

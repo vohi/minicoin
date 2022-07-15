@@ -23,7 +23,9 @@ chocolatey feature enable -n=allowGlobalConfirmation
 if (!(Get-WmiObject win32_service -Filter "Name = 'sshd'")) {
     write-host "Installing OpenSSH server"
     choco install --no-progress --confirm --limitoutput -params "/SSHServerFeature /AlsoLogToFile" openssh
-    New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+    if (!(Get-NetFirewallRule -DisplayName 'OpenSSH SSH Server')) {
+        New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+    }
     Set-Service sshd -StartupType Automatic
     Set-Service ssh-agent -StartupType Automatic
 }
