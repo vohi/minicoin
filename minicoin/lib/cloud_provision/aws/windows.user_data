@@ -13,6 +13,12 @@ Write-host "Initializing raw disks"
 Get-Disk | Where-Object PartitionStyle -Eq "RAW" | Initialize-Disk -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume
 Get-Disk
 
+# turn off password complexity requirements
+secedit /export /cfg c:\secpol.cfg
+(Get-Content C:\secpol.cfg).replace("PasswordComplexity = 1", "PasswordComplexity = 0") | Out-File c:\secpol.cfg
+secedit /configure /db c:\windows\security\local.sdb /cfg c:\secpol.cfg /areas SECURITYPOLICY
+Remove-Item C:\secpol.cfg -force
+
 # bootstrap the vagrant user in the admin group
 $Password = ConvertTo-SecureString -String "#{aws_password}" -AsPlainText -Force
 New-LocalUser "vagrant" -Password $Password -FullName "vagrant" -Description "Default vagrant user"

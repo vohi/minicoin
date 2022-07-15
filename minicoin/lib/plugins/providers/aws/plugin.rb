@@ -255,7 +255,7 @@ module Minicoin
                 # We need to somehow communicate the admin password to the machine's vagrant file,
                 # and using an environment variable (or alternatively $settings) seems to be the only way,
                 # and we want users to set the admin password for the machines anyway.
-                aws_password = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})" || "$Vagrant(0)"
+                aws_password = ENV['AWS_VM_ADMIN_PASSWORD'] || "#(#{ENV['minicoin_key']})" || "#Vagrant(0)"
 
                 # this has to happen on machine level, even though it's only needed for the
                 # provider, otherwise the plugin runs after machine-level provisioners, which
@@ -301,7 +301,12 @@ module Minicoin
                     begin
                         user_data = File.read("./lib/cloud_provision/aws/#{user_data_file}.user_data").strip
                         user_data.sub!('#{public_key}', @@public_key)
-                        user_data.sub!('#{aws_password}', aws_password)
+                        if (user_data.include?("<powershell>"))
+                            escaped_password = aws_password.gsub("$", "`$")
+                        else
+                            escaped_password = aws_password.gsub("$", "\\$")
+                        end
+                        user_data.sub!('#{aws_password}', escaped_password)
                         aws.user_data = user_data
                     rescue => e
                         STDERR.puts "Failed to read user data for AWS platform #{user_data_file}"
