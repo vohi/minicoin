@@ -98,7 +98,7 @@ else
     echo "vagrant version ${vagrant_version} found!"
 fi
 
-if [[ ! -z "$vmware_version" ]]
+if [[ -n "$vmware_version" ]]
 then
     echo "VWmare found, checking vagrant plugin..."
     vagrant_vmware=`vagrant plugin list | grep vmware`
