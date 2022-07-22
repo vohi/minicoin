@@ -292,7 +292,8 @@ module Minicoin
                 threads = []
                 exit_code = 0
                 with_target_vms(argv) do |vm|
-                    unless vm.communicate.ready?
+                    log_verbose(vm.ui, "Checking communication, state is '#{vm.state.id}'")
+                    unless vm.state.id != :stopped && vm.communicate.ready?
                         vm.ui.warn "Machine not ready, trying to bring it up"
                         up_options = ["up"]
                         if @run_options[:provider]
