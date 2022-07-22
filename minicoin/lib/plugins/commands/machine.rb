@@ -136,7 +136,7 @@ module Minicoin
                     installed_machines << installed_machine["name"]
                 end
                 ymlFiles = Dir['machines/**/*.yml']
-                Dir.mkdir("#{$HOME}/minicoin/machines") unless Dir.exist?("#{$HOME}/minicoin/machines")
+                FileUtils.mkpath("#{$HOME}/minicoin/machines") unless Dir.exist?("#{$HOME}/minicoin/machines")
                 argv.each do |machineName|
                     if installed_machines.include?(machineName) && !options[:force]
                         puts "#{machineName} already installed, set --force to overwrite"
