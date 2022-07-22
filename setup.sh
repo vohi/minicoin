@@ -119,7 +119,7 @@ then
         brew install mutagen-io/mutagen/mutagen
     else
         filename="mutagen_linux_amd64_v${mutagen_version_good}.tar.gz"
-        sudo curl -O -L https://github.com/mutagen-io/mutagen/releases/download/v${mutagen_version_good}/${filename}
+        curl -O -L https://github.com/mutagen-io/mutagen/releases/download/v${mutagen_version_good}/${filename}
         sudo mkdir -p /opt/mutagen
         sudo tar -xf "${filename}" -C /opt/mutagen
         [ $? -eq 0 ] && sudo ln -s /opt/mutagen/mutagen /usr/local/bin/mutagen
