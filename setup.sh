@@ -121,8 +121,9 @@ then
         filename="mutagen_linux_amd64_v${mutagen_version_good}.tar.gz"
         curl -O -L https://github.com/mutagen-io/mutagen/releases/download/v${mutagen_version_good}/${filename}
         sudo mkdir -p /opt/mutagen
-        sudo tar -xf "${filename}" -C /opt/mutagen
-        [ $? -eq 0 ] && sudo ln -s /opt/mutagen/mutagen /usr/local/bin/mutagen
+        if sudo tar -xf "${filename}" -C /opt/mutagen
+        then sudo ln -s /opt/mutagen/mutagen /usr/local/bin/mutagen
+        fi
     fi
     mutagen_version=`mutagen version`
 else
