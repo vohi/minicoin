@@ -71,8 +71,8 @@ if EXIST build.ninja (
       if "!PARAM_configure:~0,2!" == "-D" SET "PARAM_configure=-- !PARAM_configure!"
       REM The rest goes after the arg seperator '--', unless there already is one
       if "!PARAM_configure: -- =####!" == "!PARAM_configure!" SET "PARAM_configure=!PARAM_configure! -- "
-      if NOT "!PARAM_cc!" == "" SET PARAM_configure="!PARAM_configure! -DCMAKE_C_COMPILER=!PARAM_cc!"
-      if NOT "!PARAM_cxx!" == "" SET PARAM_configure="!PARAM_configure! -DCMAKE_CXX_COMPILER=!PARAM_cxx!"
+      if NOT "!PARAM_cc!" == "" SET "PARAM_configure=!PARAM_configure! -DCMAKE_C_COMPILER=!PARAM_cc!"
+      if NOT "!PARAM_cxx!" == "" SET "PARAM_configure=!PARAM_configure! -DCMAKE_CXX_COMPILER=!PARAM_cxx!"
       echo Configuring '!JOBDIR!' with 'configure !PARAM_configure!'
       echo Pass --configure "configure options" to override
       call !JOBDIR!\configure.bat !PARAM_configure!
