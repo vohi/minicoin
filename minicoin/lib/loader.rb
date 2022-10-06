@@ -339,7 +339,7 @@ def load_minicoin()
     if File.file?(user_file)
         user_yaml = YAML.load_file(user_file)
     end
-    user_yaml = load_includes(user_yaml, $HOME)
+    user_yaml = load_includes(user_yaml, File.join($HOME, "minicoin"))
     Dir["#{$HOME}/minicoin/machines/**/*.yml"].each do |machineFile|
         machineFileData = YAML.load_file(machineFile)
         user_yaml["machines"] = [] if user_yaml["machines"].nil?
