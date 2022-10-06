@@ -22,6 +22,7 @@ if Vagrant::Util::Platform.windows?
   $USER = ENV['USERNAME']
 end
 
+$MINICOIN_USER_DIR = (ENV["MINICOIN_USER_DIR"] || File.join($HOME, "/minicoin")).gsub("\\", "/")
 $MINICOIN_PROJECT_DIR = (ENV["MINICOIN_PROJECT_DIR"] || Dir.pwd).gsub("\\", "/")
 $PWD = File.dirname(__FILE__) #
 ENV["PWD"] = $PWD if ENV["PWD"].nil?

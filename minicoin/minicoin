@@ -12,6 +12,7 @@ fi
 
 minicoin_dir=$(dirname $source)
 project_dir="$PWD"
+[[ -z $MINICOIN_USER_DIR ]] && export MINICOIN_USER_DIR="$HOME/minicoin"
 [[ -z $MINICOIN_PROJECT_DIR ]] && export MINICOIN_PROJECT_DIR="$PWD"
 cd $minicoin_dir
 

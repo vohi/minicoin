@@ -136,7 +136,7 @@ module Minicoin
                     installed_machines << installed_machine["name"]
                 end
                 ymlFiles = Dir['machines/**/*.yml']
-                FileUtils.mkpath("#{$HOME}/minicoin/machines") unless Dir.exist?("#{$HOME}/minicoin/machines")
+                FileUtils.mkpath("#{$MINICOIN_USER_DIR}/machines") unless Dir.exist?("#{$MINICOIN_USER_DIR}/machines")
                 argv.each do |machineName|
                     if installed_machines.include?(machineName) && !options[:force]
                         puts "#{machineName} already installed, set --force to overwrite"
@@ -150,8 +150,8 @@ module Minicoin
                             next
                         end
                         if machineName == machineData["name"]
-                            @env.ui.info "Adding machine file #{ymlFile} to the minicoin configuration in #{$HOME}/minicoin"
-                            FileUtils.cp(ymlFile, "#{$HOME}/minicoin/#{ymlFile}")
+                            @env.ui.info "Adding machine file #{ymlFile} to the minicoin configuration in #{$MINICOIN_USER_DIR}"
+                            FileUtils.cp(ymlFile, "#{$MINICOIN_USER_DIR}/#{ymlFile}")
                             if machineData["extends"]
                                 args = ["machine", "add"]
                                 args << "--force" if options[:force]
@@ -193,12 +193,12 @@ module Minicoin
                     return
                 end
 
-                ymlFiles = Dir["#{$HOME}/minicoin/machines/**/*.yml"]
+                ymlFiles = Dir["#{$MINICOIN_USER_DIR}/machines/**/*.yml"]
                 argv.each do |machineName|
                     ymlFiles.each do |ymlFile|
                         machineData = YAML.load_file(ymlFile)
                         if machineData["name"] == machineName
-                            @env.ui.info "Removing machine #{ymlFile} from the minicoin configuration in #{$HOME}/minicoin"
+                            @env.ui.info "Removing machine #{ymlFile} from the minicoin configuration in #{$MINICOIN_USER_DIR}"
                             File.delete(ymlFile)
                         end
                     end

@@ -74,7 +74,7 @@ module Minicoin
                 end
                 
                 job_roots = [ File.expand_path("jobs") ]
-                "#{$HOME}/minicoin/jobs".tap { |user| job_roots << user if File.directory?(user) }
+                "#{$MINICOIN_USER_DIR}/jobs".tap { |user| job_roots << user if File.directory?(user) }
                 job_roots += look_up($MINICOIN_PROJECT_DIR || Dir.pwd)
             end
             
