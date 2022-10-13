@@ -133,13 +133,13 @@ def get_role_path(role)
     role_path = nil
     # local roles have precendence
     project_dir = ENV['MINICOIN_PROJECT_DIR']
-    if project_dir && project_dir != $PWD && project_dir != $HOME
+    if project_dir && project_dir != $PWD && project_dir != File.basename($MINICOIN_USER_DIR)
         role_path = File.join(ENV["MINICOIN_PROJECT_DIR"], ".minicoin/roles/#{role}")
         role_path = nil unless File.exist?(role_path)
     end
     if role_path.nil?
     # user can add or override roles
-        role_path = File.join($HOME, "minicoin/roles/#{role}")
+        role_path = File.join($MINICOIN_USER_DIR, "roles/#{role}")
         if !File.exist?(role_path)
             # global roles come last
             role_path = "#{$PWD}/roles/#{role}"
