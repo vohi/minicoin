@@ -143,6 +143,7 @@ case $distro in
       xcb-util-keysyms-devel
       xcb-util-renderutil-devel
       xcb-util-wm-devel
+      xcb-util-cursor-devel
       xorg-x11-devel
       libxkbcommon-x11-devel
       libxkbcommon-devel
