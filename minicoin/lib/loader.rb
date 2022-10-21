@@ -340,6 +340,11 @@ def load_minicoin()
         user_yaml = YAML.load_file(user_file)
     end
     user_yaml = load_includes(user_yaml, $MINICOIN_USER_DIR)
+    Dir["#{$MINICOIN_USER_DIR}/machines/**/*.yml"].each do |machineFile|
+        machineFileData = YAML.load_file(machineFile)
+        user_yaml["machines"] = [] if user_yaml["machines"].nil?
+        user_yaml["machines"] << machineFileData
+    end
 
     local_yaml = nil
     if $MINICOIN_PROJECT_DIR
@@ -362,12 +367,7 @@ def load_minicoin()
         merge_machines(yaml, plugin.load_minicoin) if plugin.respond_to?(:load_minicoin)
     end
 
-    user_machines = { "machines" => [] }
-    Dir["#{$MINICOIN_USER_DIR}/machines/**/*.yml"].each do |machineFile|
-        machineFileData = YAML.load_file(machineFile)
-        user_machines["machines"] << machineFileData
-    end
-    merge_machines(yaml, user_machines)
+    merge_machines(yaml, user_yaml)
     merge_machines(yaml, local_yaml)
     machines = yaml["machines"]
 
