@@ -58,16 +58,21 @@ module Minicoin
                             next
                         end
                         @@AZURE_PROFILE = JSON.parse(stdout)
-                        azure_clientname = "http://minicoin-azure"
-                        stdout, stderr, status = Open3.capture3("az ad sp show --id \"#{azure_clientname}\"")
-                        if status != 0
-                            unless stderr.start_with?("Please ensure you have network connection")
-                                stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name '#{azure_clientname}'")
-                                stdout, stderr, status = Open3.capture3("az ad sp credential reset --name '#{azure_clientname}' --password #{pwd}")
-                                STDERR.puts "Failed to generate azure account credentials" if status != 0
+                        if ENV["AZURE_CLIENT_ID"]
+                            @@AZURE_CREDENTIALS ||= {}
+                            @@AZURE_CREDENTIALS["appId"] = ENV["AZURE_CLIENT_ID"]
+                        else
+                            azure_clientname = "http://minicoin-azure"
+                            stdout, stderr, status = Open3.capture3("az ad sp show --id \"#{azure_clientname}\"")
+                            if status != 0
+                                unless stderr.start_with?("Please ensure you have network connection")
+                                    stdout, stderr, status = Open3.capture3("az ad sp create-for-rbac --name '#{azure_clientname}'")
+                                    stdout, stderr, status = Open3.capture3("az ad sp credential reset --name '#{azure_clientname}' --password #{pwd}")
+                                    STDERR.puts "Failed to generate azure account credentials" if status != 0
+                                end
                             end
+                            @@AZURE_CREDENTIALS = JSON.parse(stdout) if status == 0
                         end
-                        @@AZURE_CREDENTIALS = JSON.parse(stdout) if status == 0
                     end
 
                     next if @@AZURE_CREDENTIALS.nil?
