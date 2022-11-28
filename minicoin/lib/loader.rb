@@ -264,7 +264,8 @@ module Minicoin
                 if value.is_a?(Hash)
                     variable = Object.new
                     value.each do |k, v|
-                        variable.class.module_eval { attr_reader k.to_sym}
+                        next if k == "name" # breaks ruby in vagrant 2.3?
+                        variable.class.class_eval { attr_reader k.to_sym}
                         variable.instance_variable_set("@#{k}", v)
                     end
                     if_context.local_variable_set(name.to_sym, variable)
