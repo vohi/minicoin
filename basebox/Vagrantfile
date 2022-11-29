@@ -52,6 +52,8 @@ Vagrant.configure("2") do |config|
         basebox.vm.communicator = :winrm
       elsif is_mac
         basebox.vm.guest = :darwin
+      else
+        basebox.vm.guest = :linux
       end
     end
   end

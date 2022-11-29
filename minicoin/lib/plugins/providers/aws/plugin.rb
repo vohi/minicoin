@@ -296,6 +296,7 @@ module Minicoin
                     # as configured
                     aws.region = VagrantPlugins::AWS::Provider.default_region()
 
+                    box.vm.guest = :linux if box.vm.guest == "__UNSET__VALUE__".to_sym
                     user_data_file = "linux"
                     user_data_file = box.vm.guest.to_s if box.vm.guest.is_a?(Symbol)
                     begin
