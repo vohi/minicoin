@@ -142,13 +142,13 @@ if ($Sqldrivers) {
                 Break;
             }
             'mysql' {
-                $mysql_version = "mysql-connector-c++-8.0.28-win32"
+                $mysql_version = "mysql-connector-c++-8.0.31-win32"
                 $MySQL_ROOT = "C:\ProgramData\${mysql_version}"
                 if (!(Test-Path $MySQL_ROOT)) {
                     Run-KeepAlive -ScriptBlock {
                         param($MySQL_ROOT, $mysql_version)
                         $webclient = New-Object net.webclient # orders of magnitude faster than Invoke-WebRequest
-                        $webclient.Downloadfile("https://cdn.mysql.com//Downloads/Connector-C++/${mysql_version}.zip", "C:\Windows\Temp\mysql.zip")
+                        $webclient.Downloadfile("https://cdn.mysql.com/Downloads/Connector-C++/${mysql_version}.zip", "C:\Windows\Temp\mysql.zip")
                         try {
                             Expand-Archive -Path 'C:\Windows\Temp\mysql.zip' -DestinationPath 'C:\ProgramData'
                             [Environment]::SetEnvironmentVariable("MySQL_ROOT", $MySQL_ROOT, 'user')
