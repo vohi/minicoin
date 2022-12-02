@@ -31,6 +31,16 @@
                     "url": "file:///tmp/vmware_desktop/windows11-22H2-vmware-0.0.3.box"
                 }
             ]
+        },
+        {
+            "version": "0.0.4",
+            "status": "active",
+            "providers": [
+                {
+                    "name": "vmware_desktop",
+                    "url": "file:///tmp/vmware_desktop/windows11-22H2-vmware-0.0.4.box"
+                }
+            ]
         }
     ]
 }
