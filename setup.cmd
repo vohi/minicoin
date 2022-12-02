@@ -43,7 +43,7 @@ if !errorlevel! NEQ 0 (
 mutagen version 2> NUL > NUL
 if !errorlevel! NEQ 0 (
     echo Mutagen not found, installing
-    set "mutagen_version_good=0.13.1"
+    set "mutagen_version_good=0.16.2"
     set "mutagen_filename=mutagen_windows_amd64_v!mutagen_version_good!.zip"
 
     powershell -Command "(new-object net.webclient).DownloadFile('https://github.com/mutagen-io/mutagen/releases/download/v!mutagen_version_good!/!mutagen_filename!', '!mutagen_filename!')"
