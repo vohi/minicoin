@@ -70,7 +70,7 @@ module Minicoin
                             if md
                                 sections[section][md[1]] = md[2]
                             else
-                                machine.ui.error "Wrongly formatted data: #{line}"
+                                Vagrant.global_logger.debug "Wrongly formatted data: #{line}"
                             end
                         end
                     end
