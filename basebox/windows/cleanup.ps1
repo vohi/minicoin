@@ -31,6 +31,7 @@ Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotif
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotification" -Value 1
 Set-RegistryKey -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Key "NoToastApplicationNotificationOnLockScreen" -Value 1
 
+choco upgrade --confirm chocolatey
 choco install --confirm sdelete
 
 # doesn't block, so no point in running this here
