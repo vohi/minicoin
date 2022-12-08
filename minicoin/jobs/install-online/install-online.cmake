@@ -1,6 +1,5 @@
-set(installer_version "4.0.1")
 if (WIN32)
-  set(installer_file_os "windows-x86")
+  set(installer_file_os "windows-x64")
   set(installer_file_ext "exe")
   set(maintenance_tool_ext ".exe")
   set(qt_package_arch "win64_msvc2019_64")
