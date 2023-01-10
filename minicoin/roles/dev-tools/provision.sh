@@ -6,7 +6,7 @@ case $distro in
     ubuntu*)
         packages=(
             build-essential
-            gcc-8 g++-8
+            gcc-10 g++-10
             clang-10
             python
             perl
