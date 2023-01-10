@@ -41,6 +41,8 @@ case $distro in
             "libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev"
             "libgstreamer-plugins-good1.0-dev"
             "linux-libc-dev"
+            # GTK3 theme
+            "libgtk-3-dev"
     )
     for sqldriver in ${PARAM_sqldrivers[@]}
     do
