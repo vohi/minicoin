@@ -11,7 +11,7 @@ apt-get -q install -y libc6-i386 libpulse-dev
 apt-get -q install -y default-jre openjdk-11-jdk-headless
 apt-get -q install -y gradle
 
-ndkVersion="${PARAM_ndkVersion:-23.1.7779620}"
+ndkVersion="${PARAM_ndkVersion:-25.1.8937393}"
 ndkHost="linux-x86_64"
 sdkBuildToolsVersion="${PARAM_sdkBuildToolsVersion:-31.0.0}"
 sdkApiLevel="${PARAM_sdkApiLevel:-android-31}"
