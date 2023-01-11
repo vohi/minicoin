@@ -51,7 +51,7 @@ module Minicoin
         end
 
         def self.parse_sessions(machine)
-            stdout, stderr, status = self.call_mutagen("list", machine.name)
+            stdout, stderr, status = self.call_mutagen("list", machine.name, "--long")
             machine.ui.error stderr if status != 0
             sessions = [].tap do |sessions|
                 stdout.strip.split(/-{3,}/).each do |block|

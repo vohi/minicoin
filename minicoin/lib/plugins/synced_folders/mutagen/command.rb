@@ -92,8 +92,7 @@ module Minicoin
                 beta = alpha.gsub(Dir.home, "")[1..-1]
                 argv = argv.drop(1)
 
-                opt_str = " --name #{options[:name] || "minicoin"}"
-                opt_str += " --sync-mode #{options[:sync_mode] || "one-way-replica"}"
+                opt_str = "--sync-mode #{options[:sync_mode] || "one-way-replica"}"
                 (options[:ignore] || []).each do |ignore|
                     opt_str += " --ignore #{ignore}"
                 end
@@ -112,10 +111,11 @@ module Minicoin
                         vm.ui.error data.strip if type == :stderr
                     end
 
-                    opt_str += " --label minicoin=#{vm.name}"
+                    options_string = opt_str;
+                    options_string += " --label minicoin=#{vm.name} --name #{options[:name] || "minicoin_#{vm.name}"}"
                     beta_str = "#{vm.ssh_info[:username]}@#{vm.ssh_info[:host]}:#{vm.ssh_info[:port]}:#{beta}"
 
-                    stdout, stderr, status = Open3.capture3("echo yes | #{SyncedFolderMutagen.mutagen_path} sync create #{opt_str} #{alpha} #{beta_str}")
+                    stdout, stderr, status = Open3.capture3("echo yes | #{SyncedFolderMutagen.mutagen_path} sync create #{options_string} #{alpha} #{beta_str}")
                     if status != 0
                         vm.ui.error stderr.strip
                     end
