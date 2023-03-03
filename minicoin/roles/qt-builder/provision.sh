@@ -36,7 +36,7 @@ case $distro in
             "avahi-daemon"
             "docker docker-compose"
             # qdoc
-            "libclang-10-dev" "llvm-10"
+            "libclang-11-dev" "llvm-11"
             # gstreamer
             "libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev"
             "libgstreamer-plugins-good1.0-dev"
