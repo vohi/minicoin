@@ -66,8 +66,12 @@ module Minicoin
                     machine.ui.detail "#{alpha} => #{beta}"
                     Vagrant.global_logger.debug("Ensuring beta path exists")
                     machine.communicate.execute("mkdir -p #{beta}")
-                    Vagrant.global_logger.debug("Creating sync session with command '#{command}'")
+                    Vagrant.global_logger.debug("Creating sync session with command '#{command}  #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}'")
                     stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
+                    if status != 0 && command.start_with?("C:/") && stderr.include?("C:")
+                        command.gsub!('/', '\\')
+                        stdout, stderr, status = Open3.capture3("echo yes | #{command} #{alpha} #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}")
+                    end
                     # mutagen bug: fails to start the agent when the beta's login shell is powershell. So try
                     # to work around this bug by setting the login shell to cmd.exe, which will then be reverted
                     # by the default provisioning for Windows hosts.
