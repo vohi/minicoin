@@ -3,6 +3,10 @@
 REM Needs to be set in the calling script
 REM setlocal ENABLEDELAYEDEXPANSION
 
+REM Jobs have to call parse-opts, so this is a good place to execute
+REM an autorun script that a the machine to set up the environment.
+if EXIST "%USERPROFILE%\autorun.cmd" call "%USERPROFILE%\autorun.cmd"
+
 set names=
 set nameCount=0
 set args=
