@@ -1,5 +1,5 @@
-IF(!(Test-Path C:\Users\vagrant\bin)) {
-    New-Item -Type Directory -Path C:\Users\vagrant\bin | Out-Null
+IF(!(Test-Path C:\Users\$env:USERNAME\bin)) {
+    New-Item -Type Directory -Path C:\Users\$env:USERNAME\bin | Out-Null
 }
 
 $ChocoInstallPath = "$($env:SystemDrive)\ProgramData\Chocolatey\bin"
@@ -35,7 +35,7 @@ chocolatey feature disable -n=allowGlobalConfirmation
 
 psexec -nobanner -accepteula | Out-Null
 
-$oldpath += ";c:\Users\vagrant\bin;c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
+$oldpath += ";c:\Users\$env:USERNAME\bin;c:\Python27;c:\Python27\Scripts;c:\Strawberry\perl\bin;c:\Program Files\CMake\bin"
 [Environment]::SetEnvironmentVariable("PATH", $oldpath, [System.EnvironmentVariableTarget]::Machine)
 
 refreshenv

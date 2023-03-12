@@ -66,9 +66,9 @@ Set-Location $env:USERPROFILE
 $script = $env:USERPROFILE + "\" + $script
 
 try {
-    Log-Verbose "Searching active session for user 'vagrant'"
+    Log-Verbose "Searching active session for user '$env:USERNAME'"
     $ErrorActionPreference="SilentlyContinue"
-    $sessioninfo = (query user vagrant | Select-String Active).toString().split() | where {$_}
+    $sessioninfo = (query user $env:USERNAME | Select-String Active).toString().split() | where {$_}
     $ErrorActionPreference="Continue"
     if (($sessioninfo -eq $null) -or ($sessioninfo.Length -eq 0)) {
         throw "No session found"
@@ -179,7 +179,7 @@ do {
             TaskName = $jobid
             Description = [string]$taskargs
             Action = New-ScheduledTaskAction -Id $jobid -Execute $taskcommand -Argument "$taskargs" -WorkingDirectory $workingdirectory
-            User = "vagrant"
+            User = $env:USERNAME
             RunLevel = "Highest"
             Settings = New-ScheduledTaskSettingsSet -Priority 0 -MultipleInstances Parallel -DontStopIfGoingOnBatteries
         }
