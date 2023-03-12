@@ -191,6 +191,9 @@ class MockVm
   def winssh()
     MockWinssh.new
   end
+  def disk(disk, name)
+    nil
+  end
 end
 
 class MockTrigger
