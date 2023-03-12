@@ -206,11 +206,13 @@ class MockMinicoin
   attr_accessor :default_shared_folders
   attr_accessor :hash
   attr_accessor :guest_homes
+  attr_accessor :guest_user
 
   def initialize
     @fs_mappings = {}
     @default_shared_folders = {}
     @hash = -1
     @guest_homes = nil
+    @guest_user = "vagrant"
   end
 end

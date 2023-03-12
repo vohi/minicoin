@@ -81,6 +81,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define name, autostart: false do |box|
       box.minicoin.machine = machine
+      box.minicoin.guest_user = machine["user"] || "vagrant"
 
       # make sure the default provider used for the machine is the first provider
       # for which there is an explicit configuration; otherwise respect vagrant defaults

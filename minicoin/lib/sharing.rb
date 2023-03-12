@@ -32,8 +32,8 @@ SCRIPT
 end
 
 def adjust_guest_path(path, box)
-    path = path.gsub("~", "#{box.minicoin.guest_homes}/vagrant")
-    path.gsub!($HOME, "#{box.minicoin.guest_homes}/vagrant")
+    path = path.gsub("~", "#{box.minicoin.guest_homes}/#{box.minicoin.guest_user}")
+    path.gsub!($HOME, "#{box.minicoin.guest_homes}/#{box.minicoin.guest_user}")
     if box.vm.guest == :windows
         path.gsub!("\\", "/")
         path.gsub!(/^\//, "C:/")
