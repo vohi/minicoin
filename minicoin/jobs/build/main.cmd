@@ -13,6 +13,7 @@ goto :main
 
 REM Creates a batch wrapper in ~/bin (which is in the PATH) for qmake or cmake
 :link_tool
+if NOT EXIST "%USERPROFILE%\bin" mkdir "%USERPROFILE%\bin"
 set "toolname=%1"
 set "binpath=%CD%\qtbase\bin"
 if NOT EXIST "%binpath%\%toolname%" set "binpath=%CD%\bin"
