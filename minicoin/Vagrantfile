@@ -251,7 +251,7 @@ Vagrant.configure("2") do |config|
       # Definition of provisioning steps
       roles = machine["roles"] || []
       # some default provisioning at the very end
-      roles << "windows-setup" if box.vm.guest == :windows
+      roles << "windows-setup" if box.vm.guest == :windows && machine["provider"] != "metal"
       add_roles(box, roles, machine)
     end
   end
