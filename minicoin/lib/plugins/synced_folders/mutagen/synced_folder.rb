@@ -24,35 +24,20 @@ module Minicoin
 
             def enable(machine, folders, opts)
                 machine.ui.info "Setting up mutagen sync sessions..."
-                stdout, stderr, status = SyncedFolderMutagen.call_mutagen(:list, machine.name)
-                status = -1 if status == 0 && !stdout.include?("minicoin: #{machine.name}")
-                # if the ssh info of the machine has changed, then we need to terminate and recreate
-                if status == 0 && !stdout.include?("URL: #{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
-                    machine.ui.detail "SSH connection has changed, terminating old sync session..."
-                    SyncedFolderMutagen.call_mutagen("terminate", machine.name)
-                    status = -1
-                end
-                if status == 0
-                    # we have a running session, check if it includes all our alphas
-                    folders.each do |id, folder_opts|
-                        next if folder_opts[:type] != :mutagen
-                        alpha = folder_opts[:hostpath]
-                        status = -1 unless stdout.include?(alpha)
+                # get all sync sessions running for that machine already
+                sessions = SyncedFolderMutagen.parse_sessions(machine)
+                # if the ssh info of the machine has changed, then we need to terminate and recreate all sessions
+                sessions.each do |session|
+                    sessionBeta = session["Beta"]
+                    if !sessionBeta || !sessionBeta["URL"].start_with?("#{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}")
+                        machine.ui.detail "SSH connection has changed, terminating old sync session..."
+                        SyncFolderMutagen.call_mutagen("terminate", machine.name)
+                        sessions = []
+                        break
                     end
                 end
-                # mutagen sync sessions already created - resume them
-                if status == 0
-                    machine.ui.detail "Resetting existing sessions..."
-                    SyncedFolderMutagen.call_mutagen("reset", machine.name)
-                    SyncedFolderMutagen.call_mutagen("resume", machine.name)
-                    return
-                end
 
-                # revoke the trust from any old keys we might have for this machine
-                SyncedFolderMutagen.revoke_trust(machine)
-                # make the guest trust the host's user
-                SyncedFolderMutagen.upload_key(machine)
-
+                firstNewSession = false
                 options_string = " --label minicoin=#{machine.name} --name minicoin-#{machine.name}"
                 command = "#{SyncedFolderMutagen.mutagen_path} sync create --sync-mode one-way-replica #{options_string}"
                 folders.each do |id, folder_opts|
@@ -63,7 +48,32 @@ module Minicoin
                     mount_options.each do |mount_option|
                         command += " #{mount_option}"
                     end
-                    
+
+                    sessionRunning = nil
+                    sessions.each do |session|
+                        sessionAlpha = session["Alpha"]
+                        sessionBeta = session["Beta"]
+                        if sessionAlpha["URL"] == alpha && sessionBeta["URL"] == "#{machine.ssh_info[:remote_user]}@#{machine.ssh_info[:host]}:#{machine.ssh_info[:port]}:#{beta}"
+                            sessionRunning = session["Identifier"]
+                            break
+                        end
+                    end
+
+                    if sessionRunning
+                        machine.ui.detail "#{alpha} => #{beta} exists - resetting existing session..."
+                        SyncedFolderMutagen.call_mutagen("reset", nil, sessionRunning)
+                        SyncedFolderMutagen.call_mutagen("resume", nil, sessionRunning)
+                        next
+                    end
+
+                    # when we create a new session, revoke any existing trust we might
+                    # have and make the guest trust the host's uses
+                    if !firstNewSession
+                        firstNewSession = true
+                        SyncedFolderMutagen.revoke_trust(machine)
+                        SyncedFolderMutagen.upload_key(machine)
+                    end
+
                     machine.ui.detail "#{alpha} => #{beta}"
                     Vagrant.global_logger.debug("Ensuring beta path exists")
                     begin
