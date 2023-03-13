@@ -112,7 +112,7 @@ module Minicoin
                     end
 
                     options_string = opt_str;
-                    options_string += " --label minicoin=#{vm.name} --name #{options[:name] || "minicoin_#{vm.name}"}"
+                    options_string += " --label minicoin=#{vm.name} --name #{options[:name] || "minicoin-#{vm.name}"}"
                     beta_str = "#{vm.ssh_info[:username]}@#{vm.ssh_info[:host]}:#{vm.ssh_info[:port]}:#{beta}"
 
                     stdout, stderr, status = Open3.capture3("echo yes | #{SyncedFolderMutagen.mutagen_path} sync create #{options_string} #{alpha} #{beta_str}")

@@ -53,7 +53,8 @@ module Minicoin
                 # make the guest trust the host's user
                 SyncedFolderMutagen.upload_key(machine)
 
-                command = "#{SyncedFolderMutagen.mutagen_path} sync create --sync-mode one-way-replica --name minicoin --label minicoin=#{machine.name}"
+                options_string = " --label minicoin=#{machine.name} --name minicoin-#{machine.name}"
+                command = "#{SyncedFolderMutagen.mutagen_path} sync create --sync-mode one-way-replica #{options_string}"
                 folders.each do |id, folder_opts|
                     next if folder_opts[:type] != :mutagen
                     alpha = folder_opts[:hostpath]
